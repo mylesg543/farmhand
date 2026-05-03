@@ -1,0 +1,37 @@
+import { useState, useEffect, useCallback } from 'react'
+import { supabase } from '../lib/supabase'
+
+// fh_income table — tracks money coming IN (sales, eggs, wool, etc.)
+export function useIncome() {
+  const [income, setIncome] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const fetch = useCallback(async () => {
+    setLoading(true); setError(null)
+    const { data, error } = await supabase
+      .from('fh_income')
+      .select('*')
+      .order('date', { ascending: false })
+    if (error) setError(error.message)
+    else setIncome(data || [])
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { fetch() }, [fetch])
+
+  const addIncome = async (values) => {
+    const { data, error } = await supabase.from('fh_income').insert([values]).select().single()
+    if (error) throw error
+    setIncome(prev => [data, ...prev])
+    return data
+  }
+
+  const deleteIncome = async (id) => {
+    const { error } = await supabase.from('fh_income').delete().eq('id', id)
+    if (error) throw error
+    setIncome(prev => prev.filter(i => i.id !== id))
+  }
+
+  return { income, loading, error, refetch: fetch, addIncome, deleteIncome }
+}

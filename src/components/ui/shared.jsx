@@ -1,10 +1,10 @@
 // ─── Animal & Event Constants ─────────────────────────────────────────────────
 export const ANIMAL_META = {
-  sheep:    { label: 'Sheep',    emoji: '🐑', color: '#795548', light: '#efebe9' },
-  chickens: { label: 'Chickens', emoji: '🐔', color: '#f57f17', light: '#fff9e6' },
-  cows:     { label: 'Cows',     emoji: '🐄', color: '#37474f', light: '#eceff1' },
-  pigs:     { label: 'Pigs',     emoji: '🐖', color: '#c2185b', light: '#fce4ec' },
-  goats:    { label: 'Goats',    emoji: '🐐', color: '#558b2f', light: '#f1f8e9' },
+  sheep:    { label: 'Sheep',    singular: 'Sheep',   emoji: '🐑', color: '#795548', light: '#efebe9' },
+  chickens: { label: 'Chickens', singular: 'Chicken', emoji: '🐔', color: '#f57f17', light: '#fff9e6' },
+  cows:     { label: 'Cows',     singular: 'Cow',     emoji: '🐄', color: '#37474f', light: '#eceff1' },
+  pigs:     { label: 'Pigs',     singular: 'Pig',     emoji: '🐖', color: '#c2185b', light: '#fce4ec' },
+  goats:    { label: 'Goats',    singular: 'Goat',    emoji: '🐐', color: '#558b2f', light: '#f1f8e9' },
 }
 
 export const EVENT_TYPES = [
