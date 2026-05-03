@@ -13,6 +13,18 @@ const INCOME_TYPES = [
   { value: 'other',        label: 'Other Income' },
 ]
 
+const EXPENSE_CATEGORIES = [
+  { value: 'hay',          label: 'Hay',            emoji: '🌾', color: '#f57f17', bg: '#fff8e1' },
+  { value: 'feed',         label: 'Feed',           emoji: '🪣', color: '#795548', bg: '#efebe9' },
+  { value: 'medicine',     label: 'Medicine & Vet', emoji: '💊', color: '#c62828', bg: '#fff3f3' },
+  { value: 'infrastructure',label: 'Infrastructure', emoji: '🔨', color: '#37474f', bg: '#eceff1' },
+  { value: 'equipment',    label: 'Equipment',      emoji: '⚙️',  color: '#1565c0', bg: '#e3f2fd' },
+  { value: 'bedding',      label: 'Bedding',        emoji: '🛏️',  color: '#558b2f', bg: '#f1f8e9' },
+  { value: 'supplements',  label: 'Supplements',    emoji: '🧪', color: '#6a1b9a', bg: '#f3e5f5' },
+  { value: 'labour',       label: 'Labour',         emoji: '👷', color: '#4a3c28', bg: '#fdf6ec' },
+  { value: 'other',        label: 'Other',          emoji: '📋', color: '#616161', bg: '#fafafa' },
+]
+
 function fmtIncome(n) { return `+${fmt(n)}` }
 function fmtExpense(n) { return `-${fmt(n)}` }
 function fmtNet(n) { return `${n >= 0 ? '+' : ''}${fmt(n)}` }
@@ -29,7 +41,7 @@ export function PnLPage() {
   const [showIncomeForm,  setShowIncomeForm]  = useState(false)
   const today = new Date().toISOString().split('T')[0]
 
-  const [costForm,   setCostForm]   = useState({ species: 'sheep', description: '', amount: '', date: today })
+  const [costForm,   setCostForm]   = useState({ species: 'sheep', category: 'hay', description: '', amount: '', date: today })
   const [incomeForm, setIncomeForm] = useState({ species: 'sheep', income_type: 'sale_animal', description: '', amount: '', date: today })
   const [costErr,    setCostErr]    = useState('')
   const [incomeErr,  setIncomeErr]  = useState('')
@@ -63,8 +75,8 @@ export function PnLPage() {
     const amt = parseFloat(costForm.amount)
     if (!costForm.amount || isNaN(amt) || amt <= 0) { setCostErr('Enter a valid amount'); return }
     try {
-      await addCost({ species: costForm.species, description: costForm.description, amount: amt, date: costForm.date })
-      setCostForm({ species: 'sheep', description: '', amount: '', date: today })
+      await addCost({ species: costForm.species, category: costForm.category, description: costForm.description, amount: amt, date: costForm.date })
+      setCostForm({ species: 'sheep', category: 'hay', description: '', amount: '', date: today })
       setCostErr(''); setShowCostForm(false)
     } catch (err) { setCostErr(err.message) }
   }
@@ -146,6 +158,24 @@ export function PnLPage() {
         <div style={{ ...S.card, padding: 24, marginBottom: 20, border: '1px dashed #c8b89a', background: '#fdfaf6' }}>
           <span style={S.sectionLabel}>Log Expense — Money Going Out</span>
           {costErr && <p style={{ color: '#c62828', fontSize: 13, marginBottom: 10 }}>{costErr}</p>}
+
+          {/* Category picker */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={S.label}>Category</label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {EXPENSE_CATEGORIES.map(cat => (
+                <button key={cat.value} onClick={() => setC('category', cat.value)}
+                  style={{ ...S.btn, padding: '6px 12px', fontSize: 12, gap: 5,
+                    background: costForm.category === cat.value ? cat.color : '#fff',
+                    color: costForm.category === cat.value ? '#fff' : '#7a6648',
+                    border: `1px solid ${costForm.category === cat.value ? cat.color : '#d0c4b0'}`,
+                  }}>
+                  {cat.emoji} {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 14, marginBottom: 14 }}>
             <div>
               <label style={S.label}>Animal</label>
@@ -155,7 +185,7 @@ export function PnLPage() {
             </div>
             <div>
               <label style={S.label}>Description</label>
-              <input style={S.input} value={costForm.description} onChange={e => setC('description', e.target.value)} placeholder="e.g. Hay bale x10, feed 20kg" />
+              <input style={S.input} value={costForm.description} onChange={e => setC('description', e.target.value)} placeholder="e.g. Hay bale x10, wormer dose, fence post repair" />
             </div>
             <div>
               <label style={S.label}>Date</label>
@@ -252,10 +282,11 @@ export function PnLPage() {
                           .map(entry => {
                             const meta     = ANIMAL_META[entry.species] || ANIMAL_META.sheep
                             const isIncome = entry._type === 'income'
-                            const iType    = isIncome ? (INCOME_TYPES.find(t => t.value === entry.income_type)?.label || 'Income') : 'Expense'
+                            const iType    = isIncome ? (INCOME_TYPES.find(t => t.value === entry.income_type)?.label || 'Income') : (EXPENSE_CATEGORIES.find(c => c.value === entry.category)?.label || 'Expense')
+                            const catMeta  = !isIncome ? (EXPENSE_CATEGORIES.find(c => c.value === entry.category) || EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length-1]) : null
                             return (
-                              <div key={entry.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 8, background: isIncome ? '#f1f8f1' : '#fdfaf6' }}>
-                                <span style={{ fontSize: 16, flexShrink: 0 }}>{meta.emoji}</span>
+                              <div key={entry.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 8, background: isIncome ? '#f1f8f1' : (catMeta?.bg || '#fdfaf6') }}>
+                                <span style={{ fontSize: 16, flexShrink: 0 }}>{isIncome ? meta.emoji : catMeta?.emoji}</span>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.description}</p>
                                   <p style={{ fontSize: 11, color: '#a08060', margin: 0 }}>{meta.label} · {iType} · {formatDate(entry.date)}</p>
@@ -324,13 +355,18 @@ export function PnLPage() {
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {entries.map(c => {
-                          const meta = ANIMAL_META[c.species] || ANIMAL_META.sheep
+                          const meta    = ANIMAL_META[c.species] || ANIMAL_META.sheep
+                          const catMeta = EXPENSE_CATEGORIES.find(ec => ec.value === c.category) || EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length-1]
                           return (
-                            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 8, background: meta.light }}>
-                              <span style={{ fontSize: 20 }}>{meta.emoji}</span>
+                            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 8, background: catMeta.bg }}>
+                              <span style={{ fontSize: 20 }}>{catMeta.emoji}</span>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.description}</p>
-                                <p style={{ fontSize: 11, color: '#a08060', margin: 0 }}>{meta.label} · {formatDate(c.date)}</p>
+                                <p style={{ fontSize: 11, color: '#a08060', margin: 0 }}>
+                                  {meta.label} ·
+                                  <span style={{ color: catMeta.color, fontWeight: 600 }}> {catMeta.label}</span>
+                                  · {formatDate(c.date)}
+                                </p>
                               </div>
                               <span style={{ fontWeight: 700, fontSize: 14, color: '#c62828', flexShrink: 0 }}>-{fmt(c.amount)}</span>
                               <button onClick={() => deleteCost(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c0a080', fontSize: 18, lineHeight: 1, padding: '0 2px' }}>×</button>
