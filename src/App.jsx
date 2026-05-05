@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './hooks/useAuth'
+import { useAdminStatus } from './hooks/useAdmin'
 import { LoginPage } from './pages/LoginPage'
+import { AdminPage } from './pages/AdminPage'
 import { AnimalListPage } from './components/animals/AnimalList'
 import { AnimalDetailPage } from './components/animals/AnimalDetail'
 import { AddAnimalPage, EditAnimalPage } from './components/animals/AnimalForm'
@@ -26,7 +28,7 @@ const PLANT_CATEGORIES = [
   { key: 'other',      label: 'Other',            emoji: '🪴' },
 ]
 
-function Dropdown({ trigger, children, align = 'left' }) {
+function Dropdown({ trigger, children }) {
   const [open, setOpen] = useState(false)
   const ref = useRef()
   useEffect(() => {
@@ -38,7 +40,7 @@ function Dropdown({ trigger, children, align = 'left' }) {
     <div ref={ref} style={{ position: 'relative' }}>
       <div onClick={() => setOpen(v => !v)}>{trigger(open)}</div>
       {open && (
-        <div style={{ position: 'absolute', top: '100%', [align]: 0, zIndex: 500, background: '#fff', borderRadius: 10, boxShadow: '0 8px 32px rgba(44,36,22,0.18)', border: '1px solid #e8e0d0', minWidth: 200, padding: '6px 0', marginTop: 6 }}>
+        <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 500, background: '#fff', borderRadius: 10, boxShadow: '0 8px 32px rgba(44,36,22,0.18)', border: '1px solid #e8e0d0', minWidth: 200, padding: '6px 0', marginTop: 6 }}>
           {children(() => setOpen(false))}
         </div>
       )}
@@ -50,12 +52,14 @@ function Nav() {
   const navigate   = useNavigate()
   const location   = useLocation()
   const { user, signOut } = useAuth()
+  const { isAdmin } = useAdminStatus()
   const [toast, setToast] = useState(null)
   const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
-  const isAnimals = location.pathname === '/' || location.pathname.startsWith('/animals') || location.pathname === '/chickens'
+  const isAnimals = location.pathname === '/' || location.pathname.startsWith('/animals') || location.pathname === '/chickens' || location.pathname === '/chickens/new'
   const isPlants  = location.pathname.startsWith('/plants')
   const isPnL     = location.pathname.startsWith('/pnl')
+  const isAdmin_  = location.pathname.startsWith('/admin')
 
   const tabStyle = active => ({
     background: 'none', border: 'none', cursor: 'pointer',
@@ -96,6 +100,7 @@ function Nav() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4caf50' }} />
               <span style={{ fontSize: 12, color: '#a08060' }}>{user?.email?.split('@')[0]}</span>
+              {isAdmin && <span style={{ fontSize: 9, fontWeight: 700, background: '#fff3e0', color: '#e65100', padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Admin</span>}
             </div>
             <button onClick={handleSignOut}
               style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#a08060', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontSize: 12, fontFamily: "'Lato',sans-serif", fontWeight: 600 }}>
@@ -175,13 +180,23 @@ function Nav() {
             <span style={{ fontSize: 15 }}>💰</span>
             P & L
           </button>
+
+          {/* Admin tab — only visible to admins */}
+          {isAdmin && (
+            <>
+              <div style={{ width: 1, background: 'rgba(255,80,0,0.3)', margin: '8px 8px' }} />
+              <button onClick={() => navigate('/admin')} style={{ ...tabStyle(isAdmin_), color: isAdmin_ ? '#ffcc80' : '#8a5020', borderBottom: isAdmin_ ? '2px solid #ffcc80' : '2px solid transparent' }}>
+                <span style={{ fontSize: 15 }}>🔒</span>
+                Admin
+              </button>
+            </>
+          )}
         </div>
       </nav>
     </>
   )
 }
 
-// Protected app — only shown when logged in
 function FarmApp() {
   return (
     <div style={{ minHeight: '100vh', background: '#f7f4ef', fontFamily: "'Lato',sans-serif", color: '#2c2416' }}>
@@ -195,15 +210,14 @@ function FarmApp() {
         <Route path="/chickens/new"       element={<AddAnimalPage species="chickens" />} />
         <Route path="/plants"             element={<PlantsPage />} />
         <Route path="/pnl"               element={<PnLPage />} />
+        <Route path="/admin"             element={<AdminPage />} />
       </Routes>
     </div>
   )
 }
 
-// Auth gate — shows login or app depending on session
 function AuthGate() {
   const { user, loading } = useAuth()
-
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: '#2c2416', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -215,7 +229,6 @@ function AuthGate() {
       </div>
     )
   }
-
   if (!user) return <LoginPage />
   return <FarmApp />
 }
