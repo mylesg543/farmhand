@@ -7,11 +7,11 @@ import { PlantsPage } from './components/plants/PlantsPage'
 import { PnLPage } from './components/costs/PnLPage'
 
 const ANIMALS = [
-  { key: 'sheep',    label: 'Sheep',    emoji: '🐑', active: true  },
-  { key: 'chickens', label: 'Chickens', emoji: '🐔', active: false },
-  { key: 'cows',     label: 'Cows',     emoji: '🐄', active: false },
-  { key: 'pigs',     label: 'Pigs',     emoji: '🐖', active: false },
-  { key: 'goats',    label: 'Goats',    emoji: '🐐', active: false },
+  { key: 'sheep',    label: 'Sheep',    emoji: '🐑', path: '/',         active: true  },
+  { key: 'chickens', label: 'Chickens', emoji: '🐔', path: '/chickens', active: true  },
+  { key: 'cows',     label: 'Cows',     emoji: '🐄', path: null,        active: false },
+  { key: 'pigs',     label: 'Pigs',     emoji: '🐖', path: null,        active: false },
+  { key: 'goats',    label: 'Goats',    emoji: '🐐', path: null,        active: false },
 ]
 
 const PLANT_CATEGORIES = [
@@ -120,7 +120,7 @@ function Nav() {
                   <button key={a.key}
                     onClick={() => {
                       close()
-                      if (a.active) navigate('/')
+                      if (a.active) navigate(a.path)
                       else showToast(`${a.emoji} ${a.label} management coming soon!`)
                     }}
                     style={dropItemStyle}
@@ -194,12 +194,14 @@ export default function App() {
       <div style={{ minHeight: '100vh', background: '#f7f4ef', fontFamily: "'Lato',sans-serif", color: '#2c2416' }}>
         <Nav />
         <Routes>
-          <Route path="/"                 element={<AnimalListPage species="sheep" />} />
-          <Route path="/animals/new"      element={<AddAnimalPage />} />
-          <Route path="/animals/:id"      element={<AnimalDetailPage />} />
-          <Route path="/animals/:id/edit" element={<EditAnimalPage />} />
-          <Route path="/plants"           element={<PlantsPage />} />
-          <Route path="/pnl"              element={<PnLPage />} />
+          <Route path="/"                   element={<AnimalListPage species="sheep" />} />
+          <Route path="/animals/new"        element={<AddAnimalPage species="sheep" />} />
+          <Route path="/animals/:id"        element={<AnimalDetailPage />} />
+          <Route path="/animals/:id/edit"   element={<EditAnimalPage />} />
+          <Route path="/chickens"           element={<AnimalListPage species="chickens" />} />
+          <Route path="/chickens/new"       element={<AddAnimalPage species="chickens" />} />
+          <Route path="/plants"             element={<PlantsPage />} />
+          <Route path="/pnl"               element={<PnLPage />} />
         </Routes>
       </div>
     </BrowserRouter>
