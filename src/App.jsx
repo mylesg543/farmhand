@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { AuthProvider, useAuth } from './hooks/useAuth'
+import { LoginPage } from './pages/LoginPage'
 import { AnimalListPage } from './components/animals/AnimalList'
 import { AnimalDetailPage } from './components/animals/AnimalDetail'
 import { AddAnimalPage, EditAnimalPage } from './components/animals/AnimalForm'
@@ -24,26 +26,19 @@ const PLANT_CATEGORIES = [
   { key: 'other',      label: 'Other',            emoji: '🪴' },
 ]
 
-// Dropdown menu component
 function Dropdown({ trigger, children, align = 'left' }) {
   const [open, setOpen] = useState(false)
   const ref = useRef()
-
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
-
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <div onClick={() => setOpen(v => !v)}>{trigger(open)}</div>
       {open && (
-        <div style={{
-          position: 'absolute', top: '100%', [align]: 0, zIndex: 500,
-          background: '#fff', borderRadius: 10, boxShadow: '0 8px 32px rgba(44,36,22,0.18)',
-          border: '1px solid #e8e0d0', minWidth: 200, padding: '6px 0', marginTop: 6,
-        }}>
+        <div style={{ position: 'absolute', top: '100%', [align]: 0, zIndex: 500, background: '#fff', borderRadius: 10, boxShadow: '0 8px 32px rgba(44,36,22,0.18)', border: '1px solid #e8e0d0', minWidth: 200, padding: '6px 0', marginTop: 6 }}>
           {children(() => setOpen(false))}
         </div>
       )}
@@ -52,19 +47,19 @@ function Dropdown({ trigger, children, align = 'left' }) {
 }
 
 function Nav() {
-  const navigate  = useNavigate()
-  const location  = useLocation()
+  const navigate   = useNavigate()
+  const location   = useLocation()
+  const { user, signOut } = useAuth()
   const [toast, setToast] = useState(null)
-
   const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
-  const isAnimals = location.pathname === '/' || location.pathname.startsWith('/animals')
+  const isAnimals = location.pathname === '/' || location.pathname.startsWith('/animals') || location.pathname === '/chickens'
   const isPlants  = location.pathname.startsWith('/plants')
   const isPnL     = location.pathname.startsWith('/pnl')
 
   const tabStyle = active => ({
     background: 'none', border: 'none', cursor: 'pointer',
-    padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 7,
+    padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 6,
     fontSize: 13, fontWeight: 600,
     color: active ? '#f0e6cc' : '#6a5040',
     borderBottom: active ? '2px solid #c8a060' : '2px solid transparent',
@@ -74,8 +69,12 @@ function Nav() {
   const dropItemStyle = {
     display: 'flex', alignItems: 'center', gap: 10,
     padding: '10px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600,
-    color: '#2c2416', transition: 'background 0.1s', width: '100%', border: 'none',
+    color: '#2c2416', width: '100%', border: 'none',
     background: 'none', fontFamily: "'Lato',sans-serif", textAlign: 'left',
+  }
+
+  const handleSignOut = async () => {
+    try { await signOut() } catch (err) { alert(err.message) }
   }
 
   return (
@@ -86,7 +85,6 @@ function Nav() {
           <button onClick={() => setToast(null)} style={{ background: 'none', border: 'none', color: '#a08060', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
         </div>
       )}
-
       <nav style={{ background: '#2c2416', position: 'sticky', top: 0, zIndex: 100 }}>
         {/* Top bar */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '0 24px', height: 52, gap: 12 }}>
@@ -94,9 +92,15 @@ function Nav() {
             🌾 FarmHand
           </span>
           <span style={{ fontSize: 11, color: '#6a5040', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Farm Management</span>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4caf50' }} />
-            <span style={{ fontSize: 12, color: '#a08060' }}>Your Farm</span>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4caf50' }} />
+              <span style={{ fontSize: 12, color: '#a08060' }}>{user?.email?.split('@')[0]}</span>
+            </div>
+            <button onClick={handleSignOut}
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#a08060', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontSize: 12, fontFamily: "'Lato',sans-serif", fontWeight: 600 }}>
+              Sign Out
+            </button>
           </div>
         </div>
 
@@ -104,25 +108,19 @@ function Nav() {
         <div style={{ display: 'flex', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '0 16px' }}>
 
           {/* Animals dropdown */}
-          <Dropdown
-            trigger={open => (
-              <div style={tabStyle(isAnimals)}>
-                <span style={{ fontSize: 15 }}>🐾</span>
-                Animals
-                <span style={{ fontSize: 10, opacity: 0.7, marginLeft: 2 }}>{open ? '▲' : '▼'}</span>
-              </div>
-            )}
-          >
+          <Dropdown trigger={open => (
+            <div style={tabStyle(isAnimals)}>
+              <span style={{ fontSize: 15 }}>🐾</span>
+              Animals
+              <span style={{ fontSize: 10, opacity: 0.7, marginLeft: 2 }}>{open ? '▲' : '▼'}</span>
+            </div>
+          )}>
             {close => (
               <>
                 <div style={{ padding: '8px 16px 4px', fontSize: 10, fontWeight: 700, color: '#a08060', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Select Animal</div>
                 {ANIMALS.map(a => (
                   <button key={a.key}
-                    onClick={() => {
-                      close()
-                      if (a.active) navigate(a.path)
-                      else showToast(`${a.emoji} ${a.label} management coming soon!`)
-                    }}
+                    onClick={() => { close(); a.active ? navigate(a.path) : showToast(`${a.emoji} ${a.label} coming soon!`) }}
                     style={dropItemStyle}
                     onMouseEnter={e => e.currentTarget.style.background = '#f7f4ef'}
                     onMouseLeave={e => e.currentTarget.style.background = 'none'}>
@@ -136,19 +134,16 @@ function Nav() {
             )}
           </Dropdown>
 
-          {/* Divider */}
           <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '8px 4px' }} />
 
           {/* Plants dropdown */}
-          <Dropdown
-            trigger={open => (
-              <div style={tabStyle(isPlants)}>
-                <span style={{ fontSize: 15 }}>🌱</span>
-                Plants
-                <span style={{ fontSize: 10, opacity: 0.7, marginLeft: 2 }}>{open ? '▲' : '▼'}</span>
-              </div>
-            )}
-          >
+          <Dropdown trigger={open => (
+            <div style={tabStyle(isPlants)}>
+              <span style={{ fontSize: 15 }}>🌱</span>
+              Plants
+              <span style={{ fontSize: 10, opacity: 0.7, marginLeft: 2 }}>{open ? '▲' : '▼'}</span>
+            </div>
+          )}>
             {close => (
               <>
                 <div style={{ padding: '8px 16px 4px', fontSize: 10, fontWeight: 700, color: '#a08060', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Browse Plants</div>
@@ -161,8 +156,7 @@ function Nav() {
                   <span style={{ fontSize: 10, color: '#c8b89a' }}>→</span>
                 </button>
                 {PLANT_CATEGORIES.map(c => (
-                  <button key={c.key}
-                    onClick={() => { close(); navigate('/plants') }}
+                  <button key={c.key} onClick={() => { close(); navigate('/plants') }}
                     style={dropItemStyle}
                     onMouseEnter={e => e.currentTarget.style.background = '#f7f4ef'}
                     onMouseLeave={e => e.currentTarget.style.background = 'none'}>
@@ -174,7 +168,6 @@ function Nav() {
             )}
           </Dropdown>
 
-          {/* Divider */}
           <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '8px 4px' }} />
 
           {/* P&L */}
@@ -188,22 +181,51 @@ function Nav() {
   )
 }
 
+// Protected app — only shown when logged in
+function FarmApp() {
+  return (
+    <div style={{ minHeight: '100vh', background: '#f7f4ef', fontFamily: "'Lato',sans-serif", color: '#2c2416' }}>
+      <Nav />
+      <Routes>
+        <Route path="/"                   element={<AnimalListPage species="sheep" />} />
+        <Route path="/animals/new"        element={<AddAnimalPage species="sheep" />} />
+        <Route path="/animals/:id"        element={<AnimalDetailPage />} />
+        <Route path="/animals/:id/edit"   element={<EditAnimalPage />} />
+        <Route path="/chickens"           element={<AnimalListPage species="chickens" />} />
+        <Route path="/chickens/new"       element={<AddAnimalPage species="chickens" />} />
+        <Route path="/plants"             element={<PlantsPage />} />
+        <Route path="/pnl"               element={<PnLPage />} />
+      </Routes>
+    </div>
+  )
+}
+
+// Auth gate — shows login or app depending on session
+function AuthGate() {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#2c2416', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🌾</div>
+          <p style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, color: '#f0e6cc' }}>FarmHand</p>
+          <p style={{ fontSize: 13, color: '#a08060', marginTop: 8 }}>Loading your farm…</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) return <LoginPage />
+  return <FarmApp />
+}
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <div style={{ minHeight: '100vh', background: '#f7f4ef', fontFamily: "'Lato',sans-serif", color: '#2c2416' }}>
-        <Nav />
-        <Routes>
-          <Route path="/"                   element={<AnimalListPage species="sheep" />} />
-          <Route path="/animals/new"        element={<AddAnimalPage species="sheep" />} />
-          <Route path="/animals/:id"        element={<AnimalDetailPage />} />
-          <Route path="/animals/:id/edit"   element={<EditAnimalPage />} />
-          <Route path="/chickens"           element={<AnimalListPage species="chickens" />} />
-          <Route path="/chickens/new"       element={<AddAnimalPage species="chickens" />} />
-          <Route path="/plants"             element={<PlantsPage />} />
-          <Route path="/pnl"               element={<PnLPage />} />
-        </Routes>
-      </div>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <AuthGate />
+      </BrowserRouter>
+    </AuthProvider>
   )
 }

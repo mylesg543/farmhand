@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
-// fh_income table — tracks money coming IN (sales, eggs, wool, etc.)
 export function useIncome() {
-  const [income, setIncome] = useState([])
+  const [income,  setIncome]  = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error,   setError]   = useState(null)
 
   const fetch = useCallback(async () => {
     setLoading(true); setError(null)
@@ -21,7 +20,11 @@ export function useIncome() {
   useEffect(() => { fetch() }, [fetch])
 
   const addIncome = async (values) => {
-    const { data, error } = await supabase.from('fh_income').insert([values]).select().single()
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data, error } = await supabase
+      .from('fh_income')
+      .insert([{ ...values, user_id: user?.id }])
+      .select().single()
     if (error) throw error
     setIncome(prev => [data, ...prev])
     return data

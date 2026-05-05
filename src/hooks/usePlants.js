@@ -2,16 +2,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
 export function usePlants() {
-  const [plants, setPlants] = useState([])
+  const [plants,  setPlants]  = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error,   setError]   = useState(null)
 
   const fetch = useCallback(async () => {
     setLoading(true); setError(null)
     const { data, error } = await supabase
-      .from('fh_plants')
-      .select('*')
-      .order('created_at', { ascending: false })
+      .from('fh_plants').select('*').order('created_at', { ascending: false })
     if (error) setError(error.message)
     else setPlants(data || [])
     setLoading(false)
@@ -20,14 +18,17 @@ export function usePlants() {
   useEffect(() => { fetch() }, [fetch])
 
   const addPlant = async (values) => {
-    const { data, error } = await supabase.from('fh_plants').insert([values]).select().single()
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data, error } = await supabase
+      .from('fh_plants').insert([{ ...values, user_id: user?.id }]).select().single()
     if (error) throw error
     setPlants(prev => [data, ...prev])
     return data
   }
 
   const updatePlant = async (id, values) => {
-    const { data, error } = await supabase.from('fh_plants').update(values).eq('id', id).select().single()
+    const { data, error } = await supabase
+      .from('fh_plants').update(values).eq('id', id).select().single()
     if (error) throw error
     setPlants(prev => prev.map(p => p.id === id ? data : p))
     return data
@@ -43,9 +44,9 @@ export function usePlants() {
 }
 
 export function useSinglePlant(id) {
-  const [plant, setPlant] = useState(null)
+  const [plant,   setPlant]   = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error,   setError]   = useState(null)
 
   useEffect(() => {
     if (!id) return
@@ -62,17 +63,15 @@ export function useSinglePlant(id) {
 }
 
 export function usePlantEvents(plantId) {
-  const [events, setEvents] = useState([])
+  const [events,  setEvents]  = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error,   setError]   = useState(null)
 
   const fetch = useCallback(async () => {
     if (!plantId) return
     setLoading(true); setError(null)
     const { data, error } = await supabase
-      .from('fh_plant_events')
-      .select('*')
-      .eq('plant_id', plantId)
+      .from('fh_plant_events').select('*').eq('plant_id', plantId)
       .order('event_date', { ascending: false })
     if (error) setError(error.message)
     else setEvents(data || [])
@@ -82,7 +81,8 @@ export function usePlantEvents(plantId) {
   useEffect(() => { fetch() }, [fetch])
 
   const addEvent = async (values) => {
-    const { data, error } = await supabase.from('fh_plant_events').insert([{ ...values, plant_id: plantId }]).select().single()
+    const { data, error } = await supabase
+      .from('fh_plant_events').insert([{ ...values, plant_id: plantId }]).select().single()
     if (error) throw error
     setEvents(prev => [data, ...prev])
     return data

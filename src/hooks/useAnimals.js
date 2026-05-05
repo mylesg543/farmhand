@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
-// fh_animals table
 export function useAnimals(species = 'sheep') {
   const [animals, setAnimals] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error,   setError]   = useState(null)
 
   const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true); setError(null)
     const { data, error } = await supabase
       .from('fh_animals')
       .select('*')
@@ -23,11 +21,11 @@ export function useAnimals(species = 'sheep') {
   useEffect(() => { fetch() }, [fetch])
 
   const addAnimal = async (values) => {
+    const { data: { user } } = await supabase.auth.getUser()
     const { data, error } = await supabase
       .from('fh_animals')
-      .insert([{ ...values, species }])
-      .select()
-      .single()
+      .insert([{ ...values, species, user_id: user?.id }])
+      .select().single()
     if (error) throw error
     setAnimals(prev => [data, ...prev])
     return data
@@ -35,11 +33,7 @@ export function useAnimals(species = 'sheep') {
 
   const updateAnimal = async (id, values) => {
     const { data, error } = await supabase
-      .from('fh_animals')
-      .update(values)
-      .eq('id', id)
-      .select()
-      .single()
+      .from('fh_animals').update(values).eq('id', id).select().single()
     if (error) throw error
     setAnimals(prev => prev.map(a => a.id === id ? data : a))
     return data
@@ -55,18 +49,14 @@ export function useAnimals(species = 'sheep') {
 }
 
 export function useSingleAnimal(id) {
-  const [animal, setAnimal] = useState(null)
+  const [animal,  setAnimal]  = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error,   setError]   = useState(null)
 
   useEffect(() => {
     if (!id) return
     setLoading(true)
-    supabase
-      .from('fh_animals')
-      .select('*')
-      .eq('id', id)
-      .single()
+    supabase.from('fh_animals').select('*').eq('id', id).single()
       .then(({ data, error }) => {
         if (error) setError(error.message)
         else setAnimal(data)

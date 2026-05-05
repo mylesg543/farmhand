@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
-// fh_feed_costs table
 export function useFeedCosts() {
-  const [costs, setCosts] = useState([])
+  const [costs,   setCosts]   = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error,   setError]   = useState(null)
 
   const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true); setError(null)
     const { data, error } = await supabase
       .from('fh_feed_costs')
       .select('*')
@@ -22,11 +20,11 @@ export function useFeedCosts() {
   useEffect(() => { fetch() }, [fetch])
 
   const addCost = async (values) => {
+    const { data: { user } } = await supabase.auth.getUser()
     const { data, error } = await supabase
       .from('fh_feed_costs')
-      .insert([values])
-      .select()
-      .single()
+      .insert([{ ...values, user_id: user?.id }])
+      .select().single()
     if (error) throw error
     setCosts(prev => [data, ...prev])
     return data
