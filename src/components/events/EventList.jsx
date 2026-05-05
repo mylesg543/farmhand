@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useAnimalEvents } from '../../hooks/useAnimalEvents'
-import { EVENT_TYPES, EVENT_COLORS, S, Badge, Spinner, ErrorMsg, formatDate } from '../ui/shared'
+import { EVENT_COLORS, getEventTypes, S, Badge, Spinner, ErrorMsg, formatDate } from '../ui/shared'
 
-function EventForm({ animalId, animalName, onDone }) {
+function EventForm({ animalId, animalName, species, onDone }) {
+  const eventTypes = getEventTypes(species)
   const today = new Date().toISOString().split('T')[0]
-  const [form, setForm] = useState({ event_type: 'vaccination', event_date: today, notes: '' })
+  const [form, setForm] = useState({ event_type: eventTypes[0].value, event_date: today, notes: '' })
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState(null)
+  const [error,  setError]  = useState(null)
   const { addEvent } = useAnimalEvents(animalId)
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -25,7 +26,7 @@ function EventForm({ animalId, animalName, onDone }) {
         <div>
           <label style={S.label}>Event Type</label>
           <select style={{ ...S.input, cursor: 'pointer' }} value={form.event_type} onChange={e => set('event_type', e.target.value)}>
-            {EVENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            {eventTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
         <div>
@@ -35,7 +36,7 @@ function EventForm({ animalId, animalName, onDone }) {
       </div>
       {form.event_type === 'death' && (
         <div style={{ background: '#fff3f3', border: '1px solid #f5c6c6', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#c62828' }}>
-          ⚠️ Adding a Death event will automatically update this animal's status to <strong>Deceased</strong>.
+          Adding a Death event will automatically update this animal status to Deceased.
         </div>
       )}
       <div style={{ marginBottom: 14 }}>
@@ -43,18 +44,19 @@ function EventForm({ animalId, animalName, onDone }) {
         <textarea style={{ ...S.input, minHeight: 72, resize: 'vertical' }} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Details..." />
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button style={{ ...S.btn, ...S.btnPrimary, opacity: saving ? 0.7 : 1 }} onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save Event'}</button>
+        <button style={{ ...S.btn, ...S.btnPrimary, opacity: saving ? 0.7 : 1 }} onClick={handleSave} disabled={saving}>{saving ? 'Saving' : 'Save Event'}</button>
         <button style={{ ...S.btn, ...S.btnSecondary }} onClick={onDone}>Cancel</button>
       </div>
     </div>
   )
 }
 
-export function EventList({ animalId, animalName, onStatusChange }) {
+export function EventList({ animalId, animalName, species = 'sheep', onStatusChange }) {
   const { events, loading, error, deleteEvent } = useAnimalEvents(animalId)
+  const eventTypes = getEventTypes(species)
   const [showForm, setShowForm] = useState(false)
 
-  const handleDone = () => setShowForm(false)
+  const handleDone   = () => setShowForm(false)
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this event?')) return
     try { await deleteEvent(id) } catch (err) { alert(err.message) }
@@ -67,20 +69,20 @@ export function EventList({ animalId, animalName, onStatusChange }) {
           Event History {!loading && <span style={{ fontWeight: 400, opacity: 0.7 }}>({events.length})</span>}
         </span>
         <button style={{ ...S.btn, ...S.btnPrimary, marginLeft: 'auto', padding: '7px 16px', fontSize: 13 }} onClick={() => setShowForm(v => !v)}>
-          {showForm ? '✕ Cancel' : '+ Add Event'}
+          {showForm ? 'x Cancel' : '+ Add Event'}
         </button>
       </div>
-      {showForm && <EventForm animalId={animalId} animalName={animalName} onDone={handleDone} />}
+      {showForm && <EventForm animalId={animalId} animalName={animalName} species={species} onDone={handleDone} />}
       {loading ? <Spinner /> : error ? <ErrorMsg message={error} /> :
         events.length === 0 && !showForm ? (
           <p style={{ color: '#a08060', fontSize: 14, textAlign: 'center', padding: '32px 0' }}>No events yet. Add the first one!</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: showForm ? 16 : 0 }}>
             {events.map(ev => {
-              const ec = EVENT_COLORS[ev.event_type] || EVENT_COLORS.custom
-              const label = EVENT_TYPES.find(t => t.value === ev.event_type)?.label || ev.event_type
+              const ec    = EVENT_COLORS[ev.event_type] || EVENT_COLORS.custom
+              const label = eventTypes.find(t => t.value === ev.event_type)?.label || ev.event_type.replace(/_/g,' ')
               return (
-                <div key={ev.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 16px', borderRadius: 10, background: ec.bg, border: `1px solid ${ec.border}` }}>
+                <div key={ev.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 16px', borderRadius: 10, background: ec.bg, border: '1px solid ' + ec.border }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
                       <Badge bg={ec.border} color={ec.text}>{label}</Badge>
@@ -88,7 +90,7 @@ export function EventList({ animalId, animalName, onStatusChange }) {
                     </div>
                     {ev.notes && <p style={{ fontSize: 13, margin: 0, color: '#4a3c28', lineHeight: 1.6 }}>{ev.notes}</p>}
                   </div>
-                  <button onClick={() => handleDelete(ev.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c0a080', fontSize: 20, padding: '0 2px', lineHeight: 1 }}>×</button>
+                  <button onClick={() => handleDelete(ev.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c0a080', fontSize: 20, padding: '0 2px', lineHeight: 1 }}>x</button>
                 </div>
               )
             })}

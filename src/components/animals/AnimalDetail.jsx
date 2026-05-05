@@ -44,6 +44,7 @@ export function AnimalDetailPage() {
               <span style={{ fontSize: 12, color: '#a08060' }}>{SEX_LABELS[animal.sex] || animal.sex}</span>
             </div>
             <p style={{ fontSize: 13, color: '#a08060', margin: '0 0 12px', fontFamily: 'monospace' }}>{animal.tag_number}</p>
+            {animal.breed && <p style={{ fontSize: 13, color: '#c8a878', margin: '0 0 12px', fontStyle: 'italic' }}>{animal.breed}</p>}
             <div style={{ display: 'flex', gap: 24 }}>
               {[['Born', animal.birth_date ? `${formatDate(animal.birth_date)} (${calcAge(animal.birth_date)})` : '—'], ['Sire', sire ? sire.name : 'Unknown'], ['Dam', dam ? dam.name : 'Unknown']].map(([l, v]) => (
                 <div key={l}>
@@ -70,6 +71,7 @@ export function AnimalDetailPage() {
         <EventList
           animalId={id}
           animalName={animal.name}
+          species={animal.species || 'sheep'}
           onStatusChange={handleStatusChange}
         />
       </div>
