@@ -38,8 +38,7 @@ function FormInner({ existing, allAnimals, onSave, species = 'sheep' }) {
 
   const validate = () => {
     const e = {}
-    if (!form.name.trim())       e.name       = 'Name is required'
-    if (!form.tag_number.trim()) e.tag_number = 'Tag number is required'
+    if (!form.name.trim()) e.name = 'Name is required'
     return e
   }
 
@@ -51,6 +50,7 @@ function FormInner({ existing, allAnimals, onSave, species = 'sheep' }) {
       const payload = {
         ...form,
         species,
+        tag_number: form.tag_number.trim() || `AUTO-${Date.now()}`,
         sire_id: form.sire_id || null,
         dam_id:  form.dam_id  || null,
         breed:   form.breed   || null,
@@ -92,9 +92,9 @@ function FormInner({ existing, allAnimals, onSave, species = 'sheep' }) {
                 placeholder={isChicken ? "e.g. Big Red, Lady" : "e.g. Bella"} />
             </Field>
 
-            <Field label="Tag / ID Number *" error={errors.tag_number}>
+            <Field label="Tag / ID Number (optional)" error={errors.tag_number}>
               <input style={S.input} value={form.tag_number} onChange={e => set('tag_number', e.target.value)}
-                placeholder={isChicken ? "e.g. CHK-001" : "e.g. TAG-001"} />
+                placeholder={isChicken ? "e.g. CHK-001 (optional)" : "e.g. TAG-001 (optional)"} />
             </Field>
 
             <Field label="Sex">

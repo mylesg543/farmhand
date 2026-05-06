@@ -116,8 +116,13 @@ export function AnimalListPage({ species = 'sheep' }) {
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               {!selectMode
-                ? <><button onClick={() => setSelectMode(true)} style={{ ...S.btn, background: 'rgba(255,255,255,0.1)', color: '#f0e6cc', border: '1px solid rgba(255,255,255,0.2)', padding: '7px 14px', fontSize: 13 }}>☑ Select</button>
-                    <button onClick={() => navigate(species === 'chickens' ? '/chickens/new' : '/animals/new')} style={{ ...S.btn, background: '#c8a060', color: '#2c2416', fontWeight: 700, padding: '9px 20px' }}>+ Add {meta.singular}</button></>
+                ? <>
+                    <button onClick={() => navigate(species === 'chickens' ? '/chickens/bulk' : '/animals/bulk')}
+                      style={{ ...S.btn, background: 'rgba(255,255,255,0.1)', color: '#f0e6cc', border: '1px solid rgba(255,255,255,0.2)', padding: '7px 14px', fontSize: 13 }}>
+                      ☰ Bulk Add
+                    </button>
+                    <button onClick={() => navigate(species === 'chickens' ? '/chickens/new' : '/animals/new')} style={{ ...S.btn, background: '#c8a060', color: '#2c2416', fontWeight: 700, padding: '9px 20px' }}>+ Add {meta.singular}</button>
+                  </>
                 : <button onClick={exitSelect} style={{ ...S.btn, background: 'rgba(255,255,255,0.1)', color: '#ef9a9a', border: '1px solid rgba(255,80,80,0.3)', padding: '7px 14px', fontSize: 13 }}>✕ Cancel</button>}
             </div>
           </div>
@@ -165,7 +170,12 @@ export function AnimalListPage({ species = 'sheep' }) {
               </button>
             ))}
           </div>
-          <input style={{ ...S.input, maxWidth: 220, marginLeft: 'auto' }} placeholder="Search name or tag…" value={search} onChange={e => setSearch(e.target.value)} />
+          <input style={{ ...S.input, maxWidth: 220 }} placeholder="Search name or tag…" value={search} onChange={e => setSearch(e.target.value)} />
+          {!selectMode && (
+            <button onClick={() => setSelectMode(true)} style={{ ...S.btn, background: '#fff', color: '#5a3e1b', border: '1px solid #c8b89a', padding: '6px 14px', fontSize: 13, marginLeft: 'auto' }}>
+              ☑ Select
+            </button>
+          )}
         </div>
 
         {/* Grid */}

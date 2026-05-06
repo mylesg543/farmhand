@@ -7,6 +7,7 @@ import { AdminPage } from './pages/AdminPage'
 import { AnimalListPage } from './components/animals/AnimalList'
 import { AnimalDetailPage } from './components/animals/AnimalDetail'
 import { AddAnimalPage, EditAnimalPage } from './components/animals/AnimalForm'
+import { BulkAddPage } from './components/animals/BulkAddPage'
 import { PlantsPage } from './components/plants/PlantsPage'
 import { PnLPage } from './components/costs/PnLPage'
 
@@ -204,10 +205,12 @@ function FarmApp() {
       <Routes>
         <Route path="/"                   element={<AnimalListPage species="sheep" />} />
         <Route path="/animals/new"        element={<AddAnimalPage species="sheep" />} />
+        <Route path="/animals/bulk"       element={<BulkAddPage species="sheep" />} />
         <Route path="/animals/:id"        element={<AnimalDetailPage />} />
         <Route path="/animals/:id/edit"   element={<EditAnimalPage />} />
         <Route path="/chickens"           element={<AnimalListPage species="chickens" />} />
         <Route path="/chickens/new"       element={<AddAnimalPage species="chickens" />} />
+        <Route path="/chickens/bulk"      element={<BulkAddPage species="chickens" />} />
         <Route path="/plants"             element={<PlantsPage />} />
         <Route path="/pnl"               element={<PnLPage />} />
         <Route path="/admin"             element={<AdminPage />} />
