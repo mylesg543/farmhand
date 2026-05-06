@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAnimals } from '../../hooks/useAnimals'
-import { useFeedCosts } from '../../hooks/useFeedCosts'
-import { S, Badge, Spinner, ErrorMsg, Checkbox, AnimalIllustration, STATUS_STYLES, STATUS_DOT, SEX_LABELS, calcAge, ANIMAL_META } from '../ui/shared'
+import { supabase } from '../../lib/supabase'
+import { S, Badge, Spinner, ErrorMsg, Checkbox, AnimalIllustration, STATUS_STYLES, STATUS_DOT, SEX_LABELS, calcAge, ANIMAL_META, getEventTypes } from '../ui/shared'
 
-function BulkEventModal({ selectedIds, allAnimals, onSave, onClose }) {
+function BulkEventModal({ selectedIds, allAnimals, species, onSave, onClose }) {
   const today = new Date().toISOString().split('T')[0]
-  const [form, setForm] = useState({ event_type: 'vaccination', event_date: today, notes: '' })
+  const eventTypes = getEventTypes(species)
+  const [form, setForm] = useState({ event_type: eventTypes[0].value, event_date: today, notes: '' })
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const names = selectedIds.map(id => allAnimals.find(a => a.id === id)?.name).filter(Boolean)
-  const EVENT_TYPES = ['hoof_trimming','vaccination','sickness','lambing','sale','death','custom']
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,36,22,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
       <div style={{ background: '#fff', borderRadius: 14, padding: 32, width: 480, maxWidth: '95vw', boxShadow: '0 8px 40px rgba(44,36,22,0.2)' }} onClick={e => e.stopPropagation()}>
@@ -19,7 +19,7 @@ function BulkEventModal({ selectedIds, allAnimals, onSave, onClose }) {
           <div>
             <label style={S.label}>Event Type</label>
             <select style={{ ...S.input, cursor: 'pointer' }} value={form.event_type} onChange={e => set('event_type', e.target.value)}>
-              {EVENT_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
+              {eventTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
           <div>
@@ -92,9 +92,23 @@ export function AnimalListPage({ species = 'sheep' }) {
   const exitSelect = () => { setSelectMode(false); setSelected([]) }
 
   const handleBulkEvent = async (form) => {
-    // In production: insert events for all selected animals
-    if (form.event_type === 'death') {
-      await Promise.all(selected.map(id => updateAnimal(id, { status: 'deceased' })))
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      // Insert one event row per selected animal
+      const rows = selected.map(animal_id => ({
+        animal_id,
+        event_type: form.event_type,
+        event_date: form.event_date,
+        notes: form.notes || null,
+      }))
+      const { error } = await supabase.from('fh_animal_events').insert(rows)
+      if (error) throw error
+      // If death event, update all selected animals to deceased
+      if (form.event_type === 'death') {
+        await Promise.all(selected.map(id => updateAnimal(id, { status: 'deceased' })))
+      }
+    } catch (err) {
+      alert('Failed to save events: ' + err.message)
     }
     setShowBulkEvent(false); exitSelect()
   }
@@ -138,7 +152,7 @@ export function AnimalListPage({ species = 'sheep' }) {
                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_DOT[a.status] || '#9e9e9e', position: 'absolute', bottom: 3, right: 3, border: '2px solid #2c2416' }} />
                   </div>
                   <span style={{ fontSize: 10, fontWeight: 700, color: '#c8a878', letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{a.name}</span>
-                  <span style={{ fontSize: 9, color: '#7a6040', fontFamily: 'monospace' }}>{a.tag_number}</span>
+                  <span style={{ fontSize: 9, color: '#7a6040', fontFamily: 'monospace' }}>{a.tag_number?.startsWith('AUTO-') ? '' : a.tag_number}</span>
                 </div>
               )
             })}
@@ -201,7 +215,7 @@ export function AnimalListPage({ species = 'sheep' }) {
                         <p style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 16, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</p>
                         <Badge bg={st.bg} color={st.text}>{a.status}</Badge>
                       </div>
-                      <p style={{ fontSize: 11, color: '#a08060', margin: '0 0 5px', fontFamily: 'monospace' }}>{a.tag_number}</p>
+                      <p style={{ fontSize: 11, color: '#a08060', margin: '0 0 5px', fontFamily: 'monospace' }}>{a.tag_number?.startsWith('AUTO-') ? '' : a.tag_number}</p>
                       <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
                         <Badge bg="#f0e8d8" color="#7a5c2e">{SEX_LABELS[a.sex] || a.sex}</Badge>
                         {a.birth_date && <span style={{ fontSize: 11, color: '#a08060' }}>{calcAge(a.birth_date)}</span>}
@@ -215,7 +229,7 @@ export function AnimalListPage({ species = 'sheep' }) {
         }
       </div>
 
-      {showBulkEvent && <BulkEventModal selectedIds={selected} allAnimals={animals} onSave={handleBulkEvent} onClose={() => setShowBulkEvent(false)} />}
+      {showBulkEvent && <BulkEventModal selectedIds={selected} allAnimals={animals} species={species} onSave={handleBulkEvent} onClose={() => setShowBulkEvent(false)} />}
       {showBulkStatus && <BulkStatusModal selectedIds={selected} allAnimals={animals} onSave={handleBulkStatus} onClose={() => setShowBulkStatus(false)} />}
     </>
   )
