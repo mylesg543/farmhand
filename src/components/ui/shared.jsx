@@ -115,7 +115,7 @@ export function getSexLabel(sex) {
 export function formatDate(d) {
   if (!d) return '—'
   const [y, m, day] = d.split('-')
-  return `${day}/${m}/${y}`
+  return `${m}/${day}/${y}`
 }
 
 export function calcAge(b) {

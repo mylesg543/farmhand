@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAnimalEvents } from '../../hooks/useAnimalEvents'
 import { EVENT_COLORS, getEventTypes, S, Badge, Spinner, ErrorMsg, formatDate } from '../ui/shared'
 
-function EventForm({ animalId, animalName, species, onDone }) {
+function EventForm({ animalId, animalName, species, onDone, onStatusChange }) {
   const eventTypes = getEventTypes(species)
   const today = new Date().toISOString().split('T')[0]
   const [form, setForm] = useState({ event_type: eventTypes[0].value, event_date: today, notes: '' })
@@ -13,7 +13,13 @@ function EventForm({ animalId, animalName, species, onDone }) {
 
   const handleSave = async () => {
     setSaving(true); setError(null)
-    try { await addEvent(form); onDone() }
+    try {
+      await addEvent(form)
+      // Auto-update animal status based on event type
+      if (form.event_type === 'death' && onStatusChange) await onStatusChange('deceased')
+      if (form.event_type === 'sale' && onStatusChange)  await onStatusChange('sold')
+      onDone()
+    }
     catch (err) { setError(err.message) }
     finally { setSaving(false) }
   }
@@ -36,7 +42,12 @@ function EventForm({ animalId, animalName, species, onDone }) {
       </div>
       {form.event_type === 'death' && (
         <div style={{ background: '#fff3f3', border: '1px solid #f5c6c6', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#c62828' }}>
-          Adding a Death event will automatically update this animal status to Deceased.
+          Adding a Death event will automatically update this animal status to <strong>Deceased</strong>.
+        </div>
+      )}
+      {form.event_type === 'sale' && (
+        <div style={{ background: '#f3e5f5', border: '1px solid #ce93d8', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#6a1b9a' }}>
+          Adding a Sale event will automatically update this animal status to <strong>Sold</strong>.
         </div>
       )}
       <div style={{ marginBottom: 14 }}>
@@ -44,7 +55,7 @@ function EventForm({ animalId, animalName, species, onDone }) {
         <textarea style={{ ...S.input, minHeight: 72, resize: 'vertical' }} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Details..." />
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button style={{ ...S.btn, ...S.btnPrimary, opacity: saving ? 0.7 : 1 }} onClick={handleSave} disabled={saving}>{saving ? 'Saving' : 'Save Event'}</button>
+        <button style={{ ...S.btn, ...S.btnPrimary, opacity: saving ? 0.7 : 1 }} onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save Event'}</button>
         <button style={{ ...S.btn, ...S.btnSecondary }} onClick={onDone}>Cancel</button>
       </div>
     </div>
@@ -72,7 +83,15 @@ export function EventList({ animalId, animalName, species = 'sheep', onStatusCha
           {showForm ? 'x Cancel' : '+ Add Event'}
         </button>
       </div>
-      {showForm && <EventForm animalId={animalId} animalName={animalName} species={species} onDone={handleDone} />}
+      {showForm && (
+        <EventForm
+          animalId={animalId}
+          animalName={animalName}
+          species={species}
+          onDone={handleDone}
+          onStatusChange={onStatusChange}
+        />
+      )}
       {loading ? <Spinner /> : error ? <ErrorMsg message={error} /> :
         events.length === 0 && !showForm ? (
           <p style={{ color: '#a08060', fontSize: 14, textAlign: 'center', padding: '32px 0' }}>No events yet. Add the first one!</p>

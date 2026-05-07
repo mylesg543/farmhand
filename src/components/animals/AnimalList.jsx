@@ -103,9 +103,12 @@ export function AnimalListPage({ species = 'sheep' }) {
       }))
       const { error } = await supabase.from('fh_animal_events').insert(rows)
       if (error) throw error
-      // If death event, update all selected animals to deceased
+      // If death or sale event, update animal statuses
       if (form.event_type === 'death') {
         await Promise.all(selected.map(id => updateAnimal(id, { status: 'deceased' })))
+      }
+      if (form.event_type === 'sale') {
+        await Promise.all(selected.map(id => updateAnimal(id, { status: 'sold' })))
       }
     } catch (err) {
       alert('Failed to save events: ' + err.message)
