@@ -28,6 +28,7 @@ function BulkEventModal({ selectedIds, allAnimals, species, onSave, onClose }) {
           </div>
         </div>
         {form.event_type === 'death' && <div style={{ background: '#fff3f3', border: '1px solid #f5c6c6', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#c62828' }}>⚠️ This will update all selected animals to <strong>Deceased</strong>.</div>}
+        {form.event_type === 'sale' && <div style={{ background: '#f3e5f5', border: '1px solid #ce93d8', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#6a1b9a' }}>ℹ️ This will update all selected animals to <strong>Sold</strong>.</div>}
         <div style={{ marginBottom: 20 }}>
           <label style={S.label}>Notes</label>
           <textarea style={{ ...S.input, minHeight: 70, resize: 'vertical' }} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Details..." />
@@ -195,39 +196,51 @@ export function AnimalListPage({ species = 'sheep' }) {
           )}
         </div>
 
-        {/* Grid */}
+        {/* Grid / List */}
         {loading ? <Spinner /> : error ? <ErrorMsg message={error} /> :
           filtered.length === 0 ? (
             <div style={{ ...S.card, padding: 60, textAlign: 'center' }}><p style={{ color: '#a08060' }}>No animals found. Add your first one!</p></div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(270px,1fr))', gap: 14 }}>
-              {filtered.map(a => {
-                const st = STATUS_STYLES[a.status] || STATUS_STYLES.alive
-                const isSel = selected.includes(a.id)
-                return (
-                  <div key={a.id} onClick={() => selectMode ? toggleOne(a.id) : navigate(`/animals/${a.id}`)}
-                    style={{ ...S.card, padding: 18, cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center', transition: 'transform 0.12s,box-shadow 0.12s', border: isSel ? '2px solid #5a3e1b' : '1px solid #e8e0d0', position: 'relative' }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(44,36,22,0.12)' }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}>
-                    {selectMode && <div style={{ position: 'absolute', top: 12, right: 12 }}><Checkbox checked={isSel} /></div>}
-                    <div style={{ width: 54, height: 54, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#f0ebe4', border: '2px solid #e8e0d0' }}>
-                      <AnimalIllustration animal={a} size={54} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                        <p style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 16, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</p>
-                        <Badge bg={st.bg} color={st.text}>{a.status}</Badge>
+            <>
+              <style>{`
+                @media (max-width: 767px) {
+                  .animal-grid { display: flex !important; flex-direction: column !important; gap: 8px !important; }
+                  .animal-card { padding: 12px 14px !important; }
+                  .animal-card-avatar { width: 44px !important; height: 44px !important; }
+                  .animal-card-name { font-size: 15px !important; white-space: normal !important; }
+                  .animal-card-tag { display: none !important; }
+                }
+              `}</style>
+              <div className="animal-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(270px,1fr))', gap: 14 }}>
+                {filtered.map(a => {
+                  const st = STATUS_STYLES[a.status] || STATUS_STYLES.alive
+                  const isSel = selected.includes(a.id)
+                  return (
+                    <div key={a.id} className="animal-card" onClick={() => selectMode ? toggleOne(a.id) : navigate(`/animals/${a.id}`)}
+                      style={{ ...S.card, padding: 18, cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center', transition: 'transform 0.12s,box-shadow 0.12s', border: isSel ? '2px solid #5a3e1b' : '1px solid #e8e0d0', position: 'relative' }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(44,36,22,0.12)' }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}>
+                      {selectMode && <div style={{ position: 'absolute', top: 12, right: 12 }}><Checkbox checked={isSel} /></div>}
+                      <div className="animal-card-avatar" style={{ width: 54, height: 54, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#f0ebe4', border: '2px solid #e8e0d0' }}>
+                        <AnimalIllustration animal={a} size={54} />
                       </div>
-                      <p style={{ fontSize: 11, color: '#a08060', margin: '0 0 5px', fontFamily: 'monospace' }}>{a.tag_number?.startsWith('AUTO-') ? '' : a.tag_number}</p>
-                      <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
-                        <Badge bg="#f0e8d8" color="#7a5c2e">{SEX_LABELS[a.sex] || a.sex}</Badge>
-                        {a.birth_date && <span style={{ fontSize: 11, color: '#a08060' }}>{calcAge(a.birth_date)}</span>}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                          <p className="animal-card-name" style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 16, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</p>
+                          <Badge bg={st.bg} color={st.text}>{a.status}</Badge>
+                        </div>
+                        <p className="animal-card-tag" style={{ fontSize: 11, color: '#a08060', margin: '0 0 5px', fontFamily: 'monospace' }}>{a.tag_number?.startsWith('AUTO-') ? '' : a.tag_number}</p>
+                        <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
+                          <Badge bg="#f0e8d8" color="#7a5c2e">{SEX_LABELS[a.sex] || a.sex}</Badge>
+                          {a.birth_date && <span style={{ fontSize: 11, color: '#a08060' }}>{calcAge(a.birth_date)}</span>}
+                        </div>
                       </div>
+                      <span style={{ color: '#c8b89a', fontSize: 20, flexShrink: 0 }}>›</span>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            </>
           )
         }
       </div>

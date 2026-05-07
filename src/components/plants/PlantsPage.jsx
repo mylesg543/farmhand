@@ -196,21 +196,30 @@ function PlantDetail({ plant, onBack, onEdit }) {
 
   return (
     <div>
-      <div style={{ background: 'linear-gradient(160deg,#1a2e1a 0%,#2d4a2d 50%,#3d6b3d 100%)', padding: '28px 24px 32px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 20 }}>
-          <button onClick={onBack} style={{ ...S.btn, background: 'rgba(255,255,255,0.1)', color: '#d4f0d4', border: '1px solid rgba(255,255,255,0.2)', padding: '7px 14px', fontSize: 13 }}>← Plants</button>
-          <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: '3px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, flexShrink: 0 }}>
+      <div style={{ background: 'linear-gradient(160deg,#1a2e1a 0%,#2d4a2d 50%,#3d6b3d 100%)', padding: '20px 20px 28px' }}>
+        <style>{`
+          @media (max-width: 767px) {
+            .plant-hero-inner { flex-wrap: wrap !important; gap: 12px !important; }
+            .plant-hero-avatar { width: 60px !important; height: 60px !important; font-size: 26px !important; }
+            .plant-hero-name { font-size: 20px !important; }
+            .plant-hero-meta { flex-wrap: wrap !important; gap: 10px 20px !important; }
+            .plant-hero-edit { margin-left: 0 !important; }
+          }
+        `}</style>
+        <div className="plant-hero-inner" style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 20 }}>
+          <button onClick={onBack} style={{ ...S.btn, background: 'rgba(255,255,255,0.1)', color: '#d4f0d4', border: '1px solid rgba(255,255,255,0.2)', padding: '7px 14px', fontSize: 13, flexShrink: 0 }}>← Plants</button>
+          <div className="plant-hero-avatar" style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: '3px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, flexShrink: 0 }}>
             {emoji}
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-              <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 700, color: '#d4f0d4', margin: 0 }}>{plant.name}</h1>
-              <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: 'rgba(255,255,255,0.15)', color: '#d4f0d4', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6, flexWrap: 'wrap' }}>
+              <h1 className="plant-hero-name" style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 700, color: '#d4f0d4', margin: 0 }}>{plant.name}</h1>
+              <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: 'rgba(255,255,255,0.15)', color: '#d4f0d4', textTransform: 'uppercase', letterSpacing: '0.04em', flexShrink: 0 }}>{label}</span>
             </div>
             {plant.plant_subspecies && (
               <p style={{ fontSize: 13, color: '#a0d4a0', margin: '0 0 8px', fontStyle: 'italic' }}>{plant.plant_subspecies}</p>
             )}
-            <div style={{ display: 'flex', gap: 24 }}>
+            <div className="plant-hero-meta" style={{ display: 'flex', gap: 24 }}>
               {[
                 ['Category',  catLabel || '—'],
                 ['Location',  plant.location || '—'],
@@ -224,7 +233,7 @@ function PlantDetail({ plant, onBack, onEdit }) {
               ))}
             </div>
           </div>
-          <button onClick={onEdit} style={{ ...S.btn, background: 'rgba(255,255,255,0.1)', color: '#d4f0d4', border: '1px solid rgba(255,255,255,0.2)', padding: '7px 14px', fontSize: 13 }}>Edit</button>
+          <button className="plant-hero-edit" onClick={onEdit} style={{ ...S.btn, background: 'rgba(255,255,255,0.1)', color: '#d4f0d4', border: '1px solid rgba(255,255,255,0.2)', padding: '7px 14px', fontSize: 13, flexShrink: 0 }}>Edit</button>
         </div>
       </div>
       <div style={S.page}>
@@ -408,34 +417,42 @@ export function PlantsPage() {
   return (
     <div>
       {/* Hero */}
-      <div style={{ background: 'linear-gradient(160deg,#1a2e1a 0%,#2d4a2d 50%,#3d6b3d 100%)', padding: '32px 24px 0' }}>
+      <div style={{ background: 'linear-gradient(160deg,#1a2e1a 0%,#2d4a2d 50%,#3d6b3d 100%)', padding: '24px 20px 0' }}>
+        <style>{`
+          @media (max-width: 767px) {
+            .plants-hero-top { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+            .plants-hero-strip { gap: 10px !important; }
+            .plant-strip-icon { width: 52px !important; height: 52px !important; font-size: 22px !important; }
+            .plant-strip-name { font-size: 9px !important; max-width: 56px !important; }
+            .plant-grid { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div className="plants-hero-top" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20 }}>
             <div>
-              <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 36, fontWeight: 700, color: '#d4f0d4', margin: '0 0 4px' }}>🌱 Plants & Trees</h1>
+              <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 32, fontWeight: 700, color: '#d4f0d4', margin: '0 0 4px' }}>🌱 Plants & Trees</h1>
               <p style={{ fontSize: 13, color: '#7ab87a' }}>{plants.length} total · {Object.keys(catCounts).length} categories</p>
             </div>
-            <button onClick={goAdd} style={{ ...S.btn, background: '#4caf50', color: '#fff', fontWeight: 700, padding: '9px 20px' }}>+ Add Plant</button>
+            <button onClick={goAdd} style={{ ...S.btn, background: '#4caf50', color: '#fff', fontWeight: 700, padding: '9px 20px', flexShrink: 0 }}>+ Add Plant</button>
           </div>
           {/* Strip */}
-          <div style={{ display: 'flex', gap: 14, paddingBottom: 24, overflowX: 'auto' }}>
+          <div className="plants-hero-strip" style={{ display: 'flex', gap: 14, paddingBottom: 20, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             {plants.map(p => {
               const emoji = getPlantEmoji(p.plant_category, p.plant_subtype)
               const label = getPlantLabel(p.plant_category, p.plant_subtype)
               return (
                 <div key={p.id} onClick={() => goDetail(p.id)}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer', flexShrink: 0, transition: 'transform 0.15s' }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer', flexShrink: 0, transition: 'transform 0.15s' }}
                   onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
                   onMouseLeave={e => e.currentTarget.style.transform = ''}>
-                  <div style={{ width: 64, height: 64, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
+                  <div className="plant-strip-icon" style={{ width: 60, height: 60, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26 }}>
                     {emoji}
                   </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#a0d4a0', letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap', maxWidth: 70, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>
-                  <span style={{ fontSize: 9, color: '#5a8a5a', whiteSpace: 'nowrap' }}>{p.plant_subspecies || label}</span>
+                  <span className="plant-strip-name" style={{ fontSize: 10, fontWeight: 700, color: '#a0d4a0', letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap', maxWidth: 66, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>
                 </div>
               )
             })}
-            {plants.length === 0 && <p style={{ color: '#5a8a5a', fontSize: 13, padding: '8px 0 24px' }}>No plants added yet</p>}
+            {plants.length === 0 && <p style={{ color: '#5a8a5a', fontSize: 13, padding: '8px 0 20px' }}>No plants added yet</p>}
           </div>
         </div>
       </div>
@@ -463,7 +480,7 @@ export function PlantsPage() {
               <button onClick={goAdd} style={{ ...S.btn, ...S.btnPrimary }}>+ Add Your First Plant</button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 14 }}>
+            <div className="plant-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 14 }}>
               {filtered.map(p => {
                 const emoji = getPlantEmoji(p.plant_category, p.plant_subtype)
                 const label = getPlantLabel(p.plant_category, p.plant_subtype)
