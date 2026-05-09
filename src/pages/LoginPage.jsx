@@ -261,6 +261,13 @@ export function LoginPage() {
             <div>
               <button style={S.link} onClick={() => switchMode('forgot')}>Forgot password?</button>
             </div>
+            <div style={{ marginTop: 4, paddingTop: 14, borderTop: '1px solid #f0ebe4' }}>
+              <button
+                onClick={() => window.location.href = '/demo'}
+                style={{ width: '100%', padding: '11px', borderRadius: 8, border: '1px solid #c8b89a', background: '#fdfaf6', cursor: 'pointer', fontFamily: "'Lato', sans-serif", fontSize: 14, fontWeight: 600, color: '#5a3e1b', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                🌾 Take a Tour — See a Demo Farm
+              </button>
+            </div>
           </div>
         )}
 

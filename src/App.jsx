@@ -12,6 +12,7 @@ import { PlantsPage } from './components/plants/PlantsPage'
 import { PnLPage } from './components/costs/PnLPage'
 import { DashboardPage } from './components/dashboard/DashboardPage'
 import { CustomersPage } from './components/customers/CustomersPage'
+import { DemoPage } from './components/demo/DemoPage'
 
 // ─── Responsive hook ──────────────────────────────────────────────────────────
 function useIsMobile() {
@@ -353,6 +354,7 @@ function FarmApp() {
         <Route path="/pnl"               element={<PnLPage />} />
         <Route path="/dashboard"         element={<DashboardPage />} />
         <Route path="/customers"         element={<CustomersPage />} />
+        <Route path="/demo"              element={<DemoPage />} />
         <Route path="/admin"             element={<AdminPage />} />
       </Routes>
     </div>
@@ -362,6 +364,10 @@ function FarmApp() {
 // ─── Auth Gate ────────────────────────────────────────────────────────────────
 function AuthGate() {
   const { user, loading } = useAuth()
+  const location = useLocation()
+
+  if (location.pathname === '/demo') return <DemoPage />
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: '#2c2416', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
