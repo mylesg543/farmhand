@@ -44,7 +44,7 @@ export function PnLPage() {
   const today = new Date().toISOString().split('T')[0]
 
   const [costForm,   setCostForm]   = useState({ species: 'sheep', category: 'hay', description: '', amount: '', date: today })
-  const [incomeForm, setIncomeForm] = useState({ species: 'sheep', income_type: 'sale_animal', description: '', amount: '', date: today, customer_id: '' })
+  const [incomeForm, setIncomeForm] = useState({ species: 'sheep', income_type: 'sale_animal', description: '', amount: '', date: today, customer_id: '', quantity: '', unit: '' })
   const [costErr,    setCostErr]    = useState('')
   const [incomeErr,  setIncomeErr]  = useState('')
   const setC = (k, v) => setCostForm(f  => ({ ...f, [k]: v }))
@@ -71,24 +71,41 @@ export function PnLPage() {
   const months   = [...new Set(allDates.map(d => d.slice(0, 7)))].sort().reverse()
   const fmtMonth = m => { const [y, mo] = m.split('-'); return new Date(y, mo - 1).toLocaleString('default', { month: 'long', year: 'numeric' }) }
 
+  const EGG_PRICE_PER_DOZEN = 5.00
+  const isEggSale = incomeForm.income_type === 'sale_eggs'
+
+  const handleDozenChange = (dozens) => {
+    const amt = dozens ? (parseFloat(dozens) * EGG_PRICE_PER_DOZEN).toFixed(2) : ''
+    setIncomeForm(f => ({ ...f, quantity: dozens, amount: amt, unit: 'dozen' }))
+  }
+
   const handleAddCost = async () => {
-    if (!costForm.description.trim()) { setCostErr('Description required'); return }
     const amt = parseFloat(costForm.amount)
     if (!costForm.amount || isNaN(amt) || amt <= 0) { setCostErr('Enter a valid amount'); return }
     try {
-      await addCost({ species: costForm.species, category: costForm.category, description: costForm.description, amount: amt, date: costForm.date })
+      await addCost({ species: costForm.species, category: costForm.category, description: costForm.description || costForm.category, amount: amt, date: costForm.date })
       setCostForm({ species: 'sheep', category: 'hay', description: '', amount: '', date: today })
       setCostErr(''); setShowCostForm(false)
     } catch (err) { setCostErr(err.message) }
   }
 
   const handleAddIncome = async () => {
-    if (!incomeForm.description.trim()) { setIncomeErr('Description required'); return }
     const amt = parseFloat(incomeForm.amount)
     if (!incomeForm.amount || isNaN(amt) || amt <= 0) { setIncomeErr('Enter a valid amount'); return }
+    const description = incomeForm.description.trim() ||
+      (isEggSale && incomeForm.quantity ? `${incomeForm.quantity} dozen eggs` : incomeForm.income_type.replace(/_/g,' '))
     try {
-      await addIncome({ species: incomeForm.species, income_type: incomeForm.income_type, description: incomeForm.description, amount: amt, date: incomeForm.date, customer_id: incomeForm.customer_id || null })
-      setIncomeForm({ species: 'sheep', income_type: 'sale_animal', description: '', amount: '', date: today, customer_id: '' })
+      await addIncome({
+        species:      incomeForm.species,
+        income_type:  incomeForm.income_type,
+        description,
+        amount:       amt,
+        date:         incomeForm.date,
+        customer_id:  incomeForm.customer_id || null,
+        quantity:     incomeForm.quantity    || null,
+        unit:         incomeForm.unit        || null,
+      })
+      setIncomeForm({ species: 'sheep', income_type: 'sale_animal', description: '', amount: '', date: today, customer_id: '', quantity: '', unit: '' })
       setIncomeErr(''); setShowIncomeForm(false)
     } catch (err) { setIncomeErr(err.message) }
   }
@@ -147,19 +164,38 @@ export function PnLPage() {
             </div>
             <div>
               <label style={S.label}>Type</label>
-              <select style={{ ...S.input, cursor: 'pointer' }} value={incomeForm.income_type} onChange={e => setI('income_type', e.target.value)}>
+              <select style={{ ...S.input, cursor: 'pointer' }} value={incomeForm.income_type} onChange={e => { setI('income_type', e.target.value); if (e.target.value !== 'sale_eggs') setI('quantity', '') }}>
                 {INCOME_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
             <div>
-              <label style={S.label}>Description</label>
-              <input style={S.input} value={incomeForm.description} onChange={e => setI('description', e.target.value)} placeholder="e.g. Sold 3 lambs" />
+              <label style={S.label}>Description <span style={{ color: '#c8b89a', fontWeight: 400 }}>(optional)</span></label>
+              <input style={S.input} value={incomeForm.description} onChange={e => setI('description', e.target.value)}
+                placeholder={isEggSale ? 'e.g. Weekly egg delivery' : 'e.g. Sold 3 lambs'} />
             </div>
             <div>
               <label style={S.label}>Date</label>
               <input type="date" style={S.input} value={incomeForm.date} onChange={e => setI('date', e.target.value)} />
             </div>
           </div>
+
+          {/* Egg dozens row — only shown for egg sales */}
+          {isEggSale && (
+            <div style={{ background: '#fff9e6', border: '1px solid #ffe082', borderRadius: 8, padding: '12px 14px', marginBottom: 12, display: 'flex', gap: 14, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 120 }}>
+                <label style={S.label}>🥚 Dozens of Eggs</label>
+                <select style={{ ...S.input, cursor: 'pointer' }} value={incomeForm.quantity || ''} onChange={e => handleDozenChange(e.target.value)}>
+                  <option value="">— Select quantity —</option>
+                  {[0.5, 1, 2, 3, 4, 5].map(n => (
+                    <option key={n} value={n}>{n === 0.5 ? '½ dozen' : `${n} dozen${n > 1 ? 's' : ''}`} ({n * 12} eggs)</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ fontSize: 13, color: '#f57f17', fontWeight: 600, paddingBottom: 10 }}>
+                {incomeForm.quantity ? `$${EGG_PRICE_PER_DOZEN}/dozen × ${incomeForm.quantity} = $${(incomeForm.quantity * EGG_PRICE_PER_DOZEN).toFixed(2)}` : 'Select dozens to auto-fill price'}
+              </div>
+            </div>
+          )}
           {/* Customer + amount row */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px auto', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <div>
