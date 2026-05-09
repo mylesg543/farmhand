@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAnimals, useSingleAnimal } from '../../hooks/useAnimals'
 import { usePhotoUpload } from '../../hooks/usePhotoUpload'
+import { useIsMobile } from '../../hooks/useIsMobile'
 import { S, Field, Spinner, ErrorMsg, AnimalIllustration, SEX_OPTIONS, CHICKEN_BREEDS, ANIMAL_META } from '../ui/shared'
 
 function FormInner({ existing, allAnimals, onSave, species = 'sheep' }) {
@@ -26,6 +27,7 @@ function FormInner({ existing, allAnimals, onSave, species = 'sheep' }) {
   const [dragOver,setDragOver]= useState(false)
   const fileRef   = useRef()
   const navigate  = useNavigate()
+  const isMobile  = useIsMobile()
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const meta = ANIMAL_META[species] || ANIMAL_META.sheep
 
@@ -68,8 +70,8 @@ function FormInner({ existing, allAnimals, onSave, species = 'sheep' }) {
   const previewAnimal = { ...existing, ...form, id: existing?.id || 'preview', species }
 
   return (
-    <div style={S.page}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
+    <div style={{ ...S.page, padding: isMobile ? '16px 12px' : '32px 24px' }}>
+      <div className="form-header" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: isMobile ? 20 : 28 }}>
         <button style={{ ...S.btn, ...S.btnSecondary, padding: '7px 14px' }} onClick={() => navigate(-1)}>← Back</button>
         <div style={{ width: 54, height: 54, borderRadius: '50%', overflow: 'hidden', background: '#f0ebe4', border: '2px solid #e8e0d0', flexShrink: 0 }}>
           <AnimalIllustration animal={previewAnimal} size={54} />
@@ -81,7 +83,7 @@ function FormInner({ existing, allAnimals, onSave, species = 'sheep' }) {
 
       {saveErr && <ErrorMsg message={saveErr} />}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 22 }}>
+      <div className="form-cols" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 22 }}>
         {/* Left col */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
           <div style={{ ...S.card, padding: 26 }}>
@@ -190,7 +192,7 @@ function FormInner({ existing, allAnimals, onSave, species = 'sheep' }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, marginTop: 22 }}>
+      <div className="form-actions" style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12, marginTop: 22 }}>
         <button style={{ ...S.btn, ...S.btnPrimary, padding: '11px 26px', fontSize: 15, opacity: saving ? 0.7 : 1 }}
           onClick={handleSubmit} disabled={saving}>
           {saving ? 'Saving…' : existing ? 'Save Changes' : `Add ${meta.singular}`}

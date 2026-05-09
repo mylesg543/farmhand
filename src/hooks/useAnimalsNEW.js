@@ -8,13 +8,10 @@ export function useAnimals(species = 'sheep') {
 
   const fetch = useCallback(async () => {
     setLoading(true); setError(null)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setLoading(false); return }
     const { data, error } = await supabase
       .from('fh_animals')
       .select('*')
       .eq('species', species)
-      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
     if (error) setError(error.message)
     else setAnimals(data || [])
