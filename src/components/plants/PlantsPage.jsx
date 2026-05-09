@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { usePlants, useSinglePlant, usePlantEvents } from '../../hooks/usePlants'
+import { useIsMobile } from '../../hooks/useIsMobile'
 import { S, Spinner, ErrorMsg, Badge, formatDate } from '../ui/shared'
 
 // ─── Plant Taxonomy ───────────────────────────────────────────────────────────
@@ -115,6 +116,7 @@ function getPlantLabel(cat, subType) {
 // ─── Plant care events ────────────────────────────────────────────────────────
 function PlantEventSection({ plantId, plantName }) {
   const { events, loading, deleteEvent, addEvent } = usePlantEvents(plantId)
+  const isMobile  = useIsMobile()
   const [showForm, setShowForm] = useState(false)
   const today = new Date().toISOString().split('T')[0]
   const [form, setForm] = useState({ care_type: 'watering', event_date: today, notes: '' })
@@ -139,7 +141,7 @@ function PlantEventSection({ plantId, plantName }) {
 
       {showForm && (
         <div style={{ ...S.card, padding: 20, marginBottom: 16, border: '1px dashed #c8b89a', background: '#fdfaf6' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 14 }}>
             <div>
               <label style={S.label}>Care Type</label>
               <select style={{ ...S.input, cursor: 'pointer' }} value={form.care_type} onChange={e => set('care_type', e.target.value)}>
@@ -251,6 +253,7 @@ function PlantDetail({ plant, onBack, onEdit }) {
 
 // ─── Plant Form ───────────────────────────────────────────────────────────────
 function PlantForm({ plant, onSave, onCancel }) {
+  const isMobile = useIsMobile()
   const [form, setForm] = useState({
     name:             plant?.name             || '',
     plant_category:   plant?.plant_category   || 'fruit_tree',
@@ -268,13 +271,8 @@ function PlantForm({ plant, onSave, onCancel }) {
   const selSubtype = subtypes.find(s => s.value === form.plant_subtype)
   const emoji = getPlantEmoji(form.plant_category, form.plant_subtype)
 
-  // When category changes, clear sub selections
-  const handleCatChange = (val) => {
-    setForm(f => ({ ...f, plant_category: val, plant_subtype: '', plant_subspecies: '' }))
-  }
-  const handleSubtypeChange = (val) => {
-    setForm(f => ({ ...f, plant_subtype: val, plant_subspecies: '' }))
-  }
+  const handleCatChange     = (val) => setForm(f => ({ ...f, plant_category: val, plant_subtype: '', plant_subspecies: '' }))
+  const handleSubtypeChange = (val) => setForm(f => ({ ...f, plant_subtype: val, plant_subspecies: '' }))
 
   const submit = async () => {
     const e = {}
@@ -286,18 +284,18 @@ function PlantForm({ plant, onSave, onCancel }) {
   }
 
   return (
-    <div style={S.page}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
+    <div style={{ ...S.page, padding: isMobile ? '16px 12px' : '32px 24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: isMobile ? 20 : 28 }}>
         <button onClick={onCancel} style={{ ...S.btn, ...S.btnSecondary, padding: '7px 14px' }}>← Back</button>
-        <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#e8f5e9', border: '2px solid #c8e6c9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
+        <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#e8f5e9', border: '2px solid #c8e6c9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
           {emoji}
         </div>
-        <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 700, margin: 0 }}>
+        <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: isMobile ? 20 : 24, fontWeight: 700, margin: 0 }}>
           {plant ? `Edit ${plant.name}` : 'Add Plant or Tree'}
         </h1>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 22 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 22 }}>
         <div style={{ ...S.card, padding: 26 }}>
           <span style={S.sectionLabel}>Identity</span>
 
@@ -375,7 +373,7 @@ function PlantForm({ plant, onSave, onCancel }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, marginTop: 22 }}>
+      <div className="plant-form-actions" style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12, marginTop: 22 }}>
         <button onClick={submit} disabled={saving} style={{ ...S.btn, ...S.btnPrimary, padding: '11px 26px', fontSize: 15, opacity: saving ? 0.7 : 1 }}>
           {saving ? 'Saving…' : plant ? 'Save Changes' : 'Add Plant'}
         </button>
@@ -388,6 +386,7 @@ function PlantForm({ plant, onSave, onCancel }) {
 // ─── Plants Main Page ─────────────────────────────────────────────────────────
 export function PlantsPage() {
   const { plants, loading, error, addPlant, updatePlant, deletePlant } = usePlants()
+  const isMobile = useIsMobile()
   const [view, setView]           = useState('list')
   const [selectedId, setSelectedId] = useState(null)
   const [filterCat, setFilterCat] = useState('all')
@@ -417,23 +416,14 @@ export function PlantsPage() {
   return (
     <div>
       {/* Hero */}
-      <div style={{ background: 'linear-gradient(160deg,#1a2e1a 0%,#2d4a2d 50%,#3d6b3d 100%)', padding: '24px 20px 0' }}>
-        <style>{`
-          @media (max-width: 767px) {
-            .plants-hero-top { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
-            .plants-hero-strip { gap: 10px !important; }
-            .plant-strip-icon { width: 52px !important; height: 52px !important; font-size: 22px !important; }
-            .plant-strip-name { font-size: 9px !important; max-width: 56px !important; }
-            .plant-grid { grid-template-columns: 1fr !important; }
-          }
-        `}</style>
+      <div style={{ background: 'linear-gradient(160deg,#1a2e1a 0%,#2d4a2d 50%,#3d6b3d 100%)', padding: isMobile ? '16px 14px 0' : '24px 20px 0' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div className="plants-hero-top" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div className="plants-hero-top" style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'flex-end', justifyContent: 'space-between', marginBottom: isMobile ? 16 : 20, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 12 : 0 }}>
             <div>
-              <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 32, fontWeight: 700, color: '#d4f0d4', margin: '0 0 4px' }}>🌱 Plants & Trees</h1>
+              <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: isMobile ? 24 : 32, fontWeight: 700, color: '#d4f0d4', margin: '0 0 4px' }}>🌱 Plants & Trees</h1>
               <p style={{ fontSize: 13, color: '#7ab87a' }}>{plants.length} total · {Object.keys(catCounts).length} categories</p>
             </div>
-            <button onClick={goAdd} style={{ ...S.btn, background: '#4caf50', color: '#fff', fontWeight: 700, padding: '9px 20px', flexShrink: 0 }}>+ Add Plant</button>
+            <button onClick={goAdd} style={{ ...S.btn, background: '#4caf50', color: '#fff', fontWeight: 700, padding: '9px 18px', flexShrink: 0, width: isMobile ? '100%' : 'auto', justifyContent: 'center' }}>+ Add Plant</button>
           </div>
           {/* Strip */}
           <div className="plants-hero-strip" style={{ display: 'flex', gap: 14, paddingBottom: 20, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
@@ -457,7 +447,7 @@ export function PlantsPage() {
         </div>
       </div>
 
-      <div style={S.page}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: isMobile ? '14px 12px' : '24px 24px' }}>
         {/* Category filter */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
           <button onClick={() => setFilterCat('all')} style={{ ...S.btn, padding: '6px 14px', fontSize: 13, background: filterCat === 'all' ? '#2d4a2d' : '#fff', color: filterCat === 'all' ? '#fff' : '#7a6648', border: '1px solid #d0c4b0' }}>
@@ -480,7 +470,7 @@ export function PlantsPage() {
               <button onClick={goAdd} style={{ ...S.btn, ...S.btnPrimary }}>+ Add Your First Plant</button>
             </div>
           ) : (
-            <div className="plant-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 14 }}>
+            <div className="plant-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill,minmax(280px,1fr))', gap: isMobile ? 8 : 14 }}>
               {filtered.map(p => {
                 const emoji = getPlantEmoji(p.plant_category, p.plant_subtype)
                 const label = getPlantLabel(p.plant_category, p.plant_subtype)

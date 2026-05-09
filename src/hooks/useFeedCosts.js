@@ -8,9 +8,12 @@ export function useFeedCosts() {
 
   const fetch = useCallback(async () => {
     setLoading(true); setError(null)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setLoading(false); return }
     const { data, error } = await supabase
       .from('fh_feed_costs')
       .select('*')
+      .eq('user_id', user.id)
       .order('date', { ascending: false })
     if (error) setError(error.message)
     else setCosts(data || [])

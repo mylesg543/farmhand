@@ -10,6 +10,8 @@ import { AddAnimalPage, EditAnimalPage } from './components/animals/AnimalForm'
 import { BulkAddPage } from './components/animals/BulkAddPage'
 import { PlantsPage } from './components/plants/PlantsPage'
 import { PnLPage } from './components/costs/PnLPage'
+import { DashboardPage } from './components/dashboard/DashboardPage'
+import { CustomersPage } from './components/customers/CustomersPage'
 
 // ─── Responsive hook ──────────────────────────────────────────────────────────
 function useIsMobile() {
@@ -177,6 +179,14 @@ function DesktopNav({ user, isAdmin, navigate, location, signOut }) {
           <button onClick={() => navigate('/pnl')} style={tabStyle(isPnL)}>
             <span style={{ fontSize: 15 }}>💰</span>P & L
           </button>
+          <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '8px 4px' }} />
+          <button onClick={() => navigate('/dashboard')} style={tabStyle(location.pathname.startsWith('/dashboard'))}>
+            <span style={{ fontSize: 15 }}>📊</span>Dashboard
+          </button>
+          <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '8px 4px' }} />
+          <button onClick={() => navigate('/customers')} style={tabStyle(location.pathname.startsWith('/customers'))}>
+            <span style={{ fontSize: 15 }}>👥</span>Customers
+          </button>
           {isAdmin && (
             <>
               <div style={{ width: 1, background: 'rgba(255,80,0,0.3)', margin: '8px 8px' }} />
@@ -197,10 +207,11 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
   const [toast, setToast] = useState(null)
   const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
-  const isAnimals = location.pathname === '/' || location.pathname.startsWith('/animals') || location.pathname.startsWith('/chickens')
-  const isPlants  = location.pathname.startsWith('/plants')
-  const isPnL     = location.pathname.startsWith('/pnl')
-  const isAdminP  = location.pathname.startsWith('/admin')
+  const isAnimals   = location.pathname === '/' || location.pathname.startsWith('/animals') || location.pathname.startsWith('/chickens')
+  const isPlants    = location.pathname.startsWith('/plants')
+  const isPnL       = location.pathname.startsWith('/pnl')
+  const isDashboard = location.pathname.startsWith('/dashboard')
+  const isAdminP    = location.pathname.startsWith('/admin')
 
   const tabBtn = (active, emoji, label, onClick) => (
     <button onClick={onClick} style={{
@@ -255,9 +266,9 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
         background: '#2c2416', borderTop: '1px solid rgba(255,255,255,0.1)',
         display: 'flex', paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
-        {tabBtn(isAnimals,  '🐾', 'Animals', () => setSheet('animals'))}
-        {tabBtn(isPlants,   '🌱', 'Plants',  () => setSheet('plants'))}
-        {tabBtn(isPnL,      '💰', 'P & L',   () => navigate('/pnl'))}
+        {tabBtn(isAnimals,   '🐾', 'Animals',   () => setSheet('animals'))}
+        {tabBtn(isPnL,       '💰', 'P & L',     () => navigate('/pnl'))}
+        {tabBtn(isDashboard, '📊', 'Dashboard', () => navigate('/dashboard'))}
         {tabBtn(isAdminP || sheet === 'more', '⚙️', 'More', () => setSheet('more'))}
       </div>
 
@@ -284,6 +295,8 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
       {/* More sheet */}
       {sheet === 'more' && (
         <MobileSheet title="More" onClose={() => setSheet(null)}>
+          {sheetItem('🌱', 'Plants & Trees', 'Manage your plants', () => { setSheet(null); navigate('/plants') })}
+          {sheetItem('👥', 'Customers',       'Manage your buyers', () => { setSheet(null); navigate('/customers') })}
           {isAdmin && sheetItem('🔒', 'Admin Portal', 'View all farms', () => { setSheet(null); navigate('/admin') })}
           {sheetItem('👤', user?.email?.split('@')[0] || 'Account', user?.email, null)}
           <button onClick={() => { setSheet(null); signOut() }}
@@ -338,6 +351,8 @@ function FarmApp() {
         <Route path="/chickens/bulk"      element={<BulkAddPage species="chickens" />} />
         <Route path="/plants"             element={<PlantsPage />} />
         <Route path="/pnl"               element={<PnLPage />} />
+        <Route path="/dashboard"         element={<DashboardPage />} />
+        <Route path="/customers"         element={<CustomersPage />} />
         <Route path="/admin"             element={<AdminPage />} />
       </Routes>
     </div>

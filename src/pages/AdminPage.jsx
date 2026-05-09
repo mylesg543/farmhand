@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAllUsers, useAdminUserData } from '../hooks/useAdmin'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { S, Spinner, ErrorMsg, ANIMAL_META, AnimalIllustration, fmt, formatDate, calcAge, getSexLabel } from '../components/ui/shared'
 
 function StatPill({ label, value, color = '#5a3e1b' }) {
@@ -13,6 +14,7 @@ function StatPill({ label, value, color = '#5a3e1b' }) {
 
 function UserFarmView({ user, onBack }) {
   const { animals, costs, income, plants, loading } = useAdminUserData(user.id)
+  const isMobile = useIsMobile()
   const [tab, setTab] = useState('animals')
 
   const totalSpent  = costs.reduce((s, c) => s + Number(c.amount), 0)
@@ -26,24 +28,34 @@ function UserFarmView({ user, onBack }) {
 
   return (
     <div style={S.page}>
+      <style>{`
+        @media (max-width: 767px) {
+          .admin-farm-header { flex-wrap: wrap !important; gap: 10px !important; }
+          .admin-stats { grid-template-columns: repeat(3, 1fr) !important; }
+          .admin-tabs { flex-wrap: wrap !important; }
+          .admin-tabs button { flex: 1 !important; min-width: 80px !important; }
+          .admin-animal-grid { grid-template-columns: 1fr !important; }
+          .admin-plant-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
-        <button onClick={onBack} style={{ ...S.btn, ...S.btnSecondary, padding: '7px 14px' }}>← All Farms</button>
-        <div>
-          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 700, margin: '0 0 2px' }}>
+      <div className="admin-farm-header" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <button onClick={onBack} style={{ ...S.btn, ...S.btnSecondary, padding: '7px 14px', flexShrink: 0 }}>← All Farms</button>
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {user.farm_name || user.email?.split('@')[0] + "'s Farm"}
           </h1>
-          <p style={{ fontSize: 13, color: '#a08060', margin: 0 }}>{user.email} · Member since {formatDate(user.created_at?.slice(0,10))}</p>
+          <p style={{ fontSize: 12, color: '#a08060', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email} · Since {formatDate(user.created_at?.slice(0,10))}</p>
         </div>
-        <div style={{ marginLeft: 'auto' }}>
-          <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#e8f5e9', color: '#2e7d32', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ marginLeft: 'auto', flexShrink: 0 }}>
+          <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 20, fontSize: 10, fontWeight: 700, background: '#e8f5e9', color: '#2e7d32', textTransform: 'uppercase' }}>
             👁 Read Only
           </span>
         </div>
       </div>
 
       {/* Summary stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 24 }}>
+      <div className="admin-stats" style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3,1fr)' : 'repeat(5, 1fr)', gap: 10, marginBottom: 20 }}>
         <StatPill label="Animals"  value={animals.length} />
         <StatPill label="Plants"   value={plants.length}  />
         <StatPill label="Income"   value={`+${fmt(totalEarned)}`} color="#2e7d32" />
@@ -52,7 +64,7 @@ function UserFarmView({ user, onBack }) {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+      <div className="admin-tabs" style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
         {[['animals','Animals'],['plants','Plants'],['costs','Expenses'],['income','Income']].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)}
             style={{ ...S.btn, padding: '7px 18px', fontSize: 13, background: tab === key ? '#5a3e1b' : '#fff', color: tab === key ? '#fff' : '#7a6648', border: '1px solid #d0c4b0' }}>
@@ -70,7 +82,7 @@ function UserFarmView({ user, onBack }) {
               return (
                 <div key={species} style={{ marginBottom: 24 }}>
                   <p style={{ ...S.sectionLabel, marginBottom: 12 }}>{meta.emoji} {meta.label} ({list.length})</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 12 }}>
+                  <div className="admin-animal-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill,minmax(260px,1fr))', gap: isMobile ? 8 : 12 }}>
                     {list.map(a => {
                       const statusColors = { alive: { bg: '#e8f5e9', text: '#2e7d32' }, sold: { bg: '#f3e5f5', text: '#6a1b9a' }, deceased: { bg: '#fafafa', text: '#616161' } }
                       const st = statusColors[a.status] || statusColors.alive
@@ -102,7 +114,7 @@ function UserFarmView({ user, onBack }) {
       {tab === 'plants' && (
         plants.length === 0
           ? <div style={{ ...S.card, padding: 40, textAlign: 'center' }}><p style={{ color: '#a08060' }}>No plants recorded.</p></div>
-          : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 12 }}>
+          : <div className="admin-plant-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill,minmax(260px,1fr))', gap: isMobile ? 8 : 12 }}>
               {plants.map(p => (
                 <div key={p.id} style={{ ...S.card, padding: 16 }}>
                   <p style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 15, margin: '0 0 3px' }}>{p.name}</p>
@@ -173,6 +185,7 @@ function UserFarmView({ user, onBack }) {
 
 export function AdminPage() {
   const { users, loading, error } = useAllUsers()
+  const isMobile = useIsMobile()
   const [selectedUser, setSelectedUser] = useState(null)
 
   if (selectedUser) return <UserFarmView user={selectedUser} onBack={() => setSelectedUser(null)} />
@@ -181,18 +194,18 @@ export function AdminPage() {
   const totalPlants  = 0
 
   return (
-    <div style={S.page}>
+    <div style={{ ...S.page, padding: isMobile ? '16px 12px' : '32px 24px' }}>
       {/* Header */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 32, fontWeight: 700, margin: 0 }}>Admin Portal</h1>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
+          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: isMobile ? 24 : 32, fontWeight: 700, margin: 0 }}>Admin Portal</h1>
           <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#fff3e0', color: '#e65100', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🔒 Private</span>
         </div>
-        <p style={{ fontSize: 14, color: '#a08060', margin: 0 }}>Overview of all registered farms — read only</p>
+        <p style={{ fontSize: 13, color: '#a08060', margin: 0 }}>Overview of all registered farms — read only</p>
       </div>
 
       {/* Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
         <StatPill label="Total Farms" value={users.length} />
         <StatPill label="Active Today" value="—" />
         <StatPill label="Total Users" value={users.length} />

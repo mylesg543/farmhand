@@ -10,7 +10,7 @@ export function useIncome() {
     setLoading(true); setError(null)
     const { data, error } = await supabase
       .from('fh_income')
-      .select('*')
+      .select('*, customer:fh_customers(id, name)')
       .order('date', { ascending: false })
     if (error) setError(error.message)
     else setIncome(data || [])
@@ -24,7 +24,8 @@ export function useIncome() {
     const { data, error } = await supabase
       .from('fh_income')
       .insert([{ ...values, user_id: user?.id }])
-      .select().single()
+      .select('*, customer:fh_customers(id, name)')
+      .single()
     if (error) throw error
     setIncome(prev => [data, ...prev])
     return data
