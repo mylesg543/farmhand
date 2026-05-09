@@ -115,3 +115,24 @@ export const DEMO_INCOME = [
   { id:'inc7', species:'chickens', income_type:'sale_eggs',   description:'2 dozen eggs',   amount:10.00, date:'2025-04-02', customer_id:'cu2', quantity:2,    unit:'dozen', customer:{ id:'cu2', name:'Mike Torres'    } },
   { id:'inc8', species:'chickens', income_type:'sale_eggs',   description:'1 dozen eggs',   amount: 5.00, date:'2025-04-09', customer_id:'cu1', quantity:1,    unit:'dozen', customer:{ id:'cu1', name:'Sarah Johnson' } },
 ]
+
+export const DEMO_PLANTS = [
+  {
+    id: 'p1', name: 'Honeycrisp Apple', plant_category:'fruit_tree', plant_subtype:'apple',
+    plant_subspecies:'Honeycrisp', planted_date:'2015-03-10', location:'North fence row',
+    notes:'Great producer. About 40kg per season.',
+    photo_url:'https://images.unsplash.com/photo-1597714026720-8f74c62310ba?w=300&auto=format&fit=crop&q=60',
+  },
+  {
+    id: 'p2', name: 'Bartlett Pear', plant_category:'fruit_tree', plant_subtype:'pear',
+    plant_subspecies:'Bartlett', planted_date:'2017-04-05', location:'Back paddock',
+    notes:'Late summer harvest. Excellent for selling.',
+    photo_url:'https://plus.unsplash.com/premium_photo-1666900816782-202bbcd67f42?w=300&auto=format&fit=crop&q=60',
+  },
+  {
+    id: 'p3', name: 'Pawpaw Tree', plant_category:'fruit_tree', plant_subtype:'pawpaw',
+    plant_subspecies:'Sunflower', planted_date:'2020-05-12', location:'South garden',
+    notes:'Young tree, first fruit expected next season.',
+    photo_url:'https://images.unsplash.com/photo-1654509480655-327cc2b46f86?w=300&auto=format&fit=crop&q=60',
+  },
+]

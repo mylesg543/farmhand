@@ -2,27 +2,28 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { SEX_LABELS, calcAge, formatDate, fmt, STATUS_STYLES, STATUS_DOT, Badge, S, EVENT_COLORS, ANIMAL_META } from '../ui/shared'
-import { DEMO_SHEEP, DEMO_CHICKENS, DEMO_EVENTS, DEMO_COSTS, DEMO_INCOME, DEMO_CUSTOMERS } from './demoData'
+import { DEMO_SHEEP, DEMO_CHICKENS, DEMO_EVENTS, DEMO_COSTS, DEMO_INCOME, DEMO_CUSTOMERS, DEMO_PLANTS } from './demoData'
 
 // ─── Tour steps ───────────────────────────────────────────────────────────────
 const STEPS = [
-  { screen:'sheep',        scrollTo:null,           title:'🌾 Welcome to FarmHand!',        body:"A complete farm management app — animals, P&L, customers, and analytics. This is what a real sheep flock looks like in FarmHand." },
-  { screen:'sheep',        scrollTo:'animal-strip', title:'🐑 Quick Animal Strip',          body:"Every animal across the top with a live status dot — green for alive, purple for sold. Tap any avatar to jump straight to their profile." },
-  { screen:'sheep',        scrollTo:'animal-list',  title:'📋 Full Flock List',            body:"Each animal in a full-width row — photo, name, status badge, breed, sex and age. Everything at a glance, nothing hidden." },
-  { screen:'detail',       scrollTo:null,           title:'👆 Bella\'s Full Profile',       body:"Tap any animal for their full profile — photo, tag number, breed, age, and who their parents are. All in one place." },
-  { screen:'detail',       scrollTo:'events',       title:'📅 Full Event History',          body:"Every vaccination, shearing, lambing, and worming is logged with the date and notes. Nothing ever gets forgotten." },
-  { screen:'status',       scrollTo:'status-form',  title:'✏️ Update Animal Status',        body:"When an animal is sold or passes away, tap Edit and change their status. The history is always preserved — you'll always know what happened." },
-  { screen:'bulk_event',   scrollTo:'bulk-event',   title:'⚡ Bulk Events — 1, a Few, or All', body:"Trimmed just 5 of your 10 sheep today? Select exactly those 5 and log it once. Or select all for vaccinations. You choose how many — one tap per animal, one save for all of them." },
-  { screen:'chickens',     scrollTo:null,           title:'🐔 Chickens Module',             body:"Chickens get their own page with breed tracking and events like egg production and moulting. Separate from sheep, always organised." },
-  { screen:'pnl',          scrollTo:'pnl-tiles',    title:'💰 Profit & Loss',               body:"Filter by All, Sheep, or Chickens to see exactly which part of your farm earns the most. Every dollar in and out is tracked automatically." },
-  { screen:'pnl',          scrollTo:'pnl-income',   title:'🥚 Egg Sales in Seconds',        body:"Select the dozen quantity and the price auto-fills — $5/dozen by default but fully adjustable to whatever you charge. Tag the customer and you're done." },
-  { screen:'dash_bar',     scrollTo:'dash-filter',  title:'📊 Dashboard — Filter by Animal',body:"The dashboard filters your whole farm by animal type. Switch to Sheep-only or Chickens-only to see exactly what each part of your farm contributes." },
-  { screen:'dash_bar',     scrollTo:'dash-bar',     title:'📈 P&L Chart Over Time',         body:"Income vs expenses month by month as a bar chart. You can instantly see trends — is revenue growing? Are feed costs spiking? It's all visible at a glance." },
-  { screen:'dash_animals', scrollTo:'dash-sheep',   title:'🐑 Sheep Breakdown',             body:"Your sheep split by sex and by status. Know exactly how many ewes, rams, and wethers you have — and how many are alive vs sold." },
-  { screen:'dash_animals', scrollTo:'dash-chickens',title:'🐔 Chicken Breakdown',           body:"Chickens split by sex and breed. Running multiple breeds? See exactly how your flock is composed without digging through every record." },
-  { screen:'dash_customers',scrollTo:'dash-customers',title:'👥 Who\'s Buying Most',        body:"Your top customers ranked by spend, with egg dozens tracked per buyer. Sarah buys eggs every week — you can see her total right here." },
-  { screen:'bulk',         scrollTo:'bulk-rows',    title:'📋 Bulk Add at Lambing Time',   body:"10 new lambs arriving? Fill in the spreadsheet rows and save them all at once. No clicking through 10 individual forms." },
-  { screen:'sheep',        scrollTo:null,           title:'🌾 Ready to Start?',             body:"Create your free account and have your farm set up in minutes. Your data stays private — only you can see it.", isLast:true },
+  { screen:'sheep',        scrollTo:null,              title:'🌾 Welcome to FarmHand!',             body:"This is an example sheep flock — but FarmHand works for whatever animals you run. Sheep, chickens, cows, goats — you choose what you track." },
+  { screen:'sheep',        scrollTo:'animal-strip',    title:'🐑 Your Flock at a Glance',           body:"Every animal in the strip at the top with a live status dot. Add as many or as few as you have — 3 animals or 300, it works the same way." },
+  { screen:'sheep',        scrollTo:'animal-list',     title:'📋 Full Flock List',                  body:"Each animal in a clean row — photo, name, status, breed, sex and age. Tap any row to open their full profile." },
+  { screen:'detail',       scrollTo:null,              title:'👆 Full Animal Profile',               body:"Tap any animal for their complete profile — photo, tag number, breed, age, and parentage. Everything in one place." },
+  { screen:'detail',       scrollTo:'events',          title:'📅 Full Event History',               body:"Every vaccination, shearing, lambing and worming logged with dates and notes. Nothing ever gets forgotten." },
+  { screen:'status',       scrollTo:'status-form',     title:'✏️ Update Status Anytime',            body:"Sold an animal? Lost one? Tap Edit and change their status. The full history is always preserved." },
+  { screen:'bulk_event',   scrollTo:'bulk-event',      title:'⚡ Select 1, a Few, or All',          body:"The real power: tap any animals you worked with today and log one event for all of them at once. And when you first set up, you can add your whole existing flock in one go too." },
+  { screen:'chickens',     scrollTo:null,              title:'🐔 Chickens Module',                  body:"Chickens get their own page with breed tracking and events like egg production and moulting. Always organised, never mixed up with your sheep." },
+  { screen:'plants',       scrollTo:'plants-list',     title:'🌱 Plants & Trees Too',               body:"Got an orchard or a veggie garden? Track your fruit trees, nut trees and gardens the same way — planted date, location, and care events. We won't dwell here, just wanted you to know it's here." },
+  { screen:'pnl',          scrollTo:'pnl-tiles',       title:'💰 Profit & Loss',                    body:"Filter by All, Sheep, or Chickens to see exactly which part of your farm earns the most. Every dollar in and out tracked automatically." },
+  { screen:'pnl',          scrollTo:'pnl-income',      title:'🥚 Egg Sales in Seconds',             body:"Select the dozen quantity, price auto-fills at $5/dozen — adjustable to whatever you charge. Tag the customer and you're done in seconds." },
+  { screen:'dash_bar',     scrollTo:'dash-filter',     title:'📊 Dashboard — Filter by Animal',     body:"Switch between All Animals, Sheep only, or Chickens only. Instantly see which part of your farm is most profitable." },
+  { screen:'dash_bar',     scrollTo:'dash-bar',        title:'📈 P&L Chart Over Time',              body:"Income vs expenses month by month. See trends at a glance — is revenue growing? Are feed costs spiking?" },
+  { screen:'dash_animals', scrollTo:'dash-sheep',      title:'🐑 Animal Breakdown',                 body:"Your sheep split by sex and status — instantly know how many ewes, rams and wethers you have, and what's alive vs sold." },
+  { screen:'dash_animals', scrollTo:'dash-chickens',   title:'🐔 Chickens by Breed',               body:"Running multiple breeds? See exactly how your chicken flock breaks down without digging through every record." },
+  { screen:'dash_customers',scrollTo:'dash-customers', title:'👥 Who\'s Spending Most',            body:"Your top customers ranked by spend, with egg dozens tracked per buyer. Know your best customers without a spreadsheet." },
+  { screen:'bulk',         scrollTo:'bulk-rows',       title:'📋 Getting Set Up is Fast',           body:"When you first join, fill in the rows for your existing animals and save them all at once. Your whole flock is in the app in minutes — then it runs itself." },
+  { screen:'sheep',        scrollTo:null,              title:'🌾 Ready to Start?',                  body:"Create your free account and have your farm set up in minutes. Your data is private — only you can see it.", isLast:true },
 ]
 
 // ─── Sheep SVG fallback ───────────────────────────────────────────────────────
@@ -63,8 +64,9 @@ function AnimalAvatar({ animal, size=56 }) {
 
 // ─── Fake Nav ─────────────────────────────────────────────────────────────────
 function FakeNav({ screen, isMobile }) {
-  const isAnimals   = !['pnl','dash_bar','dash_animals','dash_customers'].includes(screen)
-  const isPnL       = screen==='pnl'
+  const isAnimals   = !['pnl','dash_bar','dash_animals','dash_customers','plants'].includes(screen)
+  const isPlants    = screen === 'plants'
+  const isPnL       = screen === 'pnl'
   const isDashboard = screen.startsWith('dash')
   return (
     <div style={{ background:'#2c2416' }}>
@@ -79,7 +81,7 @@ function FakeNav({ screen, isMobile }) {
         </div>
       </div>
       <div style={{ display:'flex', borderTop:'1px solid rgba(255,255,255,0.06)', padding:'0 12px' }}>
-        {[['🐾','Animals',isAnimals,false],['🌱','Plants',false,false],['💰','P & L',isPnL,false],['📊','Dashboard',isDashboard,false]].map(([emoji,label,active])=>(
+        {[['🐾','Animals',isAnimals],['🌱','Plants',isPlants],['💰','P & L',isPnL],['📊','Dashboard',isDashboard]].map(([emoji,label,active])=>(
           <div key={label} style={{ padding:isMobile?'8px 10px':'10px 16px', display:'flex', alignItems:'center', gap:5, fontSize:isMobile?11:13, fontWeight:600, color:active?'#f0e6cc':'#6a5040', borderBottom:active?'2px solid #c8a060':'2px solid transparent', whiteSpace:'nowrap', cursor:'default' }}>
             <span>{emoji}</span><span>{label}</span>
           </div>
@@ -619,6 +621,64 @@ function BulkScreen({ highlight, isMobile }) {
   )
 }
 
+// ─── Plants Screen ────────────────────────────────────────────────────────────
+function PlantsScreen({ highlight, isMobile }) {
+  const catLabel = { fruit_tree:'Fruit Tree', nut_tree:'Nut Tree', vegetable:'Vegetable', herb:'Herb', flower:'Flower', other:'Other' }
+  const catEmoji = { fruit_tree:'🍎', nut_tree:'🌰', vegetable:'🥕', herb:'🌿', flower:'🌸', other:'🪴' }
+
+  return (
+    <div>
+      {/* Hero — green gradient */}
+      <div style={{ background:'linear-gradient(160deg,#1a2e1a 0%,#2d4a2d 50%,#3d6b3d 100%)', width:'100%' }}>
+        <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'16px 14px 0':'24px 24px 0' }}>
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:16 }}>
+            <div>
+              <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:32, fontWeight:700, color:'#d4f0d4', margin:'0 0 4px' }}>🌱 Plants & Trees</h1>
+              <p style={{ fontSize:12, color:'#7ab87a', margin:0 }}>{DEMO_PLANTS.length} plants · 1 category</p>
+            </div>
+            <button style={{ ...S.btn, background:'#4caf50', color:'#fff', fontWeight:700, padding:'9px 18px', flexShrink:0, fontSize:isMobile?12:14 }}>+ Add Plant</button>
+          </div>
+          {/* Plant strip */}
+          <div style={{ display:'flex', gap:14, paddingBottom:20, overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
+            {DEMO_PLANTS.map(p=>(
+              <div key={p.id} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, flexShrink:0, cursor:'pointer' }}>
+                <div style={{ width:isMobile?52:60, height:isMobile?52:60, borderRadius:'50%', overflow:'hidden', border:'3px solid rgba(255,255,255,0.2)', background:'rgba(255,255,255,0.08)' }}>
+                  <img src={p.photo_url} alt={p.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>{ e.target.style.display='none' }}/>
+                </div>
+                <span style={{ fontSize:9, fontWeight:700, color:'#a0d4a0', textTransform:'uppercase', whiteSpace:'nowrap', maxWidth:66, textAlign:'center', overflow:'hidden', textOverflow:'ellipsis' }}>{p.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Plant cards */}
+      <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'12px 12px':'16px 24px' }}>
+        <Hl id="plants-list" active={highlight==='plants-list'} style={{ display:'flex', flexDirection:'column', gap:10 }}>
+          {DEMO_PLANTS.map(p=>(
+            <div key={p.id} style={{ ...S.card, padding:isMobile?'12px 14px':'16px 20px', display:'flex', gap:14, alignItems:'center', cursor:'pointer' }}>
+              <div style={{ width:isMobile?52:64, height:isMobile?52:64, borderRadius:10, overflow:'hidden', flexShrink:0, background:'#e8f5e9', border:'2px solid #c8e6c9' }}>
+                <img src={p.photo_url} alt={p.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>{ e.target.style.fontSize='28px'; e.target.style.display='flex' }}/>
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
+                  <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:isMobile?14:16, margin:0 }}>{p.name}</p>
+                  <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:10, background:'#e8f5e9', color:'#2e7d32', textTransform:'uppercase' }}>
+                    {catEmoji[p.plant_category]} {catLabel[p.plant_category]}
+                  </span>
+                </div>
+                <p style={{ fontSize:11, color:'#a08060', margin:0 }}>{p.plant_subspecies} · {p.location} · Planted {p.planted_date?.slice(0,4)}</p>
+                {p.notes && <p style={{ fontSize:11, color:'#7a6648', margin:'2px 0 0', fontStyle:'italic' }}>{p.notes}</p>}
+              </div>
+              <span style={{ color:'#c8b89a', fontSize:18 }}>›</span>
+            </div>
+          ))}
+        </Hl>
+      </div>
+    </div>
+  )
+}
+
 // ─── Bulk Event Screen ────────────────────────────────────────────────────────
 function BulkEventScreen({ highlight, isMobile }) {
   const eventTypes = ['Hoof Trimming','Vaccination','Worming','Shearing','Custom']
@@ -759,6 +819,7 @@ export function DemoPage() {
     detail:         <DetailScreen       highlight={step.scrollTo} isMobile={isMobile}/>,
     status:         <StatusScreen       highlight={step.scrollTo} isMobile={isMobile}/>,
     bulk_event:     <BulkEventScreen    highlight={step.scrollTo} isMobile={isMobile}/>,
+    plants:         <PlantsScreen       highlight={step.scrollTo} isMobile={isMobile}/>,
     pnl:            <PnLScreen          highlight={step.scrollTo} isMobile={isMobile}/>,
     dash_bar:       <DashBarScreen      highlight={step.scrollTo} isMobile={isMobile}/>,
     dash_animals:   <DashAnimalsScreen  highlight={step.scrollTo} isMobile={isMobile}/>,

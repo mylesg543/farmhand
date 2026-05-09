@@ -88,53 +88,7 @@ export function LoginPage() {
           </div>
         </div>
 
-        {/* ── Tour CTA — hero button ── */}
-        {mode === 'login' && (
-          <button
-            onClick={() => window.location.href = '/demo'}
-            style={{
-              width: '100%',
-              padding: isMobile ? '18px 20px' : '20px 24px',
-              borderRadius: 14,
-              border: '2px solid rgba(200,160,96,0.5)',
-              background: 'rgba(200,160,96,0.12)',
-              cursor: 'pointer',
-              fontFamily: "'Lato',sans-serif",
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              backdropFilter: 'blur(4px)',
-              transition: 'all 0.2s',
-              textAlign: 'left',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,160,96,0.2)'; e.currentTarget.style.borderColor = 'rgba(200,160,96,0.8)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(200,160,96,0.12)'; e.currentTarget.style.borderColor = 'rgba(200,160,96,0.5)'; e.currentTarget.style.transform = '' }}
-          >
-            <div style={{ width: isMobile ? 44 : 52, height: isMobile ? 44 : 52, borderRadius: 12, background: '#c8a060', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? 22 : 26, flexShrink: 0 }}>
-              🌾
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: isMobile ? 15 : 16, fontWeight: 700, color: '#f0e6cc', marginBottom: 3 }}>
-                Take a Tour — See a Demo Farm
-              </div>
-              <div style={{ fontSize: 12, color: '#c8a878', lineHeight: 1.4 }}>
-                No account needed · Walk through animals, P&L &amp; dashboard in 2 min
-              </div>
-            </div>
-            <div style={{ fontSize: 20, color: '#c8a060', flexShrink: 0 }}>→</div>
-          </button>
-        )}
-
-        {/* Divider */}
-        {mode === 'login' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.1)' }}/>
-            <span style={{ fontSize: 11, color: '#7a6040', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em' }}>or sign in</span>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.1)' }}/>
-          </div>
-        )}
-
-        {/* Sign in / sign up card */}
+        {/* ── Sign in card ── */}
         <div style={{
           background: '#fff',
           borderRadius: 16,
@@ -202,7 +156,44 @@ export function LoginPage() {
           )}
         </div>
 
-        <p style={{ textAlign:'center', fontSize:11, color:'rgba(255,255,255,0.25)', marginTop:4 }}>
+        {/* ── Tour CTA — below the form, unmissable ── */}
+        {mode === 'login' && (
+          <>
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.12)' }}/>
+              <span style={{ fontSize:11, color:'rgba(255,255,255,0.35)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', whiteSpace:'nowrap' }}>not sure yet?</span>
+              <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.12)' }}/>
+            </div>
+
+            <button
+              onClick={() => window.location.href = '/demo'}
+              style={{
+                width:'100%', padding: isMobile?'18px 20px':'20px 24px',
+                borderRadius:14, border:'2px solid rgba(200,160,96,0.6)',
+                background:'rgba(200,160,96,0.1)', cursor:'pointer',
+                fontFamily:"'Lato',sans-serif", display:'flex', alignItems:'center',
+                gap:14, transition:'all 0.2s', textAlign:'left',
+              }}
+              onMouseEnter={e=>{ e.currentTarget.style.background='rgba(200,160,96,0.2)'; e.currentTarget.style.borderColor='rgba(200,160,96,1)'; e.currentTarget.style.transform='translateY(-2px)' }}
+              onMouseLeave={e=>{ e.currentTarget.style.background='rgba(200,160,96,0.1)'; e.currentTarget.style.borderColor='rgba(200,160,96,0.6)'; e.currentTarget.style.transform='' }}
+            >
+              <div style={{ width:isMobile?46:54, height:isMobile?46:54, borderRadius:12, background:'#c8a060', display:'flex', alignItems:'center', justifyContent:'center', fontSize:isMobile?22:26, flexShrink:0 }}>
+                🌾
+              </div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:isMobile?15:16, fontWeight:700, color:'#f0e6cc', marginBottom:3 }}>
+                  Take a Tour — See a Demo Farm
+                </div>
+                <div style={{ fontSize:12, color:'#c8a878', lineHeight:1.4 }}>
+                  No account needed · Walk through animals, P&L &amp; dashboard in 2 min
+                </div>
+              </div>
+              <div style={{ fontSize:20, color:'#c8a060', flexShrink:0 }}>→</div>
+            </button>
+          </>
+        )}
+
+        <p style={{ textAlign:'center', fontSize:11, color:'rgba(255,255,255,0.2)', marginTop:4 }}>
           Free to use · Private &amp; secure · No credit card
         </p>
       </div>
