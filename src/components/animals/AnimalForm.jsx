@@ -10,16 +10,19 @@ function FormInner({ existing, allAnimals, onSave, species = 'sheep' }) {
   const defaultSex = sexOptions[0].value
 
   const [form, setForm] = useState({
-    name:       existing?.name       || '',
-    tag_number: existing?.tag_number || '',
-    sex:        existing?.sex        || defaultSex,
-    birth_date: existing?.birth_date || '',
-    status:     existing?.status     || 'alive',
-    notes:      existing?.notes      || '',
-    breed:      existing?.breed      || '',
-    sire_id:    existing?.sire_id    || '',
-    dam_id:     existing?.dam_id     || '',
-    photo_url:  existing?.photo_url  || null,
+    name:           existing?.name           || '',
+    tag_number:     existing?.tag_number     || '',
+    sex:            existing?.sex            || defaultSex,
+    birth_date:     existing?.birth_date     || '',
+    status:         existing?.status         || 'alive',
+    notes:          existing?.notes          || '',
+    breed:          existing?.breed          || '',
+    sire_id:        existing?.sire_id        || '',
+    dam_id:         existing?.dam_id         || '',
+    photo_url:      existing?.photo_url      || null,
+    is_borrowed:    existing?.is_borrowed    || false,
+    arrival_date:   existing?.arrival_date   || '',
+    departure_date: existing?.departure_date || '',
   })
   const [errors,  setErrors]  = useState({})
   const [saving,  setSaving]  = useState(false)
@@ -62,9 +65,10 @@ function FormInner({ existing, allAnimals, onSave, species = 'sheep' }) {
     } catch (err) { setSaveErr(err.message); setSaving(false) }
   }
 
-  // Parentage options per species sex
+  // Include rented/borrowed rams as sire options too
   const maleOptions   = allAnimals.filter(a => ['ram','rooster','bull','boar','buck'].includes(a.sex) && a.id !== existing?.id)
   const femaleOptions = allAnimals.filter(a => ['ewe','hen','cow','sow','doe'].includes(a.sex)         && a.id !== existing?.id)
+  const isRented = form.status === 'rented'
 
   const isChicken  = species === 'chickens'
   const previewAnimal = { ...existing, ...form, id: existing?.id || 'preview', species }
@@ -127,10 +131,29 @@ function FormInner({ existing, allAnimals, onSave, species = 'sheep' }) {
             <Field label="Status">
               <select style={{ ...S.input, cursor: 'pointer' }} value={form.status} onChange={e => set('status', e.target.value)}>
                 <option value="alive">Alive</option>
+                <option value="rented">Rented / Borrowed</option>
                 <option value="sold">Sold</option>
                 <option value="deceased">Deceased</option>
               </select>
             </Field>
+
+            {/* Rented fields — arrival/departure */}
+            {isRented && (
+              <div style={{ background:'#fff9e6', border:'1px solid #ffe082', borderRadius:10, padding:'14px 16px', marginBottom:4 }}>
+                <p style={{ fontSize:11, fontWeight:700, color:'#f57f17', textTransform:'uppercase', letterSpacing:'0.06em', margin:'0 0 12px' }}>
+                  🐑 Rented Animal Dates
+                </p>
+                <Field label="Arrival Date">
+                  <input type="date" style={S.input} value={form.arrival_date} onChange={e => set('arrival_date', e.target.value)} />
+                </Field>
+                <Field label="Departure Date (leave blank if still here)">
+                  <input type="date" style={S.input} value={form.departure_date} onChange={e => set('departure_date', e.target.value)} />
+                </Field>
+                <p style={{ fontSize:11, color:'#a08060', margin:'4px 0 0' }}>
+                  This ram will still appear as a sire option for any lambs born during this period.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Photo */}
@@ -171,7 +194,16 @@ function FormInner({ existing, allAnimals, onSave, species = 'sheep' }) {
             <Field label={isChicken ? "Sire / Father (optional)" : "Sire (Father)"}>
               <select style={{ ...S.input, cursor: 'pointer' }} value={form.sire_id} onChange={e => set('sire_id', e.target.value)}>
                 <option value="">— Unknown —</option>
-                {maleOptions.map(r => <option key={r.id} value={r.id}>{r.name} ({r.tag_number})</option>)}
+                {maleOptions.filter(r => r.status !== 'rented').map(r => (
+                  <option key={r.id} value={r.id}>{r.name}{r.tag_number && !r.tag_number.startsWith('AUTO-') ? ` (${r.tag_number})` : ''}</option>
+                ))}
+                {maleOptions.filter(r => r.status === 'rented').length > 0 && (
+                  <optgroup label="Rented / Borrowed">
+                    {maleOptions.filter(r => r.status === 'rented').map(r => (
+                      <option key={r.id} value={r.id}>🐑 {r.name} (rented{r.arrival_date ? `, arrived ${r.arrival_date}` : ''})</option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </Field>
             <Field label={isChicken ? "Dam / Mother (optional)" : "Dam (Mother)"}>

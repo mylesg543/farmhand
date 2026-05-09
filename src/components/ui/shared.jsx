@@ -92,10 +92,11 @@ export const STATUS_STYLES = {
   alive:    { bg: '#e8f5e9', text: '#2e7d32' },
   sold:     { bg: '#f3e5f5', text: '#6a1b9a' },
   deceased: { bg: '#fafafa', text: '#616161' },
+  rented:   { bg: '#fff9e6', text: '#f57f17' },
 }
 
 export const STATUS_DOT = {
-  alive: '#4caf50', sold: '#9c27b0', deceased: '#9e9e9e',
+  alive: '#4caf50', sold: '#9c27b0', deceased: '#9e9e9e', rented: '#f9a825',
 }
 
 // Legacy — kept for components that use it directly

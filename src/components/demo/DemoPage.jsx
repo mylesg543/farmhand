@@ -12,7 +12,7 @@ const STEPS = [
   { screen:'detail',       scrollTo:null,           title:'👆 Bella\'s Full Profile',       body:"Tap any animal for their full profile — photo, tag number, breed, age, and who their parents are. All in one place." },
   { screen:'detail',       scrollTo:'events',       title:'📅 Full Event History',          body:"Every vaccination, shearing, lambing, and worming is logged with the date and notes. Nothing ever gets forgotten." },
   { screen:'status',       scrollTo:'status-form',  title:'✏️ Update Animal Status',        body:"When an animal is sold or passes away, tap Edit and change their status. The history is always preserved — you'll always know what happened." },
-  { screen:'bulk_event',   scrollTo:'bulk-event',   title:'⚡ Bulk Events — Save Hours',    body:"Did you trim all the hooves today? Vaccinate the whole flock? Select all and log one event for every animal at once. No repetitive clicking." },
+  { screen:'bulk_event',   scrollTo:'bulk-event',   title:'⚡ Bulk Events — 1, a Few, or All', body:"Trimmed just 5 of your 10 sheep today? Select exactly those 5 and log it once. Or select all for vaccinations. You choose how many — one tap per animal, one save for all of them." },
   { screen:'chickens',     scrollTo:null,           title:'🐔 Chickens Module',             body:"Chickens get their own page with breed tracking and events like egg production and moulting. Separate from sheep, always organised." },
   { screen:'pnl',          scrollTo:'pnl-tiles',    title:'💰 Profit & Loss',               body:"Filter by All, Sheep, or Chickens to see exactly which part of your farm earns the most. Every dollar in and out is tracked automatically." },
   { screen:'pnl',          scrollTo:'pnl-income',   title:'🥚 Egg Sales in Seconds',        body:"Select the dozen quantity and the price auto-fills — $5/dozen by default but fully adjustable to whatever you charge. Tag the customer and you're done." },
@@ -622,46 +622,59 @@ function BulkScreen({ highlight, isMobile }) {
 // ─── Bulk Event Screen ────────────────────────────────────────────────────────
 function BulkEventScreen({ highlight, isMobile }) {
   const eventTypes = ['Hoof Trimming','Vaccination','Worming','Shearing','Custom']
+  const allAnimals = [...DEMO_SHEEP, ...DEMO_CHICKENS.slice(0,5)]
+  const selectedIds = ['s1','s2','s3','s4','s5'] // 5 of 10 selected
+
   return (
     <div>
       <div style={{ background:'linear-gradient(160deg,#2c2416 0%,#4a3520 40%,#6b4f2e 100%)', width:'100%' }}>
         <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'16px 14px 20px':'28px 24px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
-            <div style={{ width:8, height:8, borderRadius:'50%', background:'#c8a060' }}/>
-            <span style={{ fontSize:isMobile?13:15, fontWeight:700, color:'#f0e6cc' }}>3 animals selected</span>
+            <div style={{ background:'rgba(200,160,96,0.2)', border:'1px solid rgba(200,160,96,0.4)', borderRadius:8, padding:'6px 12px', fontSize:13, fontWeight:700, color:'#c8a060' }}>
+              5 of 10 selected
+            </div>
+            <span style={{ fontSize:13, color:'#a08060' }}>— select 1, a few, or all</span>
             <button style={{ ...S.btn, background:'rgba(255,255,255,0.1)', color:'#ef9a9a', border:'1px solid rgba(255,80,80,0.3)', padding:'5px 10px', fontSize:12, marginLeft:'auto' }}>✕ Cancel</button>
           </div>
           <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?22:28, fontWeight:700, color:'#f0e6cc', margin:'0 0 4px' }}>⚡ Bulk Add Event</h1>
-          <p style={{ fontSize:12, color:'#a08060', margin:0 }}>Adding to: <strong style={{ color:'#c8a878' }}>Bella, Duke, Rosie</strong></p>
+          <p style={{ fontSize:12, color:'#a08060', margin:0 }}>Logging for: <strong style={{ color:'#c8a878' }}>Bella, Duke, Rosie, Clover, Biscuit</strong></p>
         </div>
       </div>
       <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'12px 12px':'16px 24px' }}>
-        {/* Selected animals preview */}
-        <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap' }}>
-          {DEMO_SHEEP.slice(0,3).map(a=>{
-            const st=STATUS_STYLES[a.status]||STATUS_STYLES.alive
-            return (
-              <div key={a.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 12px', background:'#fff', borderRadius:8, border:'1px solid #e8e0d0', boxShadow:'0 1px 4px rgba(44,36,22,0.06)' }}>
-                <div style={{ width:32, height:32, borderRadius:'50%', overflow:'hidden', border:'2px solid #e8e0d0', flexShrink:0 }}>
-                  <AnimalAvatar animal={a} size={32}/>
+
+        {/* Animal selection grid */}
+        <div style={{ marginBottom:16 }}>
+          <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.08em', margin:'0 0 8px' }}>Tap to select / deselect</p>
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+            {[...DEMO_SHEEP, ...DEMO_CHICKENS.slice(0,5)].map(a=>{
+              const isSel = selectedIds.includes(a.id)
+              const st = STATUS_STYLES[a.status]||STATUS_STYLES.alive
+              return (
+                <div key={a.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 12px', background:isSel?'#2c2416':'#fff', borderRadius:8, border:isSel?'2px solid #c8a060':'1px solid #e8e0d0', cursor:'pointer', transition:'all 0.15s' }}>
+                  <div style={{ width:28, height:28, borderRadius:'50%', overflow:'hidden', flexShrink:0, border:`2px solid ${isSel?'#c8a060':'#e8e0d0'}` }}>
+                    <AnimalAvatar animal={a} size={28}/>
+                  </div>
+                  <span style={{ fontSize:13, fontWeight:600, color:isSel?'#f0e6cc':'#2c2416', whiteSpace:'nowrap' }}>{a.name}</span>
+                  {isSel && <span style={{ fontSize:12, color:'#c8a060' }}>✓</span>}
                 </div>
-                <span style={{ fontSize:13, fontWeight:600 }}>{a.name}</span>
-                <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:8, background:st.bg, color:st.text, textTransform:'uppercase' }}>{a.status}</span>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
 
         <Hl id="bulk-event" active={highlight==='bulk-event'} style={{ ...S.card, padding:isMobile?16:24 }}>
-          <span style={S.sectionLabel}>Log Event for All 3 Animals</span>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:8 }}>
+            <span style={S.sectionLabel}>Log Event for 5 Animals</span>
+            <div style={{ display:'flex', gap:8 }}>
+              <button style={{ ...S.btn, ...S.btnSecondary, padding:'5px 10px', fontSize:12 }}>Select All 10</button>
+              <button style={{ ...S.btn, background:'#f0e8d8', color:'#5a3e1b', border:'1px solid #d0c4b0', padding:'5px 10px', fontSize:12 }}>Clear</button>
+            </div>
+          </div>
           <div style={{ marginBottom:16 }}>
             <label style={S.label}>Event Type</label>
             <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
               {eventTypes.map((t,i)=>(
-                <button key={t} style={{ ...S.btn, padding:'8px 14px', fontSize:13,
-                  background:i===0?'#5a3e1b':'#fff',
-                  color:i===0?'#fff':'#7a6648',
-                  border:i===0?'none':'1px solid #d0c4b0' }}>
+                <button key={t} style={{ ...S.btn, padding:'8px 14px', fontSize:13, background:i===0?'#5a3e1b':'#fff', color:i===0?'#fff':'#7a6648', border:i===0?'none':'1px solid #d0c4b0' }}>
                   {t}
                 </button>
               ))}
@@ -678,10 +691,10 @@ function BulkEventScreen({ highlight, isMobile }) {
             </div>
           </div>
           <div style={{ background:'#fff9e6', border:'1px solid #ffe082', borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:13, color:'#f57f17' }}>
-            ✓ This event will be logged for <strong>Bella, Duke and Rosie</strong> all at once.
+            ✓ This event will be logged for <strong>5 sheep</strong> at once — the other 5 are unaffected.
           </div>
           <div style={{ display:'flex', gap:10 }}>
-            <button style={{ ...S.btn, ...S.btnPrimary, flex:isMobile?1:0, justifyContent:'center', padding:'10px 24px' }}>Save Event for 3 Animals</button>
+            <button style={{ ...S.btn, ...S.btnPrimary, flex:isMobile?1:0, justifyContent:'center', padding:'10px 24px' }}>Save for 5 Animals</button>
             <button style={{ ...S.btn, ...S.btnSecondary }}>Cancel</button>
           </div>
         </Hl>
