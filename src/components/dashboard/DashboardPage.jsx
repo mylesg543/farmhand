@@ -49,6 +49,11 @@ function DonutChart({ segments, centerLabel, centerValue }) {
   const total=segments.reduce((s,sg)=>s+sg.value,0)
   if(!total) return <div style={{ textAlign:'center', padding:'32px 0', color:'#a08060', fontSize:13 }}>No data yet</div>
   const size=160, r=60, cx=size/2, cy=size/2
+  const activeSegs=segments.filter(sg=>sg.value>0)
+
+  // Single segment = full circle (SVG arc can't do 360°)
+  const isSingle=activeSegs.length===1
+
   let angle=-90
   const paths=segments.map(sg=>{
     const pct=sg.value/total, start=angle, end=angle+pct*360; angle=end
@@ -60,7 +65,10 @@ function DonutChart({ segments, centerLabel, centerValue }) {
     <div style={{ display:'flex', alignItems:'center', gap:20, flexWrap:'wrap' }}>
       <div style={{ flexShrink:0 }}>
         <svg width={size} height={size}>
-          {paths.map((p,i)=><path key={i} d={p.d} fill={p.color} opacity={0.9}/>)}
+          {isSingle
+            ? <circle cx={cx} cy={cy} r={r} fill={activeSegs[0].color} opacity={0.9}/>
+            : paths.map((p,i)=><path key={i} d={p.d} fill={p.color} opacity={0.9}/>)
+          }
           <circle cx={cx} cy={cy} r={38} fill="#fff"/>
           <text x={cx} y={cy-5} textAnchor="middle" fontSize={11} fill="#a08060" fontWeight={600}>{centerLabel}</text>
           <text x={cx} y={cy+12} textAnchor="middle" fontSize={14} fill="#2c2416" fontWeight={700} style={{ fontFamily:"'Playfair Display',serif" }}>{centerValue}</text>
