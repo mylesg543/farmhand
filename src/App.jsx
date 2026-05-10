@@ -12,6 +12,7 @@ import { PlantsPage } from './components/plants/PlantsPage'
 import { PnLPage } from './components/costs/PnLPage'
 import { DashboardPage } from './components/dashboard/DashboardPage'
 import { CustomersPage } from './components/customers/CustomersPage'
+import { LineagePage } from './components/lineage/LineagePage'
 import { DemoPage } from './components/demo/DemoPage'
 
 // ─── Responsive hook ──────────────────────────────────────────────────────────
@@ -185,6 +186,10 @@ function DesktopNav({ user, isAdmin, navigate, location, signOut }) {
             <span style={{ fontSize: 15 }}>📊</span>Dashboard
           </button>
           <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '8px 4px' }} />
+          <button onClick={() => navigate('/lineage')} style={tabStyle(location.pathname.startsWith('/lineage'))}>
+            <span style={{ fontSize: 15 }}>🌳</span>Lineage
+          </button>
+          <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '8px 4px' }} />
           <button onClick={() => navigate('/customers')} style={tabStyle(location.pathname.startsWith('/customers'))}>
             <span style={{ fontSize: 15 }}>👥</span>Customers
           </button>
@@ -297,6 +302,7 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
       {sheet === 'more' && (
         <MobileSheet title="More" onClose={() => setSheet(null)}>
           {sheetItem('🌱', 'Plants & Trees', 'Manage your plants', () => { setSheet(null); navigate('/plants') })}
+          {sheetItem('🌳', 'Lineage',        'Family tree for your flock', () => { setSheet(null); navigate('/lineage') })}
           {sheetItem('👥', 'Customers',       'Manage your buyers', () => { setSheet(null); navigate('/customers') })}
           {isAdmin && sheetItem('🔒', 'Admin Portal', 'View all farms', () => { setSheet(null); navigate('/admin') })}
           {sheetItem('👤', user?.email?.split('@')[0] || 'Account', user?.email, null)}
@@ -354,7 +360,7 @@ function FarmApp() {
         <Route path="/pnl"               element={<PnLPage />} />
         <Route path="/dashboard"         element={<DashboardPage />} />
         <Route path="/customers"         element={<CustomersPage />} />
-        <Route path="/demo"              element={<DemoPage />} />
+        <Route path="/lineage"           element={<LineagePage />} />
         <Route path="/admin"             element={<AdminPage />} />
       </Routes>
     </div>
