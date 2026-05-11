@@ -40,17 +40,20 @@ function buildSteps(species) {
   return [
     { screen:'flock',   scrollTo:null,              tip:`Welcome to FarmHand. This is your ${label} — every animal you raise, in one place.` },
     { screen:'flock',   scrollTo:'your-animal',     tip:`That's {name} at the top. Photo, status, breed, and age — all at a glance.` },
-    { screen:'profile', scrollTo:null,              tip:`{name}'s full profile — age, breed, tag, and ${isSheep?'health events':'egg history'}. Everything in one place.` },
+    { screen:'profile', scrollTo:null,              tip:`{name}'s full profile — age, breed, tag, and ${isSheep?'health history':'egg history'}. See that 🌳 Lineage button? Tap it from any animal to trace their bloodlines.` },
     { screen:'profile', scrollTo:'events',          tip:`Every event logged here with dates and notes. ${isSheep?'Vaccinations, lambing, shearing':'Egg production, illness, moulting'} — all searchable.` },
     { screen:'event',   scrollTo:'event-form',      tip:`Log an event for {name} — pick what happened, add a note, save it.`, eventTypes:isSheep?['vaccination','worming','hoof_trimming','shearing','sickness','lambing']:['vaccination','egg_production','moulting','sickness','custom'] },
     { screen:'bulk',    scrollTo:'bulk-chips',      tip:`${isSheep?'Trimmed hooves on a few today?':'Wormed the whole flock?'} Tap which ones — log it once for all of them.` },
     { screen:'bulk',    scrollTo:'bulk-save',       tip:`One save, logged on every selected animal. Whether it's 2 or 20.` },
+    { screen:'lineage', scrollTo:'lineage-intro', tip:`This is the family tree for {name}. 4 generations — built automatically as you record sires and dams. No spreadsheet, no paper studbook.` },
+    { screen:'lineage', scrollTo:'lineage-tree',  tip:`Great-grandparents at the top, {name} at the bottom. Every bloodline in rows. Tap any ancestor to jump to their tree.` },
+    { screen:'lineage', scrollTo:'lineage-warn',  tip:`${isSheep?`And if two sheep share an ancestor, FarmHand flags it. No guessing before breeding season.`:`Track your rooster's bloodlines across hatches. FarmHand flags shared ancestors automatically.`}` },
     { screen:'pnl',     scrollTo:'pnl-top',         tip:`Every dollar tracked as you go. No spreadsheet — just log it and the P&L updates instantly.` },
     { screen:'dash1',   scrollTo:'dash-chart',      tip:`The dashboard shows income vs expenses month by month. See your trends before they become problems.` },
-    { screen:'dash2',   scrollTo:'dash-animals',    tip:`See your ${isSheep?'sheep':'chickens'} broken down by sex, status, and ${isSheep?'breed — how many ewes vs rams, alive vs sold':'breed — hens vs roosters, how the flock is composed'}.` },
-    { screen:'dash3',   scrollTo:'dash-donuts',     tip:`Income breakdown and expense breakdown as pie charts — see at a glance what's driving your revenue and your costs.` },
-    { screen:'dash4',   scrollTo:'dash-cust-pie',   tip:`Revenue by customer as a pie chart. See who your best buyers are and exactly how much each has spent.` },
-    { screen:'plants',  scrollTo:'plants-list',     tip:`Got an orchard or a veggie garden? Plants and trees get their own page too — location, planted date, and care events. Quick look, then we'll wrap up.` },
+    { screen:'dash2',   scrollTo:'dash-animals',    tip:`See your ${isSheep?'sheep':'chickens'} broken down by sex, status, and breed.` },
+    { screen:'dash3',   scrollTo:'dash-donuts',     tip:`Income and expense breakdown as pie charts — see what's driving your revenue and your costs.` },
+    { screen:'dash4',   scrollTo:'dash-cust-pie',   tip:`Revenue by customer. See who your best buyers are and exactly how much each has spent.` },
+    { screen:'plants',  scrollTo:'plants-list',     tip:`Got an orchard or a veggie garden? Plants and trees get their own page too. Quick look, then we'll wrap up.` },
     { screen:'bulkadd', scrollTo:'bulk-rows',       tip:`Getting started? Add your whole existing ${label} in one go. Name is all you need. Done in minutes.` },
     { screen:'flock',   scrollTo:null,              tip:`That's FarmHand. Ready to set up your real farm?`, isLast:true },
   ]
@@ -58,7 +61,7 @@ function buildSteps(species) {
 
 function Nav({ screen, species, isMobile }) {
   const isAnimals=['flock','profile','event','bulk','bulkadd'].includes(screen)
-  const isPnL=screen==='pnl', isDash=screen.startsWith('dash'), isPlants=screen==='plants'
+  const isPnL=screen==='pnl', isDash=screen.startsWith('dash'), isPlants=screen==='plants', isLineage=screen==='lineage'
   return (
     <div style={{ background:'#2c2416' }}>
       <div style={{ display:'flex',alignItems:'center',padding:'0 16px',height:isMobile?44:52,gap:10 }}>
@@ -66,8 +69,8 @@ function Nav({ screen, species, isMobile }) {
         <div style={{ marginLeft:'auto',fontSize:11,color:'#a08060' }}>demo farm</div>
       </div>
       <div style={{ display:'flex',borderTop:'1px solid rgba(255,255,255,0.07)',padding:'0 8px' }}>
-        {[[`${species==='sheep'?'🐑':'🐔'} ${species==='sheep'?'Sheep':'Chickens'}`,isAnimals],['🌱 Plants',isPlants],['💰 P & L',isPnL],['📊 Dashboard',isDash]].map(([l,a])=>(
-          <div key={l} style={{ padding:isMobile?'8px 8px':'10px 14px',fontSize:isMobile?10:13,fontWeight:600,color:a?'#f0e6cc':'#6a5040',borderBottom:a?'2px solid #c8a060':'2px solid transparent',whiteSpace:'nowrap' }}>{l}</div>
+        {[[`${species==='sheep'?'🐑':'🐔'} ${species==='sheep'?'Sheep':'Chickens'}`,isAnimals],['🌳 Lineage',isLineage],['🌱 Plants',isPlants],['💰 P & L',isPnL],['📊 Dashboard',isDash]].map(([l,a])=>(
+          <div key={l} style={{ padding:isMobile?'8px 8px':'10px 12px',fontSize:isMobile?10:12,fontWeight:600,color:a?'#f0e6cc':'#6a5040',borderBottom:a?'2px solid #c8a060':'2px solid transparent',whiteSpace:'nowrap' }}>{l}</div>
         ))}
       </div>
     </div>
@@ -93,57 +96,79 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
 }
 
 function FlockScreen({ name, species, highlight, isMobile }) {
-  const animals=species==='sheep'?DEMO_SHEEP:DEMO_CHICKENS
-  const isSheep=species==='sheep'
-  const display=animals.map((a,i)=>i===0?{...a,name}:a)
-  const alive=animals.filter(a=>a.status==='alive').length, sold=animals.filter(a=>a.status==='sold').length
+  const animals  = species==='sheep' ? DEMO_SHEEP : DEMO_CHICKENS
+  const isSheep  = species==='sheep'
+  const display  = animals.map((a,i) => i===0 ? {...a, name} : a)
+  const active   = display.filter(a => a.status==='alive' || a.status==='rented')
+  const inactive = display.filter(a => a.status!=='alive' && a.status!=='rented')
+  const hero     = [...active, ...inactive]
+  const [filter, setFilter] = useState('alive')
+  const listItems = filter==='alive' ? active : filter==='sold' ? display.filter(a=>a.status==='sold') : filter==='deceased' ? display.filter(a=>a.status==='deceased') : display
+
   return (
     <div>
-      <div style={{ background:'linear-gradient(160deg,#2c2416 0%,#4a3520 40%,#6b4f2e 100%)',width:'100%' }}>
-        <div style={{ maxWidth:1100,margin:'0 auto',padding:isMobile?'18px 14px 0':'28px 24px 0' }}>
-          <div style={{ display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:16 }}>
-            <div>
-              <h1 style={{ fontFamily:"'Playfair Display',serif",fontSize:isMobile?24:34,fontWeight:700,color:'#f0e6cc',margin:'0 0 4px' }}>{isSheep?'🐑':'🐔'} Your {isSheep?'Flock':'Chickens'}</h1>
-              <p style={{ fontSize:12,color:'#a08060',margin:0 }}>{alive} alive{sold>0?` · ${sold} sold`:''}</p>
-            </div>
-            <button style={{ ...S.btn,background:'#c8a060',color:'#2c2416',fontWeight:700,padding:'9px 16px',fontSize:13 }}>+ Add {isSheep?'Sheep':'Chicken'}</button>
-          </div>
-          <div style={{ display:'flex',gap:12,paddingBottom:20,overflowX:'auto',WebkitOverflowScrolling:'touch' }}>
-            {display.map(a=>(
-              <div key={a.id} style={{ display:'flex',flexDirection:'column',alignItems:'center',gap:4,flexShrink:0 }}>
-                <div style={{ position:'relative' }}>
-                  <div style={{ width:isMobile?50:60,height:isMobile?50:60,borderRadius:'50%',overflow:'hidden',border:`3px solid ${STATUS_DOT[a.status]||'#9e9e9e'}` }}><Avatar animal={a} size={isMobile?50:60}/></div>
-                  <div style={{ width:8,height:8,borderRadius:'50%',background:STATUS_DOT[a.status]||'#9e9e9e',position:'absolute',bottom:1,right:1,border:'2px solid #2c2416' }}/>
-                </div>
-                <span style={{ fontSize:9,fontWeight:700,color:'#c8a878',textTransform:'uppercase',maxWidth:60,textAlign:'center',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{a.name}</span>
+      <div style={{ background:'linear-gradient(160deg,#2c2416 0%,#4a3520 40%,#6b4f2e 100%)', width:'100%' }}>
+        <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'18px 14px 0':'28px 24px 0' }}>
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:16 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+              <div>
+                <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:34, fontWeight:700, color:'#f0e6cc', margin:'0 0 3px' }}>{isSheep?'🐑':'🐔'} Your {isSheep?'Flock':'Chickens'}</h1>
+                <p style={{ fontSize:12, color:'#a08060', margin:0 }}>{active.length} active{inactive.length>0?` · ${inactive.filter(a=>a.status==='sold').length} sold`:''}</p>
               </div>
-            ))}
+              <div style={{ background:'rgba(200,160,96,0.2)', border:'1px solid rgba(200,160,96,0.4)', borderRadius:12, padding:isMobile?'8px 12px':'10px 16px', textAlign:'center', flexShrink:0 }}>
+                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?22:28, fontWeight:700, color:'#c8a060', lineHeight:1 }}>{active.length}</div>
+                <div style={{ fontSize:9, color:'#a08060', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', marginTop:2 }}>Active</div>
+              </div>
+            </div>
+            <button style={{ ...S.btn, background:'#c8a060', color:'#2c2416', fontWeight:700, padding:'9px 16px', fontSize:13, flexShrink:0 }}>+ Add {isSheep?'Sheep':'Chicken'}</button>
+          </div>
+          {/* Hero strip — active first, inactive greyed with red dot */}
+          <div style={{ display:'flex', gap:isMobile?10:14, paddingBottom:20, overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
+            {hero.map(a => {
+              const isInactive = a.status!=='alive' && a.status!=='rented'
+              return (
+                <div key={a.id} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, flexShrink:0, opacity:isInactive?0.45:1 }}>
+                  <div style={{ position:'relative' }}>
+                    <div style={{ width:isMobile?50:60, height:isMobile?50:60, borderRadius:'50%', overflow:'hidden', border:`3px solid ${isInactive?'#666':(STATUS_DOT[a.status]||'#9e9e9e')}`, filter:isInactive?'grayscale(0.7)':'none' }}>
+                      <Avatar animal={a} size={isMobile?50:60}/>
+                    </div>
+                    <div style={{ width:9, height:9, borderRadius:'50%', background:isInactive?'#c62828':(STATUS_DOT[a.status]||'#9e9e9e'), position:'absolute', bottom:1, right:1, border:'2px solid #2c2416' }}/>
+                  </div>
+                  <span style={{ fontSize:9, fontWeight:700, color:isInactive?'#6a5040':'#c8a878', textTransform:'uppercase', whiteSpace:'nowrap', maxWidth:60, overflow:'hidden', textOverflow:'ellipsis', textAlign:'center' }}>{a.name}</span>
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
-      <div style={{ maxWidth:1100,margin:'0 auto',padding:isMobile?'12px':'16px 24px' }}>
-        <div style={{ display:'flex',gap:6,marginBottom:12,flexWrap:'wrap' }}>
-          {['All '+animals.length,'Alive '+alive,...(sold>0?['Sold '+sold]:[])].map((f,i)=>(
-            <button key={f} style={{ ...S.btn,padding:'5px 12px',fontSize:12,background:i===0?'#5a3e1b':'#fff',color:i===0?'#fff':'#7a6648',border:'1px solid #d0c4b0' }}>{f}</button>
+      <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'12px':'16px 24px' }}>
+        <div style={{ display:'flex', gap:6, marginBottom:12, flexWrap:'wrap' }}>
+          {[['alive',`Active ${active.length}`],['all',`All ${display.length}`],...(inactive.filter(a=>a.status==='sold').length>0?[['sold',`Sold ${inactive.filter(a=>a.status==='sold').length}`]]:[])].map(([k,l])=>(
+            <button key={k} onClick={()=>setFilter(k)} style={{ ...S.btn, padding:'5px 12px', fontSize:12, background:filter===k?'#5a3e1b':'#fff', color:filter===k?'#fff':'#7a6648', border:'1px solid #d0c4b0' }}>{l}</button>
           ))}
         </div>
-        {display.map((a,i)=>{
-          const st=STATUS_STYLES[a.status]||STATUS_STYLES.alive, isYours=i===0
-          const sub=isSheep?`${a.sex==='ewe'?'Ewe':a.sex==='ram'?'Ram':'Wether'} · ${a.breed} · ${calcAge(a.birth_date)}`:`${a.sex==='hen'?'Hen':a.sex==='rooster'?'Rooster':'Chick'} · ${a.breed} · ${calcAge(a.birth_date)}`
+        {listItems.map((a,i) => {
+          const st = STATUS_STYLES[a.status]||STATUS_STYLES.alive
+          const isActive = a.status==='alive'||a.status==='rented'
+          const isYours  = i===0 && filter==='alive'
+          const sub = isSheep ? `${a.sex==='ewe'?'Ewe':a.sex==='ram'?'Ram':'Wether'} · ${a.breed} · ${calcAge(a.birth_date)}` : `${a.sex==='hen'?'Hen':a.sex==='rooster'?'Rooster':'Chick'} · ${a.breed} · ${calcAge(a.birth_date)}`
           return (
             <div key={a.id} id={isYours?'your-animal':undefined}
-              style={{ ...S.card,padding:isMobile?'10px 12px':'14px 18px',marginBottom:8,display:'flex',gap:12,alignItems:'center',cursor:'pointer',
+              style={{ ...S.card, padding:isMobile?'10px 12px':'14px 18px', marginBottom:8, display:'flex', gap:12, alignItems:'center', cursor:'pointer',
+                opacity:!isActive?0.65:1,
                 outline:highlight==='your-animal'&&isYours?'3px solid #c8a060':'none',
-                boxShadow:highlight==='your-animal'&&isYours?'0 0 0 6px rgba(200,160,96,0.2)':'none',transition:'all 0.25s' }}>
-              <div style={{ width:isMobile?44:52,height:isMobile?44:52,borderRadius:'50%',overflow:'hidden',border:'2px solid #e8e0d0',flexShrink:0 }}><Avatar animal={a} size={isMobile?44:52}/></div>
-              <div style={{ flex:1,minWidth:0 }}>
-                <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:2 }}>
-                  <p style={{ fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:isMobile?14:16,margin:0 }}>{a.name}</p>
-                  <span style={{ fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:10,background:st.bg,color:st.text,textTransform:'uppercase' }}>{a.status}</span>
-                </div>
-                <p style={{ fontSize:11,color:'#a08060',margin:0 }}>{sub}</p>
+                boxShadow:highlight==='your-animal'&&isYours?'0 0 0 6px rgba(200,160,96,0.2)':'none', transition:'all 0.25s' }}>
+              <div style={{ width:isMobile?44:52, height:isMobile?44:52, borderRadius:'50%', overflow:'hidden', border:'2px solid #e8e0d0', flexShrink:0, filter:!isActive?'grayscale(0.5)':'none' }}>
+                <Avatar animal={a} size={isMobile?44:52}/>
               </div>
-              <span style={{ color:'#c8b89a',fontSize:18 }}>›</span>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:2 }}>
+                  <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:isMobile?14:16, margin:0 }}>{a.name}</p>
+                  <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:10, background:st.bg, color:st.text, textTransform:'uppercase' }}>{a.status}</span>
+                </div>
+                <p style={{ fontSize:11, color:'#a08060', margin:0 }}>{sub}</p>
+              </div>
+              <span style={{ color:'#c8b89a', fontSize:18 }}>›</span>
             </div>
           )
         })}
@@ -186,12 +211,71 @@ function ProfileScreen({ name, species, highlight, isMobile }) {
                 ))}
               </div>
             </div>
-            {!isMobile&&<button style={{ ...S.btn,background:'rgba(255,255,255,0.1)',color:'#f0e6cc',border:'1px solid rgba(255,255,255,0.2)',padding:'7px 14px',fontSize:13,flexShrink:0 }}>Edit</button>}
+            {!isMobile&&(
+              <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+                <button style={{ ...S.btn,background:'rgba(255,255,255,0.1)',color:'#f0e6cc',border:'1px solid rgba(255,255,255,0.2)',padding:'7px 14px',fontSize:13 }}>Edit</button>
+                {species==='sheep'&&(
+                  <button style={{ ...S.btn, background:'rgba(76,175,80,0.2)', color:'#a5d6a7', border:'1px solid rgba(76,175,80,0.35)', padding:'7px 14px', fontSize:13, fontWeight:700 }}>
+                    🌳 Lineage
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-          {isMobile&&<div style={{ marginTop:12 }}><button style={{ ...S.btn,width:'100%',justifyContent:'center',background:'rgba(255,255,255,0.1)',color:'#f0e6cc',border:'1px solid rgba(255,255,255,0.2)' }}>✎ Edit</button></div>}
+          {isMobile&&(
+            <div style={{ marginTop:12, display:'flex', gap:8 }}>
+              <button style={{ ...S.btn,flex:1,justifyContent:'center',background:'rgba(255,255,255,0.1)',color:'#f0e6cc',border:'1px solid rgba(255,255,255,0.2)' }}>✎ Edit</button>
+              {species==='sheep'&&(
+                <button style={{ ...S.btn, flex:1, justifyContent:'center', background:'rgba(76,175,80,0.2)', color:'#a5d6a7', border:'1px solid rgba(76,175,80,0.35)', fontWeight:700 }}>
+                  🌳 Lineage
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <div style={{ maxWidth:1100,margin:'0 auto',padding:isMobile?'12px':'16px 24px' }}>
+        {/* Mini lineage preview — sheep only */}
+        {species==='sheep' && (
+          <div style={{ ...S.card, padding:isMobile?14:20, marginBottom:14 }}>
+            <div style={{ display:'flex', alignItems:'center', marginBottom:14 }}>
+              <span style={{ fontSize:10, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em' }}>🌳 Lineage</span>
+              <button style={{ ...S.btn, marginLeft:'auto', background:'#f0ebe4', color:'#5a3e1b', border:'1px solid #d0c4b0', padding:'6px 12px', fontSize:12, fontWeight:600 }}>
+                View Full Tree →
+              </button>
+            </div>
+            <div style={{ display:'flex', gap:isMobile?14:24, alignItems:'center', flexWrap:'wrap' }}>
+              {/* Sire */}
+              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+                <div style={{ width:isMobile?42:50, height:isMobile?42:50, borderRadius:'50%', overflow:'hidden', border:'2px solid #e8e0d0', background:'#f0ebe4' }}>
+                  <Avatar animal={DEMO_SHEEP[1]} size={isMobile?42:50}/>
+                </div>
+                <span style={{ fontSize:9, fontWeight:700, color:'#2c2416', textTransform:'uppercase' }}>Duke</span>
+                <span style={{ fontSize:8, color:'#a08060' }}>Sire</span>
+              </div>
+              {/* Dam */}
+              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+                <div style={{ width:isMobile?42:50, height:isMobile?42:50, borderRadius:'50%', overflow:'hidden', border:'2px solid #e8e0d0', background:'#f0ebe4', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <span style={{ fontSize:22 }}>🐑</span>
+                </div>
+                <span style={{ fontSize:9, fontWeight:700, color:'#2c2416', textTransform:'uppercase' }}>Iris</span>
+                <span style={{ fontSize:8, color:'#a08060' }}>Dam</span>
+              </div>
+              <span style={{ fontSize:20, color:'#c8b89a' }}>→</span>
+              {/* Animal */}
+              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+                <div style={{ width:isMobile?44:54, height:isMobile?44:54, borderRadius:'50%', overflow:'hidden', border:'3px solid #c8a060', background:'#f0ebe4' }}>
+                  <Avatar animal={{...DEMO_SHEEP[0],name}} size={isMobile?44:54}/>
+                </div>
+                <span style={{ fontSize:9, fontWeight:700, color:'#2c2416', textTransform:'uppercase' }}>{name}</span>
+                <span style={{ fontSize:8, color:'#c8a060', fontWeight:700 }}>This Animal</span>
+              </div>
+              <p style={{ fontSize:12, color:'#a08060', margin:0, fontStyle:'italic', flex:1, minWidth:120 }}>
+                Tap "View Full Tree" to see 4 generations and check for shared ancestors before breeding.
+              </p>
+            </div>
+          </div>
+        )}
         <div id="events" style={{ ...S.card,padding:isMobile?14:22,outline:highlight==='events'?'3px solid #c8a060':'none',boxShadow:highlight==='events'?'0 0 0 8px rgba(200,160,96,0.15)':'none',borderRadius:10,transition:'all 0.25s' }}>
           <div style={{ display:'flex',alignItems:'center',marginBottom:16 }}>
             <p style={{ fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:16,margin:0 }}>Health & Events</p>
@@ -663,6 +747,258 @@ function PlantsScreen({ highlight, isMobile }) {
   )
 }
 
+// ─── LINEAGE DEMO SCREEN ──────────────────────────────────────────────────────
+// Full 4-generation tree — top=great-grandparents, bottom=animal. Species-aware.
+function LineageDemoScreen({ name, species, highlight, isMobile }) {
+  const isSheep  = species !== 'chickens'
+  const sexBg    = isSheep
+    ? { ram:'#5d4037', ewe:'#a1887f', wether:'#d7ccc8' }
+    : { rooster:'#c62828', hen:'#f9a825', chick:'#ffcc80' }
+
+  // ── Sheep tree ──
+  const sheepTree = {
+    name, breed:'Merino', sex:'ewe', status:'alive', photo: DEMO_SHEEP[0].photo_url,
+    sire: {
+      name:'Duke', breed:'Dorset', sex:'ram', status:'alive', photo: DEMO_SHEEP[1].photo_url,
+      sire: {
+        name:'Magnus', breed:'Dorset', sex:'ram', status:'deceased', photo:null,
+        sire: { name:'Old Rex',    breed:'Dorset', sex:'ram', status:'deceased', photo:null },
+        dam:  { name:'Heather',    breed:'Dorset', sex:'ewe', status:'deceased', photo:null },
+      },
+      dam: {
+        name:'Fern', breed:'Merino', sex:'ewe', status:'sold', photo:null,
+        sire: { name:'Brook',      breed:'Merino', sex:'ram', status:'deceased', photo:null },
+        dam:  { name:'Clementine', breed:'Merino', sex:'ewe', status:'deceased', photo:null },
+      },
+    },
+    dam: {
+      name:'Iris', breed:'Merino', sex:'ewe', status:'alive', photo:null,
+      sire: {
+        name:'Chester', breed:'Suffolk', sex:'ram', status:'sold', photo:null,
+        sire: { name:'Grayson',   breed:'Suffolk', sex:'ram', status:'deceased', photo:null },
+        dam:  { name:'Pippa',     breed:'Suffolk', sex:'ewe', status:'deceased', photo:null },
+      },
+      dam: {
+        name:'Pearl', breed:'Merino', sex:'ewe', status:'deceased', photo:null,
+        sire: { name:'Victor',    breed:'Merino', sex:'ram', status:'deceased', photo:null },
+        dam:  { name:'Dolly',     breed:'Merino', sex:'ewe', status:'deceased', photo:null },
+      },
+    },
+  }
+
+  // ── Chicken tree ──
+  const chickenTree = {
+    name, breed:'Rhode Island Red', sex:'hen', status:'alive', photo: DEMO_CHICKENS[0].photo_url,
+    sire: {
+      name:'Redford', breed:'Rhode Island Red', sex:'rooster', status:'alive', photo: DEMO_CHICKENS[1]?.photo_url||null,
+      sire: {
+        name:'Colonel', breed:'Rhode Island Red', sex:'rooster', status:'deceased', photo:null,
+        sire: { name:'General',  breed:'RIR',     sex:'rooster', status:'deceased', photo:null },
+        dam:  { name:'Henrietta',breed:'RIR',     sex:'hen',     status:'deceased', photo:null },
+      },
+      dam: {
+        name:'Maple', breed:'Buff Orpington', sex:'hen', status:'sold', photo:null,
+        sire: { name:'Biscuit',  breed:'Buff Orp',sex:'rooster', status:'deceased', photo:null },
+        dam:  { name:'Butternut',breed:'Buff Orp',sex:'hen',     status:'deceased', photo:null },
+      },
+    },
+    dam: {
+      name:'Goldie', breed:'Buff Orpington', sex:'hen', status:'alive', photo: DEMO_CHICKENS[2]?.photo_url||null,
+      sire: {
+        name:'Rex', breed:'Plymouth Rock', sex:'rooster', status:'sold', photo:null,
+        sire: { name:'Rocky',    breed:'Plymouth',sex:'rooster', status:'deceased', photo:null },
+        dam:  { name:'Pebble',   breed:'Plymouth',sex:'hen',     status:'deceased', photo:null },
+      },
+      dam: {
+        name:'Clover', breed:'Buff Orpington', sex:'hen', status:'deceased', photo:null,
+        sire: { name:'Sunny',    breed:'Buff Orp',sex:'rooster', status:'deceased', photo:null },
+        dam:  { name:'Daisy',    breed:'Buff Orp',sex:'hen',     status:'deceased', photo:null },
+      },
+    },
+  }
+
+  const tree = isSheep ? sheepTree : chickenTree
+
+  function getRow(node, depth, maxDepth) {
+    if (depth === maxDepth) return [node || null]
+    if (!node) return Array(Math.pow(2, maxDepth - depth)).fill(null)
+    return [...getRow(node.sire, depth+1, maxDepth), ...getRow(node.dam, depth+1, maxDepth)]
+  }
+
+  const rows = [
+    { label:'Great-Grandparents', nodes: getRow(tree, 0, 3) },
+    { label:'Grandparents',       nodes: getRow(tree, 0, 2) },
+    { label:'Parents',            nodes: getRow(tree, 0, 1) },
+    { label:'Your Animal',        nodes: [tree] },
+  ]
+
+  const nodeW  = isMobile ? 58 : 72
+  const gapX   = isMobile ? 4  : 8
+  const connH  = isMobile ? 22 : 30
+  const totalW = 8 * nodeW + 7 * gapX
+
+  function DemoNode({ node, isRoot }) {
+    const sz = isRoot ? (isMobile?50:62) : (isMobile?34:42)
+    if (!node) return (
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, opacity:0.3 }}>
+        <div style={{ width:sz, height:sz, borderRadius:'50%', border:'2px dashed #c8b89a', background:'#f7f4ef', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12 }}>?</div>
+        <span style={{ fontSize:7, color:'#a08060', fontStyle:'italic' }}>Unknown</span>
+      </div>
+    )
+    const sb  = sexBg[node.sex] || (isSheep ? '#d7ccc8' : '#ffcc80')
+    const em  = isSheep ? (node.sex==='ram'?'🐏':'🐑') : (node.sex==='rooster'?'🐓':'🐔')
+    return (
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+        <div style={{ position:'relative' }}>
+          <div style={{ width:sz, height:sz, borderRadius:'50%', overflow:'hidden', background:'#f0ebe4',
+            border: isRoot ? '3px solid #c8a060' : '2px solid #e8e0d0',
+            boxShadow: isRoot ? '0 0 0 4px rgba(200,160,96,0.2)' : 'none',
+            filter: node.status==='deceased' ? 'grayscale(0.6)' : 'none',
+            opacity: node.status==='deceased' ? 0.7 : 1 }}>
+            {node.photo
+              ? <img src={node.photo} alt={node.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+              : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:sz*0.42 }}>{em}</div>
+            }
+          </div>
+          <div style={{ width:8, height:8, borderRadius:'50%', background:sb, position:'absolute', bottom:1, right:1, border:'2px solid #fff' }}/>
+        </div>
+        <span style={{ fontSize:isRoot?(isMobile?11:13):(isMobile?8:9), fontWeight:700, color:'#2c2416',
+          whiteSpace:'nowrap', maxWidth:nodeW-4, overflow:'hidden', textOverflow:'ellipsis', textAlign:'center',
+          fontFamily:"'Playfair Display',serif" }}>{node.name}</span>
+        {!isMobile && node.breed && (
+          <span style={{ fontSize:7, color:'#a08060', whiteSpace:'nowrap', maxWidth:nodeW-4, overflow:'hidden', textOverflow:'ellipsis', textAlign:'center' }}>{node.breed}</span>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'16px 12px':'28px 24px' }}>
+
+      {/* Nav breadcrumb */}
+      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+        <button style={{ ...S.btn, background:'#fff', color:'#5a3e1b', border:'1px solid #d0c4b0', padding:'6px 12px', fontSize:12 }}>
+          ← {name}'s Profile
+        </button>
+        <span style={{ fontSize:12, color:'#a08060' }}>🌳 Lineage</span>
+      </div>
+
+      <div id="lineage-intro" style={{ marginBottom:16,
+        outline:highlight==='lineage-intro'?'3px solid #c8a060':'none',
+        borderRadius:highlight==='lineage-intro'?10:0,
+        boxShadow:highlight==='lineage-intro'?'0 0 0 8px rgba(200,160,96,0.15)':'none',
+        transition:'all 0.25s', padding:highlight==='lineage-intro'?4:0 }}>
+        <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?22:28, fontWeight:700, margin:'0 0 6px' }}>
+          🌳 {name}'s Family Tree
+        </h2>
+        <p style={{ fontSize:14, color:'#7a6648', margin:0, lineHeight:1.5 }}>
+          4 generations — built automatically as you record {isSheep?'sires and dams':'roosters and hens'}.
+        </p>
+      </div>
+
+      <div style={{ background:'#fff9e6', border:'1px solid #ffe082', borderRadius:10, padding:'12px 16px', marginBottom:16, fontSize:13, color:'#7a5c10', lineHeight:1.55 }}>
+        {isSheep
+          ? <><strong>💡 Before breeding season:</strong> Rosie and Clover are both daughters of Duke and {name}. Before putting any new ram with them, check here first. FarmHand flags shared ancestors automatically.</>
+          : <><strong>💡 Tracking chicken bloodlines:</strong> Redford is the rooster behind {name}'s hatch. Record his lineage and FarmHand builds the tree — useful when managing multiple breeding flocks or selecting for traits.</>
+        }
+      </div>
+
+      {/* Pedigree — horizontal top to bottom */}
+      <div id="lineage-tree" style={{ ...S.card, padding:isMobile?'14px 10px':'24px 20px',
+        outline:highlight==='lineage-tree'?'3px solid #c8a060':'none',
+        boxShadow:highlight==='lineage-tree'?'0 0 0 8px rgba(200,160,96,0.15)':'none',
+        borderRadius:12, transition:'all 0.25s', overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
+
+        <div style={{ minWidth:isMobile?480:620 }}>
+          {rows.map((row, rowIdx) => {
+            const count  = row.nodes.length
+            const isRoot = rowIdx===3
+
+            return (
+              <div key={rowIdx}>
+                {/* Row label */}
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, marginTop:rowIdx===0?0:4 }}>
+                  <span style={{ fontSize:isMobile?8:10, fontWeight:700, color:'#a08060', textTransform:'uppercase',
+                    letterSpacing:'0.07em', background:'#f7f4ef', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' }}>
+                    {row.label}
+                  </span>
+                  <div style={{ flex:1, height:1, background:'#f0ebe4' }}/>
+                </div>
+
+                {/* Connector lines down to next row */}
+                {rowIdx < 3 && (
+                  <svg width="100%" viewBox={`0 0 ${totalW} ${connH}`} style={{ display:'block', marginBottom:2 }} preserveAspectRatio="xMidYMid meet">
+                    {rows[rowIdx+1].nodes.map((_, childIdx) => {
+                      const childCount  = rows[rowIdx+1].nodes.length
+                      const childSlotW  = totalW / childCount
+                      const childX      = childSlotW * childIdx + childSlotW / 2
+                      const mySlotW     = totalW / count
+                      const par0X       = mySlotW * (childIdx*2)     + mySlotW/2
+                      const par1X       = mySlotW * (childIdx*2 + 1) + mySlotW/2
+                      const midX        = (par0X + par1X) / 2
+                      return (
+                        <g key={childIdx}>
+                          <line x1={par0X} y1={0}         x2={par0X}  y2={connH*0.4} stroke="#d0c4b0" strokeWidth={1.5}/>
+                          <line x1={par1X} y1={0}         x2={par1X}  y2={connH*0.4} stroke="#d0c4b0" strokeWidth={1.5}/>
+                          <line x1={par0X} y1={connH*0.4} x2={par1X}  y2={connH*0.4} stroke="#d0c4b0" strokeWidth={1.5}/>
+                          <line x1={midX}  y1={connH*0.4} x2={childX} y2={connH}     stroke="#d0c4b0" strokeWidth={1.5}/>
+                        </g>
+                      )
+                    })}
+                  </svg>
+                )}
+
+                {/* Nodes */}
+                <div style={{ display:'flex', width:'100%', marginBottom:4 }}>
+                  {row.nodes.map((node, ni) => (
+                    <div key={ni} style={{ flex:1, display:'flex', justifyContent:'center', padding:`0 ${gapX/2}px` }}>
+                      <DemoNode node={node} isRoot={isRoot}/>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Inbreeding check */}
+      <div id="lineage-warn" style={{ ...S.card, padding:isMobile?'14px 16px':'16px 20px', marginTop:14,
+        outline:highlight==='lineage-warn'?'3px solid #c8a060':'none',
+        boxShadow:highlight==='lineage-warn'?'0 0 0 8px rgba(200,160,96,0.15)':'none',
+        borderRadius:12, transition:'all 0.25s', background:'#f1f8f1', border:'1px solid #a5d6a7' }}>
+        <div style={{ display:'flex', gap:10, alignItems:'flex-start' }}>
+          <span style={{ fontSize:20 }}>✓</span>
+          <div>
+            <p style={{ fontSize:13, fontWeight:700, color:'#2e7d32', margin:'0 0 3px' }}>No shared ancestors detected</p>
+            <p style={{ fontSize:13, color:'#4a7a4a', margin:0, lineHeight:1.5 }}>
+              Safe to breed. FarmHand checks both sides of the tree every time.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display:'flex', gap:14, flexWrap:'wrap', marginTop:12, alignItems:'center' }}>
+        <span style={{ fontSize:11, color:'#a08060', fontWeight:700 }}>Sex dot:</span>
+        {isSheep
+          ? [['#5d4037','Ram'],['#a1887f','Ewe']].map(([c,l])=>(
+              <div key={l} style={{ display:'flex', alignItems:'center', gap:5 }}>
+                <div style={{ width:8, height:8, borderRadius:'50%', background:c }}/><span style={{ fontSize:11, color:'#7a6648' }}>{l}</span>
+              </div>
+            ))
+          : [['#c62828','Rooster'],['#f9a825','Hen']].map(([c,l])=>(
+              <div key={l} style={{ display:'flex', alignItems:'center', gap:5 }}>
+                <div style={{ width:8, height:8, borderRadius:'50%', background:c }}/><span style={{ fontSize:11, color:'#7a6648' }}>{l}</span>
+              </div>
+            ))
+        }
+      </div>
+    </div>
+  )
+}
+
+
 function BulkAddScreen({ name, species, highlight, isMobile }) {
   const isSheep=species==='sheep'
   const rows=[{name,sex:isSheep?'Ewe (Female)':'Hen',dob:isSheep?'03/15/2021':'06/01/2023'},{name:'Rosie',sex:isSheep?'Ewe (Female)':'Hen',dob:isSheep?'04/02/2022':'06/01/2023'},{name:'Duke',sex:isSheep?'Ram (Male)':'Rooster',dob:isSheep?'01/10/2020':'05/15/2023'},{name:'',sex:isSheep?'Ewe':'Hen',dob:''},{name:'',sex:isSheep?'Ewe':'Hen',dob:''}]
@@ -777,6 +1113,7 @@ export function DemoPage() {
     profile: <ProfileScreen  name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
     event:   <EventScreen    name={name} species={species} step={cur} highlight={cur.scrollTo} isMobile={isMobile}/>,
     bulk:    <BulkScreen     name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
+    lineage: <LineageDemoScreen name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
     pnl:     <PnLScreen      name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
     dash1:   <DashChartScreen    highlight={cur.scrollTo} isMobile={isMobile}/>,
     dash2:   <DashAnimalsScreen  species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,

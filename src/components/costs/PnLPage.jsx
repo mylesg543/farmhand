@@ -2,440 +2,352 @@ import { useState } from 'react'
 import { useFeedCosts } from '../../hooks/useFeedCosts'
 import { useIncome } from '../../hooks/useIncome'
 import { useCustomers } from '../../hooks/useCustomers'
-import { S, Spinner, ErrorMsg, ANIMAL_META, formatDate, fmt } from '../ui/shared'
+import { useIsMobile } from '../../hooks/useIsMobile'
+import { S, Spinner, ErrorMsg, fmt, formatDate, ANIMAL_META } from '../ui/shared'
 
 const INCOME_TYPES = [
-  { value: 'sale_animal',  label: 'Animal Sale'  },
-  { value: 'sale_produce', label: 'Produce Sale' },
-  { value: 'sale_eggs',    label: 'Egg Sale'     },
-  { value: 'sale_wool',    label: 'Wool Sale'    },
-  { value: 'sale_meat',    label: 'Meat Sale'    },
-  { value: 'breeding',     label: 'Breeding Fee' },
-  { value: 'other',        label: 'Other Income' },
+  { value:'sale_animal',  label:'Animal Sale' },
+  { value:'sale_eggs',    label:'Egg Sales' },
+  { value:'sale_wool',    label:'Wool Sale' },
+  { value:'sale_produce', label:'Produce Sale' },
+  { value:'sale_meat',    label:'Meat Sale' },
+  { value:'breeding',     label:'Breeding / Stud Fee' },
+  { value:'other',        label:'Other Income' },
 ]
-
-const EXPENSE_CATEGORIES = [
-  { value: 'hay',           label: 'Hay',            emoji: '🌾', color: '#f57f17', bg: '#fff8e1' },
-  { value: 'feed',          label: 'Feed',           emoji: '🪣', color: '#795548', bg: '#efebe9' },
-  { value: 'medicine',      label: 'Medicine & Vet', emoji: '💊', color: '#c62828', bg: '#fff3f3' },
-  { value: 'infrastructure',label: 'Infrastructure', emoji: '🔨', color: '#37474f', bg: '#eceff1' },
-  { value: 'equipment',     label: 'Equipment',      emoji: '⚙️',  color: '#1565c0', bg: '#e3f2fd' },
-  { value: 'bedding',       label: 'Bedding',        emoji: '🛏️',  color: '#558b2f', bg: '#f1f8e9' },
-  { value: 'supplements',   label: 'Supplements',    emoji: '🧪', color: '#6a1b9a', bg: '#f3e5f5' },
-  { value: 'labour',        label: 'Labour',         emoji: '👷', color: '#4a3c28', bg: '#fdf6ec' },
-  { value: 'other',         label: 'Other',          emoji: '📋', color: '#616161', bg: '#fafafa' },
+const EXPENSE_CATS = [
+  { value:'hay',            label:'Hay' },
+  { value:'feed',           label:'Feed' },
+  { value:'medicine',       label:'Medicine / Vet' },
+  { value:'bedding',        label:'Bedding' },
+  { value:'equipment',      label:'Equipment' },
+  { value:'infrastructure', label:'Infrastructure' },
+  { value:'supplements',    label:'Supplements' },
+  { value:'labour',         label:'Labour' },
+  { value:'other',          label:'Other' },
 ]
+const DOZEN_OPTIONS = [0.5, 1, 2, 3, 4, 5, 6]
+const EGG_PRICE     = 5
 
-function fmtIncome(n)  { return `+${fmt(n)}` }
-function fmtExpense(n) { return `-${fmt(n)}` }
-function fmtNet(n)     { return `${n >= 0 ? '+' : ''}${fmt(n)}` }
-function netColor(n)   { return n >= 0 ? '#2e7d32' : '#c62828' }
-function netBg(n)      { return n >= 0 ? '#e8f5e9' : '#fff3f3' }
-
-export function PnLPage() {
-  const { costs,  loading: costsLoading,  error: costsError,  addCost,   deleteCost   } = useFeedCosts()
-  const { income, loading: incomeLoading, error: incomeError, addIncome, deleteIncome } = useIncome()
-  const { customers } = useCustomers()
-
-  const [tab,            setTab]           = useState('overview')
-  const [filterAnimal,   setFilterAnimal]  = useState('all')
-  const [showCostForm,   setShowCostForm]  = useState(false)
-  const [showIncomeForm, setShowIncomeForm]= useState(false)
-  const today = new Date().toISOString().split('T')[0]
-
-  const [costForm,   setCostForm]   = useState({ species: 'sheep', category: 'hay', description: '', amount: '', date: today })
-  const [incomeForm, setIncomeForm] = useState({ species: 'sheep', income_type: 'sale_animal', description: '', amount: '', date: today, customer_id: '', quantity: '', unit: '' })
-  const [costErr,    setCostErr]    = useState('')
-  const [incomeErr,  setIncomeErr]  = useState('')
-  const setC = (k, v) => setCostForm(f  => ({ ...f, [k]: v }))
-  const setI = (k, v) => setIncomeForm(f => ({ ...f, [k]: v }))
-
-  const loading = costsLoading || incomeLoading
-  const error   = costsError   || incomeError
-
-  const filteredCosts  = costs.filter(c  => filterAnimal === 'all' || c.species === filterAnimal)
-  const filteredIncome = income.filter(i => filterAnimal === 'all' || i.species === filterAnimal)
-
-  const totalCosts  = filteredCosts.reduce((s, c) => s + Number(c.amount), 0)
-  const totalIncome = filteredIncome.reduce((s, i) => s + Number(i.amount), 0)
-  const netPnL      = totalIncome - totalCosts
-
-  const animalPnL = {}
-  Object.keys(ANIMAL_META).forEach(k => {
-    const spent  = costs.filter(c  => c.species === k).reduce((s, c) => s + Number(c.amount), 0)
-    const earned = income.filter(i => i.species === k).reduce((s, i) => s + Number(i.amount), 0)
-    animalPnL[k] = { spent, earned, net: earned - spent }
+// ─── Income Form ───────────────────────────────────────────────────────────────
+function IncomeForm({ customers, onSave, onCancel }) {
+  const [form, setForm] = useState({
+    species:'chickens', income_type:'sale_eggs', description:'', amount:'',
+    date: new Date().toISOString().split('T')[0], customer_id:'', quantity:'', unit:'',
   })
+  const [saving, setSaving] = useState(false)
+  const [error,  setError]  = useState('')
+  const set = (k,v) => setForm(f=>({...f,[k]:v}))
+  const isEggs = form.income_type === 'sale_eggs'
 
-  const allDates = [...filteredCosts.map(c => c.date), ...filteredIncome.map(i => i.date)]
-  const months   = [...new Set(allDates.map(d => d.slice(0, 7)))].sort().reverse()
-  const fmtMonth = m => { const [y, mo] = m.split('-'); return new Date(y, mo - 1).toLocaleString('default', { month: 'long', year: 'numeric' }) }
-
-  const EGG_PRICE_PER_DOZEN = 5.00
-  const isEggSale = incomeForm.income_type === 'sale_eggs'
-
-  const handleDozenChange = (dozens) => {
-    const amt = dozens ? (parseFloat(dozens) * EGG_PRICE_PER_DOZEN).toFixed(2) : ''
-    setIncomeForm(f => ({ ...f, quantity: dozens, amount: amt, unit: 'dozen' }))
+  const handleDozens = (n) => {
+    set('quantity', n)
+    set('unit', 'dozen')
+    set('amount', (n * EGG_PRICE).toFixed(2))
+    set('description', `${n===0.5?'½':n} dozen egg${n===1?'':'s'}`)
   }
 
-  const handleAddCost = async () => {
-    const amt = parseFloat(costForm.amount)
-    if (!costForm.amount || isNaN(amt) || amt <= 0) { setCostErr('Enter a valid amount'); return }
+  const handleSave = async () => {
+    if (!form.amount || isNaN(Number(form.amount))) { setError('Enter a valid amount'); return }
+    setSaving(true); setError('')
     try {
-      await addCost({ species: costForm.species, category: costForm.category, description: costForm.description || costForm.category, amount: amt, date: costForm.date })
-      setCostForm({ species: 'sheep', category: 'hay', description: '', amount: '', date: today })
-      setCostErr(''); setShowCostForm(false)
-    } catch (err) { setCostErr(err.message) }
-  }
-
-  const handleAddIncome = async () => {
-    const amt = parseFloat(incomeForm.amount)
-    if (!incomeForm.amount || isNaN(amt) || amt <= 0) { setIncomeErr('Enter a valid amount'); return }
-    const description = incomeForm.description.trim() ||
-      (isEggSale && incomeForm.quantity ? `${incomeForm.quantity} dozen eggs` : incomeForm.income_type.replace(/_/g,' '))
-    try {
-      await addIncome({
-        species:      incomeForm.species,
-        income_type:  incomeForm.income_type,
-        description,
-        amount:       amt,
-        date:         incomeForm.date,
-        customer_id:  incomeForm.customer_id || null,
-        quantity:     incomeForm.quantity    || null,
-        unit:         incomeForm.unit        || null,
+      await onSave({
+        ...form,
+        amount:      Number(form.amount),
+        customer_id: form.customer_id || null,
+        quantity:    form.quantity    || null,
+        unit:        form.unit        || null,
+        description: form.description || form.income_type.replace(/_/g,' '),
       })
-      setIncomeForm({ species: 'sheep', income_type: 'sale_animal', description: '', amount: '', date: today, customer_id: '', quantity: '', unit: '' })
-      setIncomeErr(''); setShowIncomeForm(false)
-    } catch (err) { setIncomeErr(err.message) }
+    } catch (err) { setError(err.message); setSaving(false) }
   }
 
   return (
-    <div style={S.page}>
-      <style>{`
-        @media (max-width: 767px) {
-          .pnl-header { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; }
-          .pnl-header-btns { display: flex !important; gap: 8px !important; }
-          .pnl-header-btns button { flex: 1 !important; }
-          .pnl-income-grid { grid-template-columns: 1fr 1fr !important; }
-          .pnl-expense-grid { grid-template-columns: 1fr !important; }
-          .pnl-amount-row { grid-template-columns: 1fr !important; }
-          .pnl-tabs-row { flex-direction: column !important; gap: 12px !important; }
-          .pnl-tabs { width: 100% !important; }
-          .pnl-tabs button { flex: 1 !important; }
-          .pnl-summary-nums { display: flex !important; justify-content: space-between !important; width: 100% !important; }
-          .pnl-animal-tiles { grid-template-columns: repeat(3, 1fr) !important; }
-          .pnl-tile-label { font-size: 9px !important; }
-          .pnl-tile-num { font-size: 13px !important; }
-          .pnl-tile-sub { display: none !important; }
-          .pnl-month-header { flex-wrap: wrap !important; gap: 6px !important; }
-        }
-      `}</style>
+    <div style={{ ...S.card, padding:22, marginBottom:16, border:'1px dashed #c8b89a', background:'#fdfaf6' }}>
+      <style>{`@media(max-width:767px){.pnl-form-grid{grid-template-columns:1fr!important;}}`}</style>
+      <span style={S.sectionLabel}>New Income</span>
+      {error && <p style={{ color:'#c62828', fontSize:13, marginBottom:10 }}>{error}</p>}
 
-      {/* Header */}
-      <div className="pnl-header" style={{ display: 'flex', alignItems: 'flex-end', marginBottom: 20 }}>
+      <div className="pnl-form-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
         <div>
-          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 700, margin: '0 0 4px' }}>Profit & Loss</h1>
-          <p style={{ fontSize: 13, color: '#a08060', margin: 0 }}>Track what you spend and earn</p>
+          <label style={S.label}>Animal Type</label>
+          <select style={{ ...S.input, cursor:'pointer' }} value={form.species} onChange={e=>set('species',e.target.value)}>
+            <option value="sheep">🐑 Sheep</option>
+            <option value="chickens">🐔 Chickens</option>
+          </select>
         </div>
-        <div className="pnl-header-btns" style={{ marginLeft: 'auto', display: 'flex', gap: 10 }}>
-          <button onClick={() => { setShowIncomeForm(v => !v); setShowCostForm(false) }}
-            style={{ ...S.btn, background: '#e8f5e9', color: '#2e7d32', border: '1px solid #c8e6c9' }}>
-            {showIncomeForm ? '✕' : '+ Income'}
-          </button>
-          <button onClick={() => { setShowCostForm(v => !v); setShowIncomeForm(false) }}
-            style={{ ...S.btn, ...S.btnPrimary }}>
-            {showCostForm ? '✕' : '+ Expense'}
-          </button>
+        <div>
+          <label style={S.label}>Income Type</label>
+          <select style={{ ...S.input, cursor:'pointer' }} value={form.income_type} onChange={e=>set('income_type',e.target.value)}>
+            {INCOME_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
         </div>
-      </div>
-
-      {/* Income form */}
-      {showIncomeForm && (
-        <div style={{ ...S.card, padding: 20, marginBottom: 18, border: '1px dashed #a5d6a7', background: '#f1f8f1' }}>
-          <span style={{ ...S.sectionLabel, color: '#2e7d32' }}>Log Income</span>
-          {incomeErr && <p style={{ color: '#c62828', fontSize: 13, marginBottom: 10 }}>{incomeErr}</p>}
-          <div className="pnl-income-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr 1fr', gap: 12, marginBottom: 12 }}>
-            <div>
-              <label style={S.label}>Animal</label>
-              <select style={{ ...S.input, cursor: 'pointer' }} value={incomeForm.species} onChange={e => setI('species', e.target.value)}>
-                {Object.entries(ANIMAL_META).map(([k, v]) => <option key={k} value={k}>{v.emoji} {v.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={S.label}>Type</label>
-              <select style={{ ...S.input, cursor: 'pointer' }} value={incomeForm.income_type} onChange={e => { setI('income_type', e.target.value); if (e.target.value !== 'sale_eggs') setI('quantity', '') }}>
-                {INCOME_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={S.label}>Description <span style={{ color: '#c8b89a', fontWeight: 400 }}>(optional)</span></label>
-              <input style={S.input} value={incomeForm.description} onChange={e => setI('description', e.target.value)}
-                placeholder={isEggSale ? 'e.g. Weekly egg delivery' : 'e.g. Sold 3 lambs'} />
-            </div>
-            <div>
-              <label style={S.label}>Date</label>
-              <input type="date" style={S.input} value={incomeForm.date} onChange={e => setI('date', e.target.value)} />
-            </div>
-          </div>
-
-          {/* Egg dozens row — only shown for egg sales */}
-          {isEggSale && (
-            <div style={{ background: '#fff9e6', border: '1px solid #ffe082', borderRadius: 8, padding: '12px 14px', marginBottom: 12, display: 'flex', gap: 14, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: 120 }}>
-                <label style={S.label}>🥚 Dozens of Eggs</label>
-                <select style={{ ...S.input, cursor: 'pointer' }} value={incomeForm.quantity || ''} onChange={e => handleDozenChange(e.target.value)}>
-                  <option value="">— Select quantity —</option>
-                  {[0.5, 1, 2, 3, 4, 5].map(n => (
-                    <option key={n} value={n}>{n === 0.5 ? '½ dozen' : `${n} dozen${n > 1 ? 's' : ''}`} ({n * 12} eggs)</option>
-                  ))}
-                </select>
-              </div>
-              <div style={{ fontSize: 13, color: '#f57f17', fontWeight: 600, paddingBottom: 10 }}>
-                {incomeForm.quantity ? `$${EGG_PRICE_PER_DOZEN}/dozen × ${incomeForm.quantity} = $${(incomeForm.quantity * EGG_PRICE_PER_DOZEN).toFixed(2)}` : 'Select dozens to auto-fill price'}
-              </div>
-            </div>
-          )}
-          {/* Customer + amount row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px auto', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-            <div>
-              <label style={S.label}>Customer / Buyer</label>
-              <select style={{ ...S.input, cursor: 'pointer' }} value={incomeForm.customer_id} onChange={e => setI('customer_id', e.target.value)}>
-                <option value="">— No customer —</option>
-                {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={S.label}>Amount ($)</label>
-              <input type="number" min="0" step="0.01" style={S.input} value={incomeForm.amount} onChange={e => setI('amount', e.target.value)} placeholder="0.00" />
-            </div>
-            <div style={{ display: 'flex', gap: 8, paddingBottom: 1 }}>
-              <button onClick={handleAddIncome} style={{ ...S.btn, background: '#4caf50', color: '#fff' }}>Save</button>
-              <button onClick={() => { setShowIncomeForm(false); setIncomeErr('') }} style={{ ...S.btn, ...S.btnSecondary }}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Expense form */}
-      {showCostForm && (
-        <div style={{ ...S.card, padding: 20, marginBottom: 18, border: '1px dashed #c8b89a', background: '#fdfaf6' }}>
-          <span style={S.sectionLabel}>Log Expense</span>
-          {costErr && <p style={{ color: '#c62828', fontSize: 13, marginBottom: 10 }}>{costErr}</p>}
-          <div style={{ marginBottom: 14 }}>
-            <label style={S.label}>Category</label>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {EXPENSE_CATEGORIES.map(cat => (
-                <button key={cat.value} onClick={() => setC('category', cat.value)}
-                  style={{ ...S.btn, padding: '6px 10px', fontSize: 12, gap: 4,
-                    background: costForm.category === cat.value ? cat.color : '#fff',
-                    color: costForm.category === cat.value ? '#fff' : '#7a6648',
-                    border: `1px solid ${costForm.category === cat.value ? cat.color : '#d0c4b0'}`,
-                  }}>
-                  {cat.emoji} {cat.label}
+        {isEggs && (
+          <div style={{ gridColumn:'1 / -1' }}>
+            <label style={S.label}>Dozens (auto-prices at ${EGG_PRICE}/dozen — adjust amount if needed)</label>
+            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+              {DOZEN_OPTIONS.map(n=>(
+                <button key={n} onClick={()=>handleDozens(n)}
+                  style={{ ...S.btn, padding:'8px 14px', fontSize:14, fontWeight:700,
+                    background: form.quantity===n?'#c8a060':'#fff',
+                    color:      form.quantity===n?'#2c2416':'#7a6648',
+                    border:     form.quantity===n?'2px solid #c8a060':'1px solid #d0c4b0' }}>
+                  {n===0.5?'½':n}
                 </button>
               ))}
             </div>
           </div>
-          <div className="pnl-expense-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 12, marginBottom: 12 }}>
-            <div>
-              <label style={S.label}>Animal</label>
-              <select style={{ ...S.input, cursor: 'pointer' }} value={costForm.species} onChange={e => setC('species', e.target.value)}>
-                {Object.entries(ANIMAL_META).map(([k, v]) => <option key={k} value={k}>{v.emoji} {v.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={S.label}>Description</label>
-              <input style={S.input} value={costForm.description} onChange={e => setC('description', e.target.value)} placeholder="e.g. Hay bale x10" />
-            </div>
-            <div>
-              <label style={S.label}>Date</label>
-              <input type="date" style={S.input} value={costForm.date} onChange={e => setC('date', e.target.value)} />
-            </div>
-          </div>
-          <div className="pnl-amount-row" style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 12, alignItems: 'flex-end' }}>
-            <div>
-              <label style={S.label}>Amount ($)</label>
-              <input type="number" min="0" step="0.01" style={S.input} value={costForm.amount} onChange={e => setC('amount', e.target.value)} placeholder="0.00" />
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={handleAddCost} style={{ ...S.btn, ...S.btnPrimary }}>Save</button>
-              <button onClick={() => { setShowCostForm(false); setCostErr('') }} style={{ ...S.btn, ...S.btnSecondary }}>Cancel</button>
-            </div>
-          </div>
+        )}
+        <div>
+          <label style={S.label}>Amount ($)</label>
+          <input type="number" step="0.01" style={S.input} value={form.amount}
+            onChange={e=>set('amount',e.target.value)} placeholder="0.00"/>
         </div>
-      )}
+        <div>
+          <label style={S.label}>Date</label>
+          <input type="date" style={S.input} value={form.date} onChange={e=>set('date',e.target.value)}/>
+        </div>
+        <div>
+          <label style={S.label}>Description (optional)</label>
+          <input style={S.input} value={form.description} onChange={e=>set('description',e.target.value)} placeholder="e.g. Weekly egg sale"/>
+        </div>
+        <div>
+          <label style={S.label}>Customer (optional)</label>
+          <select style={{ ...S.input, cursor:'pointer' }} value={form.customer_id} onChange={e=>set('customer_id',e.target.value)}>
+            <option value="">— No customer —</option>
+            {customers.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+      </div>
+      <div style={{ display:'flex', gap:10 }}>
+        <button onClick={handleSave} disabled={saving} style={{ ...S.btn,...S.btnPrimary, opacity:saving?0.7:1 }}>
+          {saving?'Saving…':'Save Income'}
+        </button>
+        <button onClick={onCancel} style={{ ...S.btn,...S.btnSecondary }}>Cancel</button>
+      </div>
+    </div>
+  )
+}
 
-      {/* Animal filter tiles */}
-      <div className="pnl-animal-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(130px,1fr))', gap: 8, marginBottom: 20 }}>
-        {[{ key: 'all', label: 'All Animals', emoji: '🌾' }, ...Object.entries(ANIMAL_META).map(([k, v]) => ({ key: k, label: v.label, emoji: v.emoji }))].map(a => {
-          const p = a.key === 'all'
-            ? { net: netPnL, spent: totalCosts, earned: totalIncome }
-            : animalPnL[a.key] || { net: 0, spent: 0, earned: 0 }
-          const isActive = filterAnimal === a.key
+// ─── Expense Form ──────────────────────────────────────────────────────────────
+function ExpenseForm({ onSave, onCancel }) {
+  const [form, setForm] = useState({
+    species:'sheep', category:'hay', description:'', amount:'',
+    date: new Date().toISOString().split('T')[0],
+  })
+  const [saving, setSaving] = useState(false)
+  const [error,  setError]  = useState('')
+  const set = (k,v) => setForm(f=>({...f,[k]:v}))
+
+  const handleSave = async () => {
+    if (!form.amount || isNaN(Number(form.amount))) { setError('Enter a valid amount'); return }
+    setSaving(true); setError('')
+    try {
+      await onSave({ ...form, amount: Number(form.amount), description: form.description || form.category })
+    } catch (err) { setError(err.message); setSaving(false) }
+  }
+
+  return (
+    <div style={{ ...S.card, padding:22, marginBottom:16, border:'1px dashed #f5c6c6', background:'#fff8f8' }}>
+      <style>{`@media(max-width:767px){.exp-form-grid{grid-template-columns:1fr!important;}}`}</style>
+      <span style={S.sectionLabel}>New Expense</span>
+      {error && <p style={{ color:'#c62828', fontSize:13, marginBottom:10 }}>{error}</p>}
+      <div className="exp-form-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
+        <div>
+          <label style={S.label}>Animal Type</label>
+          <select style={{ ...S.input, cursor:'pointer' }} value={form.species} onChange={e=>set('species',e.target.value)}>
+            <option value="sheep">🐑 Sheep</option>
+            <option value="chickens">🐔 Chickens</option>
+            <option value="general">🌾 General</option>
+          </select>
+        </div>
+        <div>
+          <label style={S.label}>Category</label>
+          <select style={{ ...S.input, cursor:'pointer' }} value={form.category} onChange={e=>set('category',e.target.value)}>
+            {EXPENSE_CATS.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={S.label}>Amount ($)</label>
+          <input type="number" step="0.01" style={S.input} value={form.amount}
+            onChange={e=>set('amount',e.target.value)} placeholder="0.00"/>
+        </div>
+        <div>
+          <label style={S.label}>Date</label>
+          <input type="date" style={S.input} value={form.date} onChange={e=>set('date',e.target.value)}/>
+        </div>
+        <div style={{ gridColumn:'1 / -1' }}>
+          <label style={S.label}>Description (optional)</label>
+          <input style={S.input} value={form.description} onChange={e=>set('description',e.target.value)} placeholder="e.g. Hay bale x20"/>
+        </div>
+      </div>
+      <div style={{ display:'flex', gap:10 }}>
+        <button onClick={handleSave} disabled={saving} style={{ ...S.btn,...S.btnPrimary, opacity:saving?0.7:1 }}>
+          {saving?'Saving…':'Save Expense'}
+        </button>
+        <button onClick={onCancel} style={{ ...S.btn,...S.btnSecondary }}>Cancel</button>
+      </div>
+    </div>
+  )
+}
+
+// ─── P&L Page ──────────────────────────────────────────────────────────────────
+export function PnLPage() {
+  const { costs,  loading:lc, error:ec, addCost,   deleteCost }   = useFeedCosts()
+  const { income, loading:li, error:ei, addIncome, deleteIncome } = useIncome()
+  const { customers }    = useCustomers()
+  const isMobile         = useIsMobile()
+  const [showInc,  setShowInc]  = useState(false)
+  const [showExp,  setShowExp]  = useState(false)
+  const [speciesFilter, setSpeciesFilter] = useState('all')
+  const [view,     setView]     = useState('overview') // overview | income | expenses
+
+  const filterI  = speciesFilter==='all' ? income : income.filter(i=>i.species===speciesFilter)
+  const filterC  = speciesFilter==='all' ? costs  : costs.filter(c=>c.species===speciesFilter)
+  const totalIn  = filterI.reduce((s,i)=>s+Number(i.amount),0)
+  const totalOut = filterC.reduce((s,c)=>s+Number(c.amount),0)
+  const net      = totalIn - totalOut
+
+  const handleAddIncome  = async(p)=>{ await addIncome(p);  setShowInc(false) }
+  const handleAddExpense = async(p)=>{ await addCost(p);    setShowExp(false) }
+
+  if (lc||li) return <div style={S.page}><Spinner/></div>
+  if (ec||ei) return <div style={S.page}><ErrorMsg message={ec||ei}/></div>
+
+  return (
+    <div style={{ ...S.page, padding:isMobile?'14px 12px':'32px 24px' }}>
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:12 }}>
+        <div>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:30, fontWeight:700, margin:'0 0 4px' }}>
+            💰 Profit & Loss
+          </h1>
+          <p style={{ fontSize:13, color:'#a08060', margin:0 }}>Track income and expenses across your farm</p>
+        </div>
+        <div style={{ display:'flex', gap:8 }}>
+          <button onClick={()=>{ setShowInc(v=>!v); setShowExp(false) }}
+            style={{ ...S.btn, background:showInc?'#2e7d32':'#e8f5e9', color:showInc?'#fff':'#2e7d32', border:'1px solid #c8e6c9', fontWeight:600 }}>
+            {showInc?'✕ Cancel':'+ Income'}
+          </button>
+          <button onClick={()=>{ setShowExp(v=>!v); setShowInc(false) }}
+            style={{ ...S.btn, ...S.btnPrimary }}>
+            {showExp?'✕ Cancel':'+ Expense'}
+          </button>
+        </div>
+      </div>
+
+      {showInc && <IncomeForm  customers={customers} onSave={handleAddIncome}  onCancel={()=>setShowInc(false)}/>}
+      {showExp && <ExpenseForm                        onSave={handleAddExpense} onCancel={()=>setShowExp(false)}/>}
+
+      {/* Species filter tiles */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
+        {[
+          { key:'all',      emoji:'🌾', label:'All Animals',  inc:income.reduce((s,i)=>s+Number(i.amount),0), out:costs.reduce((s,c)=>s+Number(c.amount),0) },
+          { key:'sheep',    emoji:'🐑', label:'Sheep',        inc:income.filter(i=>i.species==='sheep').reduce((s,i)=>s+Number(i.amount),0),    out:costs.filter(c=>c.species==='sheep').reduce((s,c)=>s+Number(c.amount),0) },
+          { key:'chickens', emoji:'🐔', label:'Chickens',     inc:income.filter(i=>i.species==='chickens').reduce((s,i)=>s+Number(i.amount),0), out:costs.filter(c=>c.species==='chickens').reduce((s,c)=>s+Number(c.amount),0) },
+        ].map(sp=>{
+          const spNet   = sp.inc - sp.out
+          const isActive= speciesFilter===sp.key
+          const nc      = spNet>=0?'#2e7d32':'#c62828'
           return (
-            <div key={a.key} onClick={() => setFilterAnimal(a.key)}
-              style={{ ...S.card, padding: '12px 8px', cursor: 'pointer', textAlign: 'center', border: isActive ? `2px solid ${netColor(p.net)}` : '1px solid #e8e0d0', background: isActive ? netBg(p.net) : '#fff', transition: 'all 0.15s' }}>
-              <div style={{ fontSize: 20, marginBottom: 3 }}>{a.emoji}</div>
-              <div className="pnl-tile-label" style={{ fontSize: 10, color: '#a08060', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>{a.label}</div>
-              <div className="pnl-tile-num" style={{ fontSize: 14, fontWeight: 700, color: netColor(p.net), fontFamily: "'Playfair Display',serif" }}>{fmtNet(p.net)}</div>
-              <div className="pnl-tile-sub" style={{ fontSize: 10, color: '#a08060', marginTop: 3, display: 'flex', justifyContent: 'center', gap: 4 }}>
-                <span style={{ color: '#2e7d32', fontWeight: 600 }}>+{fmt(p.earned)}</span>
-                <span style={{ color: '#bbb' }}>·</span>
-                <span style={{ color: '#c62828', fontWeight: 600 }}>-{fmt(p.spent)}</span>
+            <div key={sp.key} onClick={()=>setSpeciesFilter(sp.key)}
+              style={{ ...S.card, padding:isMobile?'10px 8px':'14px 12px', cursor:'pointer', textAlign:'center',
+                border:isActive?`2px solid ${nc}`:'1px solid #e8e0d0', background:isActive?'#fdfaf0':'#fff', transition:'all 0.15s' }}>
+              <div style={{ fontSize:isMobile?18:22, marginBottom:3 }}>{sp.emoji}</div>
+              <div style={{ fontSize:9, color:'#a08060', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', marginBottom:4 }}>{sp.label}</div>
+              <div style={{ fontSize:isMobile?13:16, fontWeight:700, color:nc, fontFamily:"'Playfair Display',serif" }}>
+                {(spNet>=0?'+':'')+fmt(spNet)}
               </div>
+              {!isMobile && (
+                <div style={{ fontSize:10, color:'#a08060', marginTop:2, display:'flex', justifyContent:'center', gap:6 }}>
+                  <span style={{ color:'#2e7d32' }}>+{fmt(sp.inc)}</span>
+                  <span style={{ color:'#c62828' }}>−{fmt(sp.out)}</span>
+                </div>
+              )}
             </div>
           )
         })}
       </div>
 
-      {/* Tabs + summary nums */}
-      <div className="pnl-tabs-row" style={{ display: 'flex', gap: 6, marginBottom: 20, alignItems: 'center' }}>
-        <div className="pnl-tabs" style={{ display: 'flex', gap: 6 }}>
-          {[['overview','Overview'],['income','Income'],['expenses','Expenses']].map(([key, label]) => (
-            <button key={key} onClick={() => setTab(key)}
-              style={{ ...S.btn, padding: '7px 16px', fontSize: 13, background: tab === key ? '#5a3e1b' : '#fff', color: tab === key ? '#fff' : '#7a6648', border: '1px solid #d0c4b0' }}>
-              {label}
+      {/* Summary totals + view tabs */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:10 }}>
+        <div style={{ display:'flex', gap:6 }}>
+          {['overview','income','expenses'].map(v=>(
+            <button key={v} onClick={()=>setView(v)}
+              style={{ ...S.btn, padding:'6px 14px', fontSize:13,
+                background:view===v?'#5a3e1b':'#fff', color:view===v?'#fff':'#7a6648',
+                border:'1px solid #d0c4b0' }}>
+              {v.charAt(0).toUpperCase()+v.slice(1)}
             </button>
           ))}
         </div>
-        <div className="pnl-summary-nums" style={{ marginLeft: 'auto', display: 'flex', gap: 16, alignItems: 'center' }}>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: 10, color: '#2e7d32', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 1px' }}>In</p>
-            <p style={{ fontSize: 16, fontWeight: 700, color: '#2e7d32', margin: 0 }}>+{fmt(totalIncome)}</p>
+        <div style={{ display:'flex', gap:isMobile?12:20, alignItems:'center', flexWrap:'wrap' }}>
+          <div style={{ textAlign:'center' }}>
+            <p style={{ fontSize:10, color:'#2e7d32', fontWeight:700, textTransform:'uppercase', margin:'0 0 1px' }}>In</p>
+            <p style={{ fontSize:isMobile?15:18, fontWeight:700, color:'#2e7d32', margin:0, fontFamily:"'Playfair Display',serif" }}>+{fmt(totalIn)}</p>
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: 10, color: '#c62828', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 1px' }}>Out</p>
-            <p style={{ fontSize: 16, fontWeight: 700, color: '#c62828', margin: 0 }}>-{fmt(totalCosts)}</p>
+          <div style={{ textAlign:'center' }}>
+            <p style={{ fontSize:10, color:'#c62828', fontWeight:700, textTransform:'uppercase', margin:'0 0 1px' }}>Out</p>
+            <p style={{ fontSize:isMobile?15:18, fontWeight:700, color:'#c62828', margin:0, fontFamily:"'Playfair Display',serif" }}>−{fmt(totalOut)}</p>
           </div>
-          <div style={{ textAlign: 'center', borderLeft: '1px solid #e8e0d0', paddingLeft: 14 }}>
-            <p style={{ fontSize: 10, color: '#a08060', fontWeight: 700, textTransform: 'uppercase', margin: '0 0 1px' }}>Net</p>
-            <p style={{ fontSize: 18, fontWeight: 700, color: netColor(netPnL), fontFamily: "'Playfair Display',serif", margin: 0 }}>{fmtNet(netPnL)}</p>
+          <div style={{ textAlign:'center', borderLeft:'1px solid #e8e0d0', paddingLeft:isMobile?12:18 }}>
+            <p style={{ fontSize:10, color:'#a08060', fontWeight:700, textTransform:'uppercase', margin:'0 0 1px' }}>Net</p>
+            <p style={{ fontSize:isMobile?17:22, fontWeight:700, color:net>=0?'#2e7d32':'#c62828', margin:0, fontFamily:"'Playfair Display',serif" }}>
+              {(net>=0?'+':'')+fmt(net)}
+            </p>
           </div>
         </div>
       </div>
 
-      {loading ? <Spinner /> : error ? <ErrorMsg message={error} /> : (
-        <>
-          {/* Overview */}
-          {tab === 'overview' && (
-            months.length === 0
-              ? <div style={{ ...S.card, padding: 48, textAlign: 'center' }}><p style={{ color: '#a08060' }}>No entries yet. Log your first income or expense above.</p></div>
-              : months.map(mo => {
-                  const moCosts  = filteredCosts.filter(c  => c.date.startsWith(mo))
-                  const moIncome = filteredIncome.filter(i => i.date.startsWith(mo))
-                  const moSpent  = moCosts.reduce((s, c)  => s + Number(c.amount), 0)
-                  const moEarned = moIncome.reduce((s, i) => s + Number(i.amount), 0)
-                  const moNet    = moEarned - moSpent
-                  return (
-                    <div key={mo} style={{ ...S.card, padding: 18, marginBottom: 12 }}>
-                      <div className="pnl-month-header" style={{ display: 'flex', alignItems: 'center', marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid #f0ebe4' }}>
-                        <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 15, fontWeight: 700 }}>{fmtMonth(mo)}</span>
-                        <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center' }}>
-                          <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 600 }}>+{fmt(moEarned)}</span>
-                          <span style={{ fontSize: 12, color: '#c62828', fontWeight: 600 }}>-{fmt(moSpent)}</span>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: netColor(moNet), borderLeft: '1px solid #e8e0d0', paddingLeft: 10 }}>{fmtNet(moNet)}</span>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {[...moIncome.map(i => ({ ...i, _type: 'income' })), ...moCosts.map(c => ({ ...c, _type: 'expense' }))]
-                          .sort((a, b) => b.date.localeCompare(a.date))
-                          .map(entry => {
-                            const meta     = ANIMAL_META[entry.species] || ANIMAL_META.sheep
-                            const isIncome = entry._type === 'income'
-                            const catMeta  = !isIncome ? (EXPENSE_CATEGORIES.find(c => c.value === entry.category) || EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length-1]) : null
-                            const iType    = isIncome ? (INCOME_TYPES.find(t => t.value === entry.income_type)?.label || 'Income') : catMeta?.label
-                            return (
-                              <div key={entry.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 8, background: isIncome ? '#f1f8f1' : (catMeta?.bg || '#fdfaf6') }}>
-                                <span style={{ fontSize: 16, flexShrink: 0 }}>{isIncome ? meta.emoji : catMeta?.emoji}</span>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.description}</p>
-                                  <p style={{ fontSize: 11, color: '#a08060', margin: 0 }}>{meta.label} · {iType}{entry.customer?.name ? ` · 👤 ${entry.customer.name}` : ''} · {formatDate(entry.date)}</p>
-                                </div>
-                                <span style={{ fontWeight: 700, fontSize: 13, color: isIncome ? '#2e7d32' : '#c62828', flexShrink: 0 }}>
-                                  {isIncome ? fmtIncome(entry.amount) : fmtExpense(entry.amount)}
-                                </span>
-                                <button onClick={() => isIncome ? deleteIncome(entry.id) : deleteCost(entry.id)}
-                                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c0a080', fontSize: 18, lineHeight: 1, padding: '0 2px', flexShrink: 0 }}>×</button>
-                              </div>
-                            )
-                          })}
-                      </div>
-                    </div>
-                  )
-                })
-          )}
+      {/* Entries */}
+      {(view==='overview'||view==='income') && filterI.length>0 && (
+        <div style={{ ...S.card, padding:isMobile?14:22, marginBottom:14 }}>
+          <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:15, margin:'0 0 14px' }}>Income</p>
+          {filterI.map(i=>{
+            const typeLabel=(INCOME_TYPES.find(t=>t.value===i.income_type)||{label:i.income_type}).label
+            return (
+              <div key={i.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 11px', borderRadius:8, background:'#f1f8f1', marginBottom:7 }}>
+                <span style={{ fontSize:16 }}>{ANIMAL_META[i.species]?.emoji||'🌾'}</span>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <p style={{ fontSize:13, fontWeight:600, margin:'0 0 1px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{i.description||typeLabel}</p>
+                  <p style={{ fontSize:11, color:'#a08060', margin:0 }}>
+                    {typeLabel}{i.customer?.name?` · ${i.customer.name}`:''} · {formatDate(i.date)}
+                    {i.quantity&&i.unit?` · ${i.quantity} ${i.unit}`:''}
+                  </p>
+                </div>
+                <span style={{ fontWeight:700, fontSize:13, color:'#2e7d32', flexShrink:0 }}>+{fmt(Number(i.amount))}</span>
+                <button onClick={()=>deleteIncome(i.id)} style={{ background:'none', border:'none', color:'#c0a080', cursor:'pointer', fontSize:16, padding:'0 4px', flexShrink:0 }}>×</button>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
-          {/* Income tab */}
-          {tab === 'income' && (
-            filteredIncome.length === 0
-              ? <div style={{ ...S.card, padding: 48, textAlign: 'center' }}><p style={{ color: '#a08060' }}>No income recorded yet.</p></div>
-              : months.filter(mo => filteredIncome.some(i => i.date.startsWith(mo))).map(mo => {
-                  const entries = filteredIncome.filter(i => i.date.startsWith(mo)).sort((a, b) => b.date.localeCompare(a.date))
-                  const total   = entries.reduce((s, i) => s + Number(i.amount), 0)
-                  return (
-                    <div key={mo} style={{ ...S.card, padding: 18, marginBottom: 12 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid #f0ebe4' }}>
-                        <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 15, fontWeight: 700 }}>{fmtMonth(mo)}</span>
-                        <span style={{ marginLeft: 'auto', fontWeight: 700, fontSize: 14, color: '#2e7d32' }}>+{fmt(total)}</span>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {entries.map(i => {
-                          const meta  = ANIMAL_META[i.species] || ANIMAL_META.sheep
-                          const iType = INCOME_TYPES.find(t => t.value === i.income_type)?.label || 'Income'
-                          return (
-                            <div key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 8, background: '#f1f8f1' }}>
-                              <span style={{ fontSize: 18 }}>{meta.emoji}</span>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.description}</p>
-                                <p style={{ fontSize: 11, color: '#a08060', margin: 0 }}>{meta.label} · {iType}{i.customer?.name ? ` · 👤 ${i.customer.name}` : ''} · {formatDate(i.date)}</p>
-                              </div>
-                              <span style={{ fontWeight: 700, fontSize: 13, color: '#2e7d32', flexShrink: 0 }}>+{fmt(i.amount)}</span>
-                              <button onClick={() => deleteIncome(i.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c0a080', fontSize: 18, lineHeight: 1, padding: '0 2px' }}>×</button>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })
-          )}
+      {(view==='overview'||view==='expenses') && filterC.length>0 && (
+        <div style={{ ...S.card, padding:isMobile?14:22, marginBottom:14 }}>
+          <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:15, margin:'0 0 14px' }}>Expenses</p>
+          {filterC.map(c=>{
+            const catLabel=(EXPENSE_CATS.find(x=>x.value===c.category)||{label:c.category}).label
+            return (
+              <div key={c.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 11px', borderRadius:8, background:'#fff3f3', marginBottom:7 }}>
+                <span style={{ fontSize:16 }}>{ANIMAL_META[c.species]?.emoji||'🌾'}</span>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <p style={{ fontSize:13, fontWeight:600, margin:'0 0 1px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{c.description||catLabel}</p>
+                  <p style={{ fontSize:11, color:'#a08060', margin:0 }}>{catLabel} · {formatDate(c.date)}</p>
+                </div>
+                <span style={{ fontWeight:700, fontSize:13, color:'#c62828', flexShrink:0 }}>−{fmt(Number(c.amount))}</span>
+                <button onClick={()=>deleteCost(c.id)} style={{ background:'none', border:'none', color:'#c0a080', cursor:'pointer', fontSize:16, padding:'0 4px', flexShrink:0 }}>×</button>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
-          {/* Expenses tab */}
-          {tab === 'expenses' && (
-            filteredCosts.length === 0
-              ? <div style={{ ...S.card, padding: 48, textAlign: 'center' }}><p style={{ color: '#a08060' }}>No expenses recorded yet.</p></div>
-              : months.filter(mo => filteredCosts.some(c => c.date.startsWith(mo))).map(mo => {
-                  const entries = filteredCosts.filter(c => c.date.startsWith(mo)).sort((a, b) => b.date.localeCompare(a.date))
-                  const total   = entries.reduce((s, c) => s + Number(c.amount), 0)
-                  return (
-                    <div key={mo} style={{ ...S.card, padding: 18, marginBottom: 12 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid #f0ebe4' }}>
-                        <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 15, fontWeight: 700 }}>{fmtMonth(mo)}</span>
-                        <span style={{ marginLeft: 'auto', fontWeight: 700, fontSize: 14, color: '#c62828' }}>-{fmt(total)}</span>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {entries.map(c => {
-                          const meta    = ANIMAL_META[c.species] || ANIMAL_META.sheep
-                          const catMeta = EXPENSE_CATEGORIES.find(ec => ec.value === c.category) || EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length-1]
-                          return (
-                            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 8, background: catMeta.bg }}>
-                              <span style={{ fontSize: 18 }}>{catMeta.emoji}</span>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.description}</p>
-                                <p style={{ fontSize: 11, color: '#a08060', margin: 0 }}>{meta.label} · <span style={{ color: catMeta.color, fontWeight: 600 }}>{catMeta.label}</span> · {formatDate(c.date)}</p>
-                              </div>
-                              <span style={{ fontWeight: 700, fontSize: 13, color: '#c62828', flexShrink: 0 }}>-{fmt(c.amount)}</span>
-                              <button onClick={() => deleteCost(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c0a080', fontSize: 18, lineHeight: 1, padding: '0 2px' }}>×</button>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })
-          )}
-        </>
+      {filterI.length===0 && filterC.length===0 && (
+        <div style={{ ...S.card, padding:60, textAlign:'center' }}>
+          <div style={{ fontSize:44, marginBottom:14 }}>💰</div>
+          <p style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, margin:'0 0 8px' }}>No entries yet</p>
+          <p style={{ fontSize:14, color:'#a08060', margin:'0 0 16px' }}>Log your first income or expense above.</p>
+        </div>
       )}
     </div>
   )
