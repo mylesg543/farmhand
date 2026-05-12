@@ -28,17 +28,15 @@ function groupByMonth(events) {
   const groups = []
   const seen   = {}
   for (const ev of events) {
-    // Parse YYYY-MM directly from the date string — no timezone ambiguity
-    const parts = (ev.event_date || '').split('-')
-    const year  = parts[0]
-    const month = parts[1]
-    if (!year || !month) continue
-    const key = `${year}-${month}`
-    const lbl = new Date(parseInt(year), parseInt(month)-1, 1)
-      .toLocaleDateString('en-US', { month:'long', year:'numeric' })
+    // Slice first 7 chars (YYYY-MM) — works whether date is '2026-05-12' or '2026-05-12T00:00:00'
+    const key = (ev.event_date || '').slice(0, 7)
+    if (!key || key.length < 7) continue
+    const [year, month] = key.split('-')
+    const lbl = new Date(parseInt(year), parseInt(month) - 1, 1)
+      .toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     if (!seen[key]) {
       seen[key] = groups.length
-      groups.push({ key, label:lbl, events:[] })
+      groups.push({ key, label: lbl, events: [] })
     }
     groups[seen[key]].events.push(ev)
   }
