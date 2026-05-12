@@ -25,22 +25,19 @@ const getMeta = (type) => EVENT_META[type] || EVENT_META.custom
 
 // ─── Group events by year-month ────────────────────────────────────────────────
 function groupByMonth(events) {
-  const groups = []
-  const seen   = {}
+  const map = new Map()
   for (const ev of events) {
-    // Slice first 7 chars (YYYY-MM) — works whether date is '2026-05-12' or '2026-05-12T00:00:00'
-    const key = (ev.event_date || '').slice(0, 7)
+    const key = (ev.event_date || '').slice(0, 7) // Always 'YYYY-MM'
     if (!key || key.length < 7) continue
-    const [year, month] = key.split('-')
-    const lbl = new Date(parseInt(year), parseInt(month) - 1, 1)
-      .toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-    if (!seen[key]) {
-      seen[key] = groups.length
-      groups.push({ key, label: lbl, events: [] })
+    if (!map.has(key)) {
+      const [year, month] = key.split('-')
+      const lbl = new Date(parseInt(year), parseInt(month) - 1, 1)
+        .toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+      map.set(key, { key, label: lbl, events: [] })
     }
-    groups[seen[key]].events.push(ev)
+    map.get(key).events.push(ev)
   }
-  return groups
+  return Array.from(map.values())
 }
 
 // ─── Single event card ─────────────────────────────────────────────────────────
@@ -284,6 +281,8 @@ function LogEventForm({ onSave, onCancel, isMobile }) {
 // ─── Main Timeline ─────────────────────────────────────────────────────────────
 export function EventTimeline({ events=[], loading=false, onAddEvent, onAddPhoto, onDelete, isMobile }) {
   const [showForm, setShowForm] = useState(false)
+  // Debug: log raw event_date values so we can see what Supabase returns
+  if (events.length > 0) console.log('EventTimeline dates:', events.map(e => e.event_date))
   const groups = groupByMonth(events)
 
   const handleSave = async (form) => {
