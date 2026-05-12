@@ -1,31 +1,47 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+const BUCKET = 'fh-animal-photos'
+
 export function usePhotoUpload() {
   const [uploading, setUploading] = useState(false)
-  const [uploadError, setUploadError] = useState(null)
+  const [error,     setError]     = useState(null)
 
-  const uploadPhoto = async (file, animalId) => {
+  const upload = async (file) => {
+    if (!file) throw new Error('No file provided')
     setUploading(true)
-    setUploadError(null)
+    setError(null)
     try {
-      const ext = file.name.split('.').pop()
-      const path = `${animalId}-${Date.now()}.${ext}`
-      const { error: uploadErr } = await supabase.storage
-        .from('fh-animal-photos')
-        .upload(path, file, { upsert: true })
-      if (uploadErr) throw uploadErr
-      const { data } = supabase.storage
-        .from('fh-animal-photos')
+      // Unique filename: timestamp + random + original extension
+      const ext      = file.name.split('.').pop().toLowerCase()
+      const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const path     = `events/${filename}`
+
+      const { data, error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(path, file, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: file.type,
+        })
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from(BUCKET)
         .getPublicUrl(path)
-      return data.publicUrl
+
+      if (!urlData?.publicUrl) throw new Error('Could not get public URL')
+      return urlData.publicUrl
+
     } catch (err) {
-      setUploadError(err.message)
-      return null
+      setError(err.message)
+      throw err
     } finally {
       setUploading(false)
     }
   }
 
-  return { uploadPhoto, uploading, uploadError }
+  return { upload, uploading, error }
 }

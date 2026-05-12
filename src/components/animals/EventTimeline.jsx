@@ -26,12 +26,20 @@ const getMeta = (type) => EVENT_META[type] || EVENT_META.custom
 // ─── Group events by year-month ────────────────────────────────────────────────
 function groupByMonth(events) {
   const groups = []
-  const seen = {}
+  const seen   = {}
   for (const ev of events) {
-    const d   = new Date(ev.event_date + 'T00:00:00')
-    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
-    const lbl = d.toLocaleDateString('en-US', { month:'long', year:'numeric' })
-    if (!seen[key]) { seen[key] = groups.length; groups.push({ key, label:lbl, events:[] }) }
+    // Parse YYYY-MM directly from the date string — no timezone ambiguity
+    const parts = (ev.event_date || '').split('-')
+    const year  = parts[0]
+    const month = parts[1]
+    if (!year || !month) continue
+    const key = `${year}-${month}`
+    const lbl = new Date(parseInt(year), parseInt(month)-1, 1)
+      .toLocaleDateString('en-US', { month:'long', year:'numeric' })
+    if (!seen[key]) {
+      seen[key] = groups.length
+      groups.push({ key, label:lbl, events:[] })
+    }
     groups[seen[key]].events.push(ev)
   }
   return groups
@@ -50,15 +58,20 @@ function EventCard({ event, onAddPhoto, onDelete, isMobile }) {
   const day         = new Date(event.event_date+'T00:00:00').getDate()
   const mon         = new Date(event.event_date+'T00:00:00').toLocaleDateString('en-US',{month:'short'})
 
+  const [uploadErrMsg, setUploadErrMsg] = useState('')
+
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
     setUploading(true)
+    setUploadErrMsg('')
     try {
       const url = await upload(file)
       await onAddPhoto(event.id, url)
-    } catch (err) { console.error(err) }
-    finally { setUploading(false) }
+    } catch (err) {
+      console.error(err)
+      setUploadErrMsg('Upload failed — check your connection and try again.')
+    } finally { setUploading(false) }
   }
 
   return (
@@ -150,6 +163,7 @@ function EventCard({ event, onAddPhoto, onDelete, isMobile }) {
                   Delete
                 </button>
               </div>
+              {uploadErrMsg && <p style={{ fontSize:11, color:'#c62828', margin:'6px 0 0' }}>{uploadErrMsg}</p>}
             </div>
           )}
         </div>
