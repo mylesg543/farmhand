@@ -34,16 +34,36 @@ function IncomeForm({ customers, onSave, onCancel }) {
     species:'chickens', income_type:'sale_eggs', description:'', amount:'',
     date: new Date().toISOString().split('T')[0], customer_id:'', quantity:'', unit:'',
   })
-  const [saving, setSaving] = useState(false)
-  const [error,  setError]  = useState('')
+  const [saving,    setSaving]    = useState(false)
+  const [error,     setError]     = useState('')
+  // Load saved egg price from localStorage, fall back to default $5
+  const [eggPrice,  setEggPrice]  = useState(() => {
+    const saved = localStorage.getItem('fh_egg_price_per_dozen')
+    return saved ? parseFloat(saved) : EGG_PRICE
+  })
+  const [editPrice, setEditPrice] = useState(false)
   const set = (k,v) => setForm(f=>({...f,[k]:v}))
   const isEggs = form.income_type === 'sale_eggs'
 
   const handleDozens = (n) => {
     set('quantity', n)
     set('unit', 'dozen')
-    set('amount', (n * EGG_PRICE).toFixed(2))
+    set('amount', (n * eggPrice).toFixed(2))
     set('description', `${n===0.5?'½':n} dozen egg${n===1?'':'s'}`)
+  }
+
+  const handlePriceChange = (newPrice) => {
+    const p = parseFloat(newPrice) || 0
+    setEggPrice(p)
+    if (form.quantity) {
+      set('amount', (form.quantity * p).toFixed(2))
+    }
+  }
+
+  const handlePriceSave = () => {
+    // Persist to localStorage so it's remembered next time
+    localStorage.setItem('fh_egg_price_per_dozen', eggPrice.toString())
+    setEditPrice(false)
   }
 
   const handleSave = async () => {
@@ -83,7 +103,32 @@ function IncomeForm({ customers, onSave, onCancel }) {
         </div>
         {isEggs && (
           <div style={{ gridColumn:'1 / -1' }}>
-            <label style={S.label}>Dozens (auto-prices at ${EGG_PRICE}/dozen — adjust amount if needed)</label>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8, flexWrap:'wrap' }}>
+              <label style={{ ...S.label, margin:0 }}>Quick Dozens</label>
+              {/* Editable price per dozen */}
+              <div style={{ display:'flex', alignItems:'center', gap:6, marginLeft:'auto' }}>
+                <span style={{ fontSize:11, color:'#a08060' }}>Price per dozen:</span>
+                {editPrice ? (
+                  <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                    <span style={{ fontSize:13, color:'#5a3e1b' }}>$</span>
+                    <input
+                      type="number" step="0.50" min="0"
+                      style={{ ...S.input, width:64, padding:'4px 8px', fontSize:13 }}
+                      value={eggPrice}
+                      onChange={e=>handlePriceChange(e.target.value)}
+                      autoFocus
+                    />
+                    <button onClick={handlePriceSave}
+                      style={{ ...S.btn, ...S.btnPrimary, padding:'4px 10px', fontSize:11 }}>✓</button>
+                  </div>
+                ) : (
+                  <button onClick={()=>setEditPrice(true)}
+                    style={{ ...S.btn, background:'#f0ebe4', color:'#5a3e1b', border:'1px solid #d0c4b0', padding:'4px 10px', fontSize:11, fontWeight:600 }}>
+                    ${eggPrice.toFixed(2)}/doz ✎
+                  </button>
+                )}
+              </div>
+            </div>
             <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
               {DOZEN_OPTIONS.map(n=>(
                 <button key={n} onClick={()=>handleDozens(n)}
@@ -95,6 +140,9 @@ function IncomeForm({ customers, onSave, onCancel }) {
                 </button>
               ))}
             </div>
+            <p style={{ fontSize:11, color:'#a08060', margin:'6px 0 0', fontStyle:'italic' }}>
+              Auto-fills at ${eggPrice.toFixed(2)}/dozen — tap ✎ to change and save your price.
+            </p>
           </div>
         )}
         <div>
@@ -116,6 +164,16 @@ function IncomeForm({ customers, onSave, onCancel }) {
             <option value="">— No customer —</option>
             {customers.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
+          {customers.length === 0 && (
+            <p style={{ fontSize:11, color:'#a08060', margin:'5px 0 0', fontStyle:'italic' }}>
+              No customers yet — add them in the <strong style={{ color:'#5a3e1b' }}>Customers</strong> tab first.
+            </p>
+          )}
+          {customers.length > 0 && (
+            <p style={{ fontSize:11, color:'#a08060', margin:'5px 0 0' }}>
+              Don't see your customer? <strong style={{ color:'#5a3e1b' }}>Add them in the Customers tab.</strong>
+            </p>
+          )}
         </div>
       </div>
       <div style={{ display:'flex', gap:10 }}>
