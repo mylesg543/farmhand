@@ -178,34 +178,117 @@ function FlockScreen({ name, species, highlight, isMobile }) {
 }
 
 function ProfileScreen({ name, species, highlight, isMobile }) {
-  const isSheep=species==='sheep'
-  const animal={...(isSheep?DEMO_SHEEP[0]:DEMO_CHICKENS[0]),name}
-  const events=isSheep?[
-    {id:'s',event_type:'sickness',event_date:'2024-09-14',notes:'Limping on left front. Penicillin 3ml. Monitor 5 days.'},
-    {id:'e1',event_type:'vaccination',event_date:'2024-03-10',notes:'Annual CD&T.'},
-    {id:'e2',event_type:'lambing',event_date:'2024-04-02',notes:'Twins — Rosie and Clover. Both healthy.'},
-    {id:'e3',event_type:'shearing',event_date:'2024-05-15',notes:'Fleece 4.2kg. Good quality.'},
-  ]:[
-    {id:'e1',event_type:'egg_production',event_date:'2025-01-15',notes:'Averaging 6 eggs/week. Consistent through winter.'},
-    {id:'e2',event_type:'vaccination',event_date:'2024-11-10',notes:'Newcastle disease vaccine.'},
-    {id:'e3',event_type:'moulting',event_date:'2024-10-01',notes:'Moulting started. Production dipped ~3 weeks.'},
-    {id:'e4',event_type:'sickness',event_date:'2024-08-20',notes:'Lethargic, not eating. Recovered after 2 days — heat stress likely.'},
+  const isSheep  = species==='sheep'
+  const animal   = {...(isSheep?DEMO_SHEEP[0]:DEMO_CHICKENS[0]), name}
+
+  const events = isSheep ? [
+    { id:'e1', event_type:'sickness',      event_date:'2024-09-14', notes:'Limping on left front. Penicillin 3ml. Monitor 5 days.', photo_url:null },
+    { id:'e2', event_type:'lambing',       event_date:'2024-04-02', notes:'Twins born — Rosie and Clover. Both healthy, strong latches.', photo_url:DEMO_SHEEP[2]?.photo_url||null },
+    { id:'e3', event_type:'shearing',      event_date:'2024-05-15', notes:'Fleece 4.2kg. Good staple length.', photo_url:null },
+    { id:'e4', event_type:'vaccination',   event_date:'2024-03-10', notes:'Annual CD&T booster.', photo_url:null },
+    { id:'e5', event_type:'hoof_trimming', event_date:'2023-11-20', notes:'All four hooves. No issues.', photo_url:null },
+  ] : [
+    { id:'e1', event_type:'egg_production', event_date:'2025-01-15', notes:'Averaging 6 eggs/week through winter. Consistent layer.', photo_url:null },
+    { id:'e2', event_type:'vaccination',    event_date:'2024-11-10', notes:'Newcastle disease vaccine. Group treatment.', photo_url:null },
+    { id:'e3', event_type:'moulting',       event_date:'2024-10-01', notes:'Moulting started. Egg production dipped ~3 weeks.', photo_url:null },
+    { id:'e4', event_type:'sickness',       event_date:'2024-08-20', notes:'Lethargic, not eating. Recovered after 2 days — heat stress.', photo_url:null },
   ]
-  const subtitle=isSheep?'Merino · Ewe · TAG-001':'Rhode Island Red · Hen · CHK-001'
+
+  const monthGroups = events.reduce((acc, ev) => {
+    const d   = new Date(ev.event_date+'T00:00:00')
+    const key = d.toLocaleDateString('en-US',{month:'long',year:'numeric'})
+    if (!acc[key]) acc[key] = []
+    acc[key].push(ev)
+    return acc
+  }, {})
+
+  const EVENT_ICONS = { vaccination:'💉', worming:'💊', hoof_trimming:'🪛', shearing:'✂️', lambing:'🐣', sickness:'🤒', injury:'🩹', egg_production:'🥚', moulting:'🪶', breeding:'❤️', weight_check:'⚖️', custom:'📝' }
+  const EC = { vaccination:{color:'#1565c0',bg:'#e3f2fd',border:'#90caf9'}, worming:{color:'#6a1b9a',bg:'#f3e5f5',border:'#ce93d8'}, hoof_trimming:{color:'#4e342e',bg:'#efebe9',border:'#bcaaa4'}, shearing:{color:'#2e7d32',bg:'#e8f5e9',border:'#a5d6a7'}, lambing:{color:'#e65100',bg:'#fff3e0',border:'#ffcc80'}, sickness:{color:'#c62828',bg:'#fff3f3',border:'#f5c6c6'}, egg_production:{color:'#f57f17',bg:'#fff9e6',border:'#ffe082'}, moulting:{color:'#5d4037',bg:'#efebe9',border:'#bcaaa4'} }
+
+  function TimelineEvent({ ev }) {
+    const [expanded, setExpanded] = useState(false)
+    const [imgErr,   setImgErr]   = useState(false)
+    const em    = EVENT_ICONS[ev.event_type] || '📝'
+    const ec    = EC[ev.event_type] || { color:'#5a3e1b', bg:'#fdfaf6', border:'#d0c4b0' }
+    const isAlert = ev.event_type==='sickness'||ev.event_type==='injury'
+    const d     = new Date(ev.event_date+'T00:00:00')
+    const day   = d.getDate()
+    const mon   = d.toLocaleDateString('en-US',{month:'short'})
+    const label = ev.event_type.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())
+    const hasPhoto = ev.photo_url && !imgErr
+
+    return (
+      <div style={{ display:'flex', gap:0, position:'relative', marginBottom:4 }}>
+        {/* Date */}
+        <div style={{ width:isMobile?44:52, flexShrink:0, paddingTop:4, textAlign:'center' }}>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?15:19, fontWeight:700, color:'#2c2416', lineHeight:1 }}>{day}</div>
+          <div style={{ fontSize:9, fontWeight:700, color:'#a08060', textTransform:'uppercase' }}>{mon}</div>
+        </div>
+        {/* Icon */}
+        <div style={{ width:isMobile?44:52, flexShrink:0, display:'flex', justifyContent:'center', paddingTop:2, zIndex:1 }}>
+          {hasPhoto ? (
+            <div onClick={()=>setExpanded(v=>!v)} style={{ width:isMobile?38:46, height:isMobile?38:46, borderRadius:9, overflow:'hidden', border:`2px solid ${ec.border}`, cursor:'pointer' }}>
+              <img src={ev.photo_url} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={()=>setImgErr(true)} alt={label}/>
+            </div>
+          ) : (
+            <div onClick={()=>setExpanded(v=>!v)}
+              style={{ width:isMobile?38:46, height:isMobile?38:46, borderRadius:9, background:ec.bg, border:`2px solid ${ec.border}`,
+                display:'flex', alignItems:'center', justifyContent:'center', fontSize:isMobile?17:21,
+                cursor:'pointer', boxShadow:isAlert?'0 0 0 3px rgba(198,40,40,0.2)':'none' }}>
+              {em}
+            </div>
+          )}
+        </div>
+        {/* Content */}
+        <div style={{ flex:1, paddingLeft:isMobile?10:14, paddingBottom:16, minWidth:0 }}>
+          <div onClick={()=>setExpanded(v=>!v)}
+            style={{ cursor:'pointer', background:expanded?ec.bg:'transparent',
+              border:expanded?`1px solid ${ec.border}`:'1px solid transparent',
+              borderRadius:10, padding:expanded?(isMobile?'10px 12px':'12px 16px'):'4px 0',
+              transition:'all 0.2s' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+              <span style={{ fontSize:isMobile?12:13, fontWeight:700, color:ec.color }}>{label}</span>
+              {isAlert && <span style={{ fontSize:9, fontWeight:700, padding:'1px 6px', borderRadius:8, background:'#c62828', color:'#fff', textTransform:'uppercase' }}>⚠ Alert</span>}
+              <span style={{ fontSize:11, color:'#a08060', marginLeft:'auto' }}>{expanded?'▲':'▾'}</span>
+            </div>
+            {!expanded && ev.notes && (
+              <p style={{ fontSize:12, color:'#7a6648', margin:'3px 0 0', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{ev.notes}</p>
+            )}
+            {expanded && (
+              <div style={{ marginTop:10 }}>
+                {ev.notes && <p style={{ fontSize:13, color:'#4a3c28', margin:'0 0 8px', lineHeight:1.6 }}>{ev.notes}</p>}
+                {hasPhoto && <div style={{ borderRadius:8, overflow:'hidden', marginBottom:8, maxWidth:260 }}><img src={ev.photo_url} style={{ width:'100%', height:'auto' }} alt={label} onError={()=>setImgErr(true)}/></div>}
+              </div>
+            )}
+          </div>
+          {!expanded && !hasPhoto && (
+            <span style={{ fontSize:10, color:'#c8b89a', fontStyle:'italic', cursor:'pointer', opacity:0.7 }}>📷 add photo</span>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div>
-      <div style={{ background:'linear-gradient(160deg,#2c2416 0%,#4a3520 60%,#6b4f2e 100%)',width:'100%' }}>
-        <div style={{ maxWidth:1100,margin:'0 auto',padding:isMobile?'14px 14px 20px':'22px 24px 28px' }}>
-          <button style={{ ...S.btn,background:'rgba(255,255,255,0.1)',color:'#f0e6cc',border:'1px solid rgba(255,255,255,0.2)',padding:'6px 12px',fontSize:12,marginBottom:14 }}>← {isSheep?'Flock':'Chickens'}</button>
-          <div style={{ display:'flex',gap:isMobile?12:18,alignItems:'flex-start' }}>
-            <div style={{ width:isMobile?64:80,height:isMobile?64:80,borderRadius:'50%',overflow:'hidden',border:'3px solid rgba(255,255,255,0.25)',flexShrink:0 }}><Avatar animal={animal} size={isMobile?64:80}/></div>
+      <div style={{ background:'linear-gradient(160deg,#2c2416 0%,#4a3520 60%,#6b4f2e 100%)', width:'100%' }}>
+        <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'14px 14px 20px':'22px 24px 28px' }}>
+          <button style={{ ...S.btn,background:'rgba(255,255,255,0.1)',color:'#f0e6cc',border:'1px solid rgba(255,255,255,0.2)',padding:'6px 12px',fontSize:12,marginBottom:14 }}>
+            ← {isSheep?'Flock':'Chickens'}
+          </button>
+          <div style={{ display:'flex', gap:isMobile?12:18, alignItems:'flex-start' }}>
+            <div style={{ width:isMobile?64:80, height:isMobile?64:80, borderRadius:'50%', overflow:'hidden', border:'3px solid rgba(255,255,255,0.25)', flexShrink:0 }}>
+              <Avatar animal={animal} size={isMobile?64:80}/>
+            </div>
             <div style={{ flex:1 }}>
-              <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap' }}>
-                <h1 style={{ fontFamily:"'Playfair Display',serif",fontSize:isMobile?20:28,fontWeight:700,color:'#f0e6cc',margin:0 }}>{name}</h1>
-                <span style={{ padding:'3px 10px',borderRadius:20,fontSize:10,fontWeight:700,background:'#4caf50',color:'#fff',textTransform:'uppercase' }}>alive</span>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, flexWrap:'wrap' }}>
+                <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?20:28, fontWeight:700, color:'#f0e6cc', margin:0 }}>{name}</h1>
+                <span style={{ padding:'3px 10px', borderRadius:20, fontSize:10, fontWeight:700, background:'#4caf50', color:'#fff', textTransform:'uppercase' }}>alive</span>
               </div>
-              <p style={{ fontSize:12,color:'#c8a878',margin:'0 0 8px',fontStyle:'italic' }}>{subtitle}</p>
-              <div style={{ display:'flex',gap:isMobile?12:20,flexWrap:'wrap' }}>
+              <p style={{ fontSize:12, color:'#c8a878', margin:'0 0 8px', fontStyle:'italic' }}>
+                {isSheep?'Merino · Ewe · TAG-001':'Rhode Island Red · Hen · CHK-001'}
+              </p>
+              <div style={{ display:'flex', gap:isMobile?12:20, flexWrap:'wrap' }}>
                 {[['Age',calcAge(isSheep?'2021-03-15':'2023-06-01')],['Events',events.length+'']].map(([l,v])=>(
                   <div key={l}><p style={{ fontSize:9,color:'#7a6040',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',margin:'0 0 1px' }}>{l}</p><p style={{ fontSize:12,color:'#c8a878',margin:0 }}>{v}</p></div>
                 ))}
@@ -213,91 +296,73 @@ function ProfileScreen({ name, species, highlight, isMobile }) {
             </div>
             {!isMobile&&(
               <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+                {isSheep&&<button style={{ ...S.btn, background:'rgba(76,175,80,0.2)', color:'#a5d6a7', border:'1px solid rgba(76,175,80,0.35)', padding:'7px 14px', fontSize:13, fontWeight:700 }}>🌳 Lineage</button>}
                 <button style={{ ...S.btn,background:'rgba(255,255,255,0.1)',color:'#f0e6cc',border:'1px solid rgba(255,255,255,0.2)',padding:'7px 14px',fontSize:13 }}>Edit</button>
-                {species==='sheep'&&(
-                  <button style={{ ...S.btn, background:'rgba(76,175,80,0.2)', color:'#a5d6a7', border:'1px solid rgba(76,175,80,0.35)', padding:'7px 14px', fontSize:13, fontWeight:700 }}>
-                    🌳 Lineage
-                  </button>
-                )}
               </div>
             )}
           </div>
           {isMobile&&(
             <div style={{ marginTop:12, display:'flex', gap:8 }}>
+              {isSheep&&<button style={{ ...S.btn,flex:1,justifyContent:'center',background:'rgba(76,175,80,0.2)',color:'#a5d6a7',border:'1px solid rgba(76,175,80,0.35)',fontWeight:700 }}>🌳 Lineage</button>}
               <button style={{ ...S.btn,flex:1,justifyContent:'center',background:'rgba(255,255,255,0.1)',color:'#f0e6cc',border:'1px solid rgba(255,255,255,0.2)' }}>✎ Edit</button>
-              {species==='sheep'&&(
-                <button style={{ ...S.btn, flex:1, justifyContent:'center', background:'rgba(76,175,80,0.2)', color:'#a5d6a7', border:'1px solid rgba(76,175,80,0.35)', fontWeight:700 }}>
-                  🌳 Lineage
-                </button>
-              )}
             </div>
           )}
         </div>
       </div>
-      <div style={{ maxWidth:1100,margin:'0 auto',padding:isMobile?'12px':'16px 24px' }}>
-        {/* Mini lineage preview — sheep only */}
-        {species==='sheep' && (
-          <div style={{ ...S.card, padding:isMobile?14:20, marginBottom:14 }}>
-            <div style={{ display:'flex', alignItems:'center', marginBottom:14 }}>
+      <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'12px 12px':'16px 24px' }}>
+        {/* Mini lineage */}
+        {isSheep && (
+          <div style={{ ...S.card, padding:isMobile?'12px 14px':'16px 20px', marginBottom:14 }}>
+            <div style={{ display:'flex', alignItems:'center', marginBottom:12 }}>
               <span style={{ fontSize:10, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em' }}>🌳 Lineage</span>
-              <button style={{ ...S.btn, marginLeft:'auto', background:'#f0ebe4', color:'#5a3e1b', border:'1px solid #d0c4b0', padding:'6px 12px', fontSize:12, fontWeight:600 }}>
-                View Full Tree →
-              </button>
+              <button style={{ ...S.btn, marginLeft:'auto', background:'#f0ebe4', color:'#5a3e1b', border:'1px solid #d0c4b0', padding:'5px 10px', fontSize:11, fontWeight:600 }}>View Full Tree →</button>
             </div>
-            <div style={{ display:'flex', gap:isMobile?14:24, alignItems:'center', flexWrap:'wrap' }}>
-              {/* Sire */}
-              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                <div style={{ width:isMobile?42:50, height:isMobile?42:50, borderRadius:'50%', overflow:'hidden', border:'2px solid #e8e0d0', background:'#f0ebe4' }}>
-                  <Avatar animal={DEMO_SHEEP[1]} size={isMobile?42:50}/>
+            <div style={{ display:'flex', gap:14, alignItems:'center' }}>
+              {[['Duke','Sire',DEMO_SHEEP[1]],['Iris','Dam',null]].map(([pname,role,a])=>(
+                <div key={role} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+                  <div style={{ width:38, height:38, borderRadius:'50%', overflow:'hidden', border:'2px solid #e8e0d0', background:'#f0ebe4' }}>
+                    {a?<Avatar animal={a} size={38}/>:<div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>🐑</div>}
+                  </div>
+                  <span style={{ fontSize:8, fontWeight:700, color:'#2c2416', textTransform:'uppercase' }}>{pname}</span>
+                  <span style={{ fontSize:7, color:'#a08060' }}>{role}</span>
                 </div>
-                <span style={{ fontSize:9, fontWeight:700, color:'#2c2416', textTransform:'uppercase' }}>Duke</span>
-                <span style={{ fontSize:8, color:'#a08060' }}>Sire</span>
-              </div>
-              {/* Dam */}
-              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                <div style={{ width:isMobile?42:50, height:isMobile?42:50, borderRadius:'50%', overflow:'hidden', border:'2px solid #e8e0d0', background:'#f0ebe4', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <span style={{ fontSize:22 }}>🐑</span>
+              ))}
+              <span style={{ fontSize:16, color:'#c8b89a' }}>→</span>
+              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+                <div style={{ width:42, height:42, borderRadius:'50%', overflow:'hidden', border:'3px solid #c8a060', background:'#f0ebe4' }}>
+                  <Avatar animal={animal} size={42}/>
                 </div>
-                <span style={{ fontSize:9, fontWeight:700, color:'#2c2416', textTransform:'uppercase' }}>Iris</span>
-                <span style={{ fontSize:8, color:'#a08060' }}>Dam</span>
+                <span style={{ fontSize:8, fontWeight:700, color:'#2c2416', textTransform:'uppercase' }}>{name}</span>
+                <span style={{ fontSize:7, color:'#c8a060', fontWeight:700 }}>This Animal</span>
               </div>
-              <span style={{ fontSize:20, color:'#c8b89a' }}>→</span>
-              {/* Animal */}
-              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                <div style={{ width:isMobile?44:54, height:isMobile?44:54, borderRadius:'50%', overflow:'hidden', border:'3px solid #c8a060', background:'#f0ebe4' }}>
-                  <Avatar animal={{...DEMO_SHEEP[0],name}} size={isMobile?44:54}/>
-                </div>
-                <span style={{ fontSize:9, fontWeight:700, color:'#2c2416', textTransform:'uppercase' }}>{name}</span>
-                <span style={{ fontSize:8, color:'#c8a060', fontWeight:700 }}>This Animal</span>
-              </div>
-              <p style={{ fontSize:12, color:'#a08060', margin:0, fontStyle:'italic', flex:1, minWidth:120 }}>
-                Tap "View Full Tree" to see 4 generations and check for shared ancestors before breeding.
-              </p>
             </div>
           </div>
         )}
-        <div id="events" style={{ ...S.card,padding:isMobile?14:22,outline:highlight==='events'?'3px solid #c8a060':'none',boxShadow:highlight==='events'?'0 0 0 8px rgba(200,160,96,0.15)':'none',borderRadius:10,transition:'all 0.25s' }}>
-          <div style={{ display:'flex',alignItems:'center',marginBottom:16 }}>
-            <p style={{ fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:16,margin:0 }}>Health & Events</p>
-            <button style={{ ...S.btn,...S.btnPrimary,marginLeft:'auto',padding:'7px 14px',fontSize:12 }}>+ Log Event</button>
+        {/* Timeline */}
+        <div id="events" style={{ ...S.card, padding:isMobile?'14px 12px':'22px 24px',
+          outline:highlight==='events'?'3px solid #c8a060':'none',
+          boxShadow:highlight==='events'?'0 0 0 8px rgba(200,160,96,0.15)':'none',
+          borderRadius:10, transition:'all 0.25s' }}>
+          <div style={{ display:'flex', alignItems:'center', marginBottom:18 }}>
+            <div>
+              <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:16, margin:'0 0 1px' }}>Health Timeline</p>
+              <p style={{ fontSize:12, color:'#a08060', margin:0 }}>{events.length} events recorded</p>
+            </div>
+            <button style={{ ...S.btn, ...S.btnPrimary, marginLeft:'auto', padding:isMobile?'8px 14px':'9px 18px', fontSize:12 }}>+ Log Event</button>
           </div>
-          {events.map(ev=>{
-            const ec=EVENT_COLORS[ev.event_type]||EVENT_COLORS.custom
-            const label=ev.event_type.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())
-            const sick=ev.event_type==='sickness'
-            return (
-              <div key={ev.id} style={{ display:'flex',gap:10,padding:'11px 13px',borderRadius:9,background:sick?'#fff3f3':ec.bg,border:`1px solid ${sick?'#f5c6c6':ec.border}`,marginBottom:7,position:'relative' }}>
-                {sick&&<div style={{ position:'absolute',top:-7,right:10,background:'#c62828',color:'#fff',fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:8,textTransform:'uppercase' }}>⚠ Illness</div>}
-                <div style={{ flex:1 }}>
-                  <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:3,flexWrap:'wrap' }}>
-                    <Badge bg={sick?'#f5c6c6':ec.border} color={sick?'#c62828':ec.text}>{label}</Badge>
-                    <span style={{ fontSize:11,color:'#7a6648' }}>{formatDate(ev.event_date)}</span>
-                  </div>
-                  {ev.notes&&<p style={{ fontSize:13,margin:0,color:'#4a3c28',lineHeight:1.5 }}>{ev.notes}</p>}
-                </div>
+          {Object.entries(monthGroups).map(([month, monthEvents]) => (
+            <div key={month} style={{ marginBottom:12 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12, padding:'4px 0' }}>
+                <span style={{ fontSize:10, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.08em', whiteSpace:'nowrap' }}>{month}</span>
+                <div style={{ flex:1, height:1, background:'#e8e0d0' }}/>
+                <span style={{ fontSize:10, color:'#c8b89a' }}>{monthEvents.length}</span>
               </div>
-            )
-          })}
+              <div style={{ position:'relative' }}>
+                <div style={{ position:'absolute', left:isMobile?66:78, top:0, bottom:0, width:2, background:'linear-gradient(to bottom,#e8e0d0,#f7f4ef)', borderRadius:1 }}/>
+                {monthEvents.map(ev => <TimelineEvent key={ev.id} ev={ev}/>)}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -911,13 +976,16 @@ function LineageDemoScreen({ name, species, highlight, isMobile }) {
 
         <div style={{ minWidth:isMobile?480:620 }}>
           {rows.map((row, rowIdx) => {
-            const count  = row.nodes.length
-            const isRoot = rowIdx===3
+            const count      = row.nodes.length
+            const isRoot     = rowIdx===3
+            const mySlotW    = totalW / count
+            const nextRow    = rows[rowIdx+1]
+            const nextSlotW  = nextRow ? totalW / nextRow.nodes.length : 0
 
             return (
               <div key={rowIdx}>
                 {/* Row label */}
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, marginTop:rowIdx===0?0:4 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, marginTop:rowIdx===0?0:2 }}>
                   <span style={{ fontSize:isMobile?8:10, fontWeight:700, color:'#a08060', textTransform:'uppercase',
                     letterSpacing:'0.07em', background:'#f7f4ef', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' }}>
                     {row.label}
@@ -925,37 +993,35 @@ function LineageDemoScreen({ name, species, highlight, isMobile }) {
                   <div style={{ flex:1, height:1, background:'#f0ebe4' }}/>
                 </div>
 
-                {/* Connector lines down to next row */}
-                {rowIdx < 3 && (
-                  <svg width="100%" viewBox={`0 0 ${totalW} ${connH}`} style={{ display:'block', marginBottom:2 }} preserveAspectRatio="xMidYMid meet">
-                    {rows[rowIdx+1].nodes.map((_, childIdx) => {
-                      const childCount  = rows[rowIdx+1].nodes.length
-                      const childSlotW  = totalW / childCount
-                      const childX      = childSlotW * childIdx + childSlotW / 2
-                      const mySlotW     = totalW / count
-                      const par0X       = mySlotW * (childIdx*2)     + mySlotW/2
-                      const par1X       = mySlotW * (childIdx*2 + 1) + mySlotW/2
-                      const midX        = (par0X + par1X) / 2
-                      return (
-                        <g key={childIdx}>
-                          <line x1={par0X} y1={0}         x2={par0X}  y2={connH*0.4} stroke="#d0c4b0" strokeWidth={1.5}/>
-                          <line x1={par1X} y1={0}         x2={par1X}  y2={connH*0.4} stroke="#d0c4b0" strokeWidth={1.5}/>
-                          <line x1={par0X} y1={connH*0.4} x2={par1X}  y2={connH*0.4} stroke="#d0c4b0" strokeWidth={1.5}/>
-                          <line x1={midX}  y1={connH*0.4} x2={childX} y2={connH}     stroke="#d0c4b0" strokeWidth={1.5}/>
-                        </g>
-                      )
-                    })}
-                  </svg>
-                )}
-
-                {/* Nodes */}
-                <div style={{ display:'flex', width:'100%', marginBottom:4 }}>
+                {/* ── NODES first — icons sit above their lines ── */}
+                <div style={{ display:'flex', width:'100%', marginBottom:0 }}>
                   {row.nodes.map((node, ni) => (
                     <div key={ni} style={{ flex:1, display:'flex', justifyContent:'center', padding:`0 ${gapX/2}px` }}>
                       <DemoNode node={node} isRoot={isRoot}/>
                     </div>
                   ))}
                 </div>
+
+                {/* ── CONNECTORS below — lines drop down from nodes and converge ── */}
+                {rowIdx < 3 && (
+                  <svg width="100%" viewBox={`0 0 ${totalW} ${connH}`} style={{ display:'block', marginBottom:4 }} preserveAspectRatio="xMidYMid meet">
+                    {nextRow.nodes.map((_, childIdx) => {
+                      const par0X  = mySlotW   * (childIdx*2)     + mySlotW/2
+                      const par1X  = mySlotW   * (childIdx*2 + 1) + mySlotW/2
+                      const midX   = (par0X + par1X) / 2
+                      const childX = nextSlotW * childIdx + nextSlotW / 2
+                      const juncY  = connH * 0.55
+                      return (
+                        <g key={childIdx}>
+                          <line x1={par0X} y1={0}     x2={par0X}  y2={juncY}  stroke="#d0c4b0" strokeWidth={1.5}/>
+                          <line x1={par1X} y1={0}     x2={par1X}  y2={juncY}  stroke="#d0c4b0" strokeWidth={1.5}/>
+                          <line x1={par0X} y1={juncY} x2={par1X}  y2={juncY}  stroke="#d0c4b0" strokeWidth={1.5}/>
+                          <line x1={midX}  y1={juncY} x2={childX} y2={connH}  stroke="#d0c4b0" strokeWidth={1.5}/>
+                        </g>
+                      )
+                    })}
+                  </svg>
+                )}
               </div>
             )
           })}

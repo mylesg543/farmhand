@@ -100,11 +100,12 @@ function NodeCard({ animal, isRoot=false, size, onClick }) {
 }
 
 // ─── Horizontal pedigree — top=great-grandparents, bottom=animal ───────────────
+// Icons sit ABOVE their connecting lines - each avatar floats over its branch
 function PedigreeChart({ root, isMobile, onAnimalClick }) {
   const nodeSize = isMobile ? 38 : 52
   const rootSize = isMobile ? 52 : 66
   const gapX     = isMobile ? 4  : 8
-  const connH    = isMobile ? 22 : 32
+  const connH    = isMobile ? 28 : 40  // height of connector zone between rows
 
   function getRow(node, depth, maxDepth) {
     if (depth===maxDepth) return [node?.animal||null]
@@ -119,54 +120,40 @@ function PedigreeChart({ root, isMobile, onAnimalClick }) {
     { label:'Animal',             nodes: [root.animal] },       // 1
   ]
 
-  const totalW  = 8 * nodeSize + 7 * gapX
-  const minW    = Math.max(totalW, isMobile?320:480)
+  const totalW = 8 * nodeSize + 7 * gapX
+  const minW   = Math.max(totalW, isMobile ? 320 : 480)
 
   return (
     <div style={{ overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
       <div style={{ minWidth:minW, padding:'0 4px' }}>
         {rows.map((row, rowIdx) => {
-          const count  = row.nodes.length
-          const isRoot = rowIdx===3
-          const sz     = isRoot ? rootSize : nodeSize
-          const slotW  = totalW / count
+          const count   = row.nodes.length
+          const isRoot  = rowIdx === 3
+          const sz      = isRoot ? rootSize : nodeSize
+          const slotW   = totalW / count
+          // Next row info for drawing connectors below this row
+          const nextRow      = rows[rowIdx + 1]
+          const nextCount    = nextRow?.nodes.length || 0
+          const nextSlotW    = nextCount ? totalW / nextCount : 0
 
           return (
             <div key={rowIdx}>
               {/* Row label */}
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, marginTop:rowIdx===0?0:4 }}>
-                <span style={{ fontSize:isMobile?8:10, fontWeight:700, color:'#a08060', textTransform:'uppercase',
-                  letterSpacing:'0.07em', background:'#f7f4ef', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8,
+                marginBottom:6, marginTop:rowIdx===0 ? 0 : 2 }}>
+                <span style={{ fontSize:isMobile?8:10, fontWeight:700, color:'#a08060',
+                  textTransform:'uppercase', letterSpacing:'0.07em',
+                  background:'#f7f4ef', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' }}>
                   {row.label}
                 </span>
                 <div style={{ flex:1, height:1, background:'#f0ebe4' }}/>
               </div>
 
-              {/* Connector lines — pairs connecting down to next row's single node */}
-              {rowIdx < 3 && (
-                <svg width="100%" viewBox={`0 0 ${totalW} ${connH}`} style={{ display:'block', marginBottom:2 }} preserveAspectRatio="xMidYMid meet">
-                  {rows[rowIdx+1].nodes.map((_, childIdx) => {
-                    const childSlotW  = totalW / rows[rowIdx+1].nodes.length
-                    const childX      = childSlotW * childIdx + childSlotW / 2
-                    const par0X       = slotW * (childIdx*2)     + slotW/2
-                    const par1X       = slotW * (childIdx*2 + 1) + slotW/2
-                    const midX        = (par0X + par1X) / 2
-                    return (
-                      <g key={childIdx}>
-                        <line x1={par0X} y1={0}        x2={par0X} y2={connH*0.4} stroke="#d0c4b0" strokeWidth={1.5}/>
-                        <line x1={par1X} y1={0}        x2={par1X} y2={connH*0.4} stroke="#d0c4b0" strokeWidth={1.5}/>
-                        <line x1={par0X} y1={connH*0.4} x2={par1X} y2={connH*0.4} stroke="#d0c4b0" strokeWidth={1.5}/>
-                        <line x1={midX}  y1={connH*0.4} x2={childX} y2={connH}   stroke="#d0c4b0" strokeWidth={1.5}/>
-                      </g>
-                    )
-                  })}
-                </svg>
-              )}
-
-              {/* Node row */}
-              <div style={{ display:'flex', width:'100%', marginBottom:4 }}>
+              {/* ── NODE ROW — icons sit here, above their lines ── */}
+              <div style={{ display:'flex', width:'100%', marginBottom:0 }}>
                 {row.nodes.map((animal, ni) => (
-                  <div key={ni} style={{ flex:1, display:'flex', justifyContent:'center', padding:`0 ${gapX/2}px` }}>
+                  <div key={ni} style={{ flex:1, display:'flex', justifyContent:'center',
+                    padding:`0 ${gapX/2}px` }}>
                     <NodeCard
                       animal={animal}
                       isRoot={isRoot}
@@ -176,6 +163,37 @@ function PedigreeChart({ root, isMobile, onAnimalClick }) {
                   </div>
                 ))}
               </div>
+
+              {/* ── CONNECTOR SVG — lines drop DOWN from each node to converge below ── */}
+              {rowIdx < 3 && (
+                <svg
+                  width="100%"
+                  viewBox={`0 0 ${totalW} ${connH}`}
+                  style={{ display:'block', marginBottom:4 }}
+                  preserveAspectRatio="xMidYMid meet"
+                >
+                  {nextRow.nodes.map((_, childIdx) => {
+                    // The two parent slots that converge to this child
+                    const par0X  = slotW  * (childIdx * 2)     + slotW  / 2
+                    const par1X  = slotW  * (childIdx * 2 + 1) + slotW  / 2
+                    const midX   = (par0X + par1X) / 2
+                    const childX = nextSlotW * childIdx + nextSlotW / 2
+                    const juncY  = connH * 0.55  // junction point — horizontal bar
+
+                    return (
+                      <g key={childIdx}>
+                        {/* Drop lines down from each parent */}
+                        <line x1={par0X} y1={0}     x2={par0X} y2={juncY} stroke="#d0c4b0" strokeWidth={1.5}/>
+                        <line x1={par1X} y1={0}     x2={par1X} y2={juncY} stroke="#d0c4b0" strokeWidth={1.5}/>
+                        {/* Horizontal bar connecting the two */}
+                        <line x1={par0X} y1={juncY} x2={par1X} y2={juncY} stroke="#d0c4b0" strokeWidth={1.5}/>
+                        {/* Single line down from midpoint to child */}
+                        <line x1={midX}  y1={juncY} x2={childX} y2={connH} stroke="#d0c4b0" strokeWidth={1.5}/>
+                      </g>
+                    )
+                  })}
+                </svg>
+              )}
             </div>
           )
         })}
