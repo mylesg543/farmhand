@@ -97,9 +97,10 @@ export function DashboardPage() {
   const { customers }          = useCustomers()
   const isMobile = useIsMobile()
 
-  const [view,      setView]      = useState('pnl')      // pnl | animals | customers
-  const [animalSp,  setAnimalSp]  = useState('sheep')    // sheep | chickens — animal tab filter
-  const [expanded,  setExpanded]  = useState(null)       // customer id
+  const [view,         setView]        = useState('pnl')      // pnl | animals | customers
+  const [animalSp,     setAnimalSp]    = useState('sheep')    // sheep | chickens
+  const [animalFilter, setAnimalFilter]= useState('active')   // active | all
+  const [expanded,     setExpanded]    = useState(null)       // customer id
 
   // ── P&L by month ──────────────────────────────────────────────────────────────
   const incomeByMonth={}, costsByMonth={}
@@ -124,11 +125,19 @@ export function DashboardPage() {
   const expSegments=Object.entries(byCat).map(([k,v])=>({ label:expCatLabels[k]||k, value:v, color:expCatColors[k]||'#78909c' })).filter(s=>s.value>0).sort((a,b)=>b.value-a.value)
 
   // ── Animal breakdowns ──────────────────────────────────────────────────────────
-  const sheepBySex={};    sheep.forEach(a=>{ sheepBySex[a.sex]=(sheepBySex[a.sex]||0)+1 })
+  // Active only for the animals tab (alive + rented) — matches AnimalList default
+  const activeSheep    = sheep.filter(a => a.status==='alive' || a.status==='rented')
+  const activeChickens = chickens.filter(a => a.status==='alive' || a.status==='rented')
+
+  // Which set to use based on filter toggle
+  const displaySheep    = animalFilter==='active' ? activeSheep    : sheep
+  const displayChickens = animalFilter==='active' ? activeChickens : chickens
+
+  const sheepBySex={};    displaySheep.forEach(a=>{ sheepBySex[a.sex]=(sheepBySex[a.sex]||0)+1 })
   const sheepByStatus={};  sheep.forEach(a=>{ sheepByStatus[a.status]=(sheepByStatus[a.status]||0)+1 })
-  const sheepByBreed={};   sheep.forEach(a=>{ const b=a.breed||'Unknown'; sheepByBreed[b]=(sheepByBreed[b]||0)+1 })
-  const chickenBySex={};   chickens.forEach(c=>{ chickenBySex[c.sex]=(chickenBySex[c.sex]||0)+1 })
-  const chickenByBreed={}; chickens.forEach(c=>{ const b=c.breed||'Unknown'; chickenByBreed[b]=(chickenByBreed[b]||0)+1 })
+  const sheepByBreed={};   displaySheep.forEach(a=>{ const b=a.breed||'Unknown'; sheepByBreed[b]=(sheepByBreed[b]||0)+1 })
+  const chickenBySex={};   displayChickens.forEach(c=>{ chickenBySex[c.sex]=(chickenBySex[c.sex]||0)+1 })
+  const chickenByBreed={}; displayChickens.forEach(c=>{ const b=c.breed||'Unknown'; chickenByBreed[b]=(chickenByBreed[b]||0)+1 })
 
   const sheepSexSegs    = Object.entries(sheepBySex).map(([k,v])=>({ label:k.charAt(0).toUpperCase()+k.slice(1), value:v, color:k==='ram'?'#5d4037':k==='ewe'?'#a1887f':'#d7ccc8', isCount:true }))
   const sheepStatusSegs = Object.entries(sheepByStatus).map(([k,v])=>({ label:k.charAt(0).toUpperCase()+k.slice(1), value:v, color:k==='alive'?'#4caf50':k==='sold'?'#9c27b0':k==='rented'?'#f9a825':'#9e9e9e', isCount:true }))
@@ -210,45 +219,63 @@ export function DashboardPage() {
       {/* ── Animals View ──────────────────────────────────────────────────────── */}
       {view==='animals' && (
         <>
-          {/* Summary */}
+          {/* Summary — active counts */}
           <div className="dash-2col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
-            {[{label:'Total Sheep',value:sheep.length,emoji:'🐑'},{label:'Total Chickens',value:chickens.length,emoji:'🐔'},{label:'Total Animals',value:sheep.length+chickens.length,emoji:'🐾'}].map(s=>(
+            {[
+              {label:animalFilter==='active'?'Active Sheep':'All Sheep',       value:displaySheep.length,    total:sheep.length,    emoji:'🐑'},
+              {label:animalFilter==='active'?'Active Chickens':'All Chickens', value:displayChickens.length, total:chickens.length, emoji:'🐔'},
+              {label:animalFilter==='active'?'Active Total':'All Animals',     value:displaySheep.length+displayChickens.length, total:sheep.length+chickens.length, emoji:'🐾'},
+            ].map(s=>(
               <div key={s.label} style={{ ...S.card, padding:'14px 12px', textAlign:'center' }}>
                 <div style={{ fontSize:24, marginBottom:4 }}>{s.emoji}</div>
                 <div style={{ fontSize:isMobile?20:26, fontWeight:700, fontFamily:"'Playfair Display',serif" }}>{s.value}</div>
                 <div style={{ fontSize:10, color:'#a08060', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', marginTop:2 }}>{s.label}</div>
+                {animalFilter==='active' && s.total > s.value && <div style={{ fontSize:10, color:'#c8b89a', marginTop:2 }}>{s.total - s.value} sold/deceased</div>}
               </div>
             ))}
           </div>
 
-          {/* Animal type toggle */}
-          <div style={{ display:'flex', background:'#f0e8d8', borderRadius:10, padding:3, gap:2, marginBottom:16, width:'fit-content' }}>
-            {[['sheep','🐑 Sheep'],['chickens','🐔 Chickens']].map(([k,l])=>(
-              <button key={k} onClick={()=>setAnimalSp(k)}
-                style={{ ...S.btn, padding:'6px 14px', fontSize:13, borderRadius:8,
-                  background:animalSp===k?'#5a3e1b':'transparent', color:animalSp===k?'#fff':'#7a6648', border:'none', transition:'all 0.2s' }}>
-                {l}
-              </button>
-            ))}
+          {/* Species + Active/All toggles */}
+          <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
+            <div style={{ display:'flex', background:'#f0e8d8', borderRadius:10, padding:3, gap:2 }}>
+              {[['sheep','🐑 Sheep'],['chickens','🐔 Chickens']].map(([k,l])=>(
+                <button key={k} onClick={()=>setAnimalSp(k)}
+                  style={{ ...S.btn, padding:'6px 14px', fontSize:13, borderRadius:8,
+                    background:animalSp===k?'#5a3e1b':'transparent',
+                    color:animalSp===k?'#fff':'#7a6648', border:'none', transition:'all 0.2s' }}>
+                  {l}
+                </button>
+              ))}
+            </div>
+            <div style={{ display:'flex', background:'#f0e8d8', borderRadius:10, padding:3, gap:2 }}>
+              {[['active','Active'],['all','All']].map(([k,l])=>(
+                <button key={k} onClick={()=>setAnimalFilter(k)}
+                  style={{ ...S.btn, padding:'6px 14px', fontSize:13, borderRadius:8,
+                    background:animalFilter===k?'#5a3e1b':'transparent',
+                    color:animalFilter===k?'#fff':'#7a6648', border:'none', transition:'all 0.2s' }}>
+                  {l}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Sheep charts */}
           {animalSp==='sheep' && (
-            sheep.length===0
-              ? <div style={{ ...S.card, padding:60, textAlign:'center' }}><div style={{ fontSize:48, marginBottom:12 }}>🐑</div><p style={{ color:'#a08060', fontSize:15 }}>Add sheep to see your breakdown.</p></div>
+            displaySheep.length===0
+              ? <div style={{ ...S.card, padding:60, textAlign:'center' }}><div style={{ fontSize:48, marginBottom:12 }}>🐑</div><p style={{ color:'#a08060', fontSize:15 }}>No {animalFilter==='active'?'active ':''} sheep to show.</p></div>
               : <div className="dash-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-                  <div style={card}><p style={secTitle}>🐑 By Sex</p><DonutChart segments={sheepSexSegs} centerLabel="Total" centerValue={sheep.length}/></div>
-                  <div style={card}><p style={secTitle}>🐑 By Status</p><DonutChart segments={sheepStatusSegs} centerLabel="Total" centerValue={sheep.length}/></div>
+                  <div style={card}><p style={secTitle}>🐑 By Sex</p><DonutChart segments={sheepSexSegs} centerLabel={animalFilter==='active'?'Active':'Total'} centerValue={displaySheep.length}/></div>
+                  <div style={card}><p style={secTitle}>🐑 By Status</p><DonutChart segments={sheepStatusSegs} centerLabel="All" centerValue={sheep.length}/></div>
                   {Object.keys(sheepByBreed).length>1&&<div style={{ ...card, gridColumn:isMobile?undefined:'span 2' }}><p style={secTitle}>🐑 By Breed</p><DonutChart segments={sheepBreedSegs} centerLabel="Breeds" centerValue={Object.keys(sheepByBreed).length}/></div>}
                 </div>
           )}
 
           {/* Chicken charts */}
           {animalSp==='chickens' && (
-            chickens.length===0
-              ? <div style={{ ...S.card, padding:60, textAlign:'center' }}><div style={{ fontSize:48, marginBottom:12 }}>🐔</div><p style={{ color:'#a08060', fontSize:15 }}>Add chickens to see your breakdown.</p></div>
+            displayChickens.length===0
+              ? <div style={{ ...S.card, padding:60, textAlign:'center' }}><div style={{ fontSize:48, marginBottom:12 }}>🐔</div><p style={{ color:'#a08060', fontSize:15 }}>No {animalFilter==='active'?'active ':''} chickens to show.</p></div>
               : <div className="dash-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-                  <div style={card}><p style={secTitle}>🐔 By Sex</p><DonutChart segments={chickenSexSegs} centerLabel="Total" centerValue={chickens.length}/></div>
+                  <div style={card}><p style={secTitle}>🐔 By Sex</p><DonutChart segments={chickenSexSegs} centerLabel={animalFilter==='active'?'Active':'Total'} centerValue={displayChickens.length}/></div>
                   <div style={card}><p style={secTitle}>🐔 By Breed</p><DonutChart segments={chickenBreedSegs} centerLabel="Breeds" centerValue={Object.keys(chickenByBreed).length}/></div>
                 </div>
           )}
