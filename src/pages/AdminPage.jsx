@@ -1,247 +1,765 @@
-import { useState } from 'react'
-import { useAllUsers, useAdminUserData } from '../hooks/useAdmin'
-import { useIsMobile } from '../hooks/useIsMobile'
-import { S, Spinner, ErrorMsg, ANIMAL_META, AnimalIllustration, fmt, formatDate, calcAge, getSexLabel } from '../components/ui/shared'
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../hooks/useAuth'
+import { useNavigate } from 'react-router-dom'
+import { S, fmt, formatDate } from '../components/ui/shared'
 
-function StatPill({ label, value, color = '#5a3e1b' }) {
+// ─── Auth guard — only your UID gets in ───────────────────────────────────────
+const ADMIN_UIDS = ['d1b58a87-b815-47aa-8d8d-33c3eedb1e57']
+
+function useAdmin() {
+  const { user } = useAuth()
+  return user && ADMIN_UIDS.includes(user.id)
+}
+
+// ─── Stat card ─────────────────────────────────────────────────────────────────
+function StatCard({ label, value, sub, color='#2c2416', bg='#fff', trend, emoji }) {
   return (
-    <div style={{ textAlign: 'center', padding: '10px 16px', background: '#f7f4ef', borderRadius: 8 }}>
-      <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, color }}>{value}</div>
-      <div style={{ fontSize: 11, color: '#a08060', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 }}>{label}</div>
+    <div style={{ ...S.card, padding:'18px 20px', background:bg, display:'flex', flexDirection:'column', gap:4 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+        {emoji && <span style={{ fontSize:20 }}>{emoji}</span>}
+        <span style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em' }}>{label}</span>
+      </div>
+      <div style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:700, color, lineHeight:1 }}>{value}</div>
+      {sub && <div style={{ fontSize:12, color:'#a08060', marginTop:2 }}>{sub}</div>}
+      {trend !== undefined && (
+        <div style={{ fontSize:12, color: trend >= 0 ? '#2e7d32' : '#c62828', fontWeight:600, marginTop:2 }}>
+          {trend >= 0 ? '↑' : '↓'} {Math.abs(trend)}% vs last month
+        </div>
+      )}
     </div>
   )
 }
 
-function UserFarmView({ user, onBack }) {
-  const { animals, costs, income, plants, loading } = useAdminUserData(user.id)
-  const isMobile = useIsMobile()
-  const [tab, setTab] = useState('animals')
+// ─── Mini bar chart ────────────────────────────────────────────────────────────
+function MiniBarChart({ data, color='#5a3e1b', height=60 }) {
+  if (!data || data.length === 0) return null
+  const max = Math.max(...data.map(d => d.value), 1)
+  return (
+    <div style={{ display:'flex', alignItems:'flex-end', gap:4, height }}>
+      {data.map((d, i) => (
+        <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
+          <div style={{ width:'100%', background:color, borderRadius:'3px 3px 0 0', opacity:0.85,
+            height: Math.max((d.value / max) * height, d.value > 0 ? 3 : 0) }}/>
+          <span style={{ fontSize:8, color:'#a08060', whiteSpace:'nowrap' }}>{d.label}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
-  const totalSpent  = costs.reduce((s, c) => s + Number(c.amount), 0)
-  const totalEarned = income.reduce((s, i) => s + Number(i.amount), 0)
-  const netPnL      = totalEarned - totalSpent
+// ─── Activity badge ────────────────────────────────────────────────────────────
+function ActivityBadge({ daysSince }) {
+  if (daysSince === null) return <span style={{ fontSize:10, padding:'2px 8px', borderRadius:8, background:'#f0ebe4', color:'#a08060' }}>Never</span>
+  if (daysSince <= 1)  return <span style={{ fontSize:10, padding:'2px 8px', borderRadius:8, background:'#e8f5e9', color:'#2e7d32', fontWeight:700 }}>Today</span>
+  if (daysSince <= 7)  return <span style={{ fontSize:10, padding:'2px 8px', borderRadius:8, background:'#e3f2fd', color:'#1565c0', fontWeight:700 }}>{daysSince}d ago</span>
+  if (daysSince <= 30) return <span style={{ fontSize:10, padding:'2px 8px', borderRadius:8, background:'#fff9e6', color:'#f57f17', fontWeight:700 }}>{daysSince}d ago</span>
+  return <span style={{ fontSize:10, padding:'2px 8px', borderRadius:8, background:'#fff3f3', color:'#c62828', fontWeight:700 }}>{daysSince}d ago</span>
+}
 
-  const animalsBySpecies = {}
-  animals.forEach(a => { animalsBySpecies[a.species] = (animalsBySpecies[a.species] || []).concat(a) })
+// ─── Event type icons (same as EventTimeline) ─────────────────────────────────
+const EV_ICONS = {
+  vaccination:'💉', worming:'💊', hoof_trimming:'🪛', shearing:'✂️',
+  lambing:'🐣', weaning:'🍼', sickness:'🤒', injury:'🩹',
+  weight_check:'⚖️', pregnancy_check:'🔍', egg_production:'🥚',
+  moulting:'🪶', breeding:'❤️', sale:'💰', custom:'📝',
+}
+const EV_COLORS = {
+  vaccination:  '#1565c0', worming:'#6a1b9a', hoof_trimming:'#4e342e',
+  shearing:     '#2e7d32', lambing:'#e65100', sickness:'#c62828',
+  injury:       '#c62828', egg_production:'#f57f17', moulting:'#5d4037',
+  pregnancy_check:'#ad1457', breeding:'#ad1457', weight_check:'#00695c',
+  custom:       '#5a3e1b',
+}
 
-  if (loading) return <div style={S.page}><Spinner /></div>
+// ─── Read-only animal events panel ────────────────────────────────────────────
+function AnimalDetailPanel({ animal, events }) {
+  const animalEvents = events
+    .filter(e => e.animal_id === animal.id)
+    .sort((a,b) => b.event_date > a.event_date ? 1 : -1)
+  const st = { alive:'#4caf50', sold:'#9c27b0', deceased:'#9e9e9e', rented:'#f9a825' }
 
   return (
-    <div style={S.page}>
-      <style>{`
-        @media (max-width: 767px) {
-          .admin-farm-header { flex-wrap: wrap !important; gap: 10px !important; }
-          .admin-stats { grid-template-columns: repeat(3, 1fr) !important; }
-          .admin-tabs { flex-wrap: wrap !important; }
-          .admin-tabs button { flex: 1 !important; min-width: 80px !important; }
-          .admin-animal-grid { grid-template-columns: 1fr !important; }
-          .admin-plant-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
-      {/* Header */}
-      <div className="admin-farm-header" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button onClick={onBack} style={{ ...S.btn, ...S.btnSecondary, padding: '7px 14px', flexShrink: 0 }}>← All Farms</button>
-        <div style={{ minWidth: 0 }}>
-          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {user.farm_name || user.email?.split('@')[0] + "'s Farm"}
-          </h1>
-          <p style={{ fontSize: 12, color: '#a08060', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email} · Since {formatDate(user.created_at?.slice(0,10))}</p>
+    <div style={{ background:'#fdfaf6', borderRadius:10, border:'1px solid #e8e0d0', overflow:'hidden', marginTop:6 }}>
+      {/* Animal header */}
+      <div style={{ background:'linear-gradient(135deg,#2c2416,#4a3520)', padding:'14px 16px', display:'flex', alignItems:'center', gap:12 }}>
+        <div style={{ width:44, height:44, borderRadius:'50%', overflow:'hidden', border:'2px solid rgba(255,255,255,0.25)', background:'rgba(255,255,255,0.1)', flexShrink:0 }}>
+          {animal.photo_url
+            ? <img src={animal.photo_url} alt={animal.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+            : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>
+                {animal.species==='chickens'?'🐔':'🐑'}
+              </div>
+          }
         </div>
-        <div style={{ marginLeft: 'auto', flexShrink: 0 }}>
-          <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 20, fontSize: 10, fontWeight: 700, background: '#e8f5e9', color: '#2e7d32', textTransform: 'uppercase' }}>
-            👁 Read Only
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:2 }}>
+            <span style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:16, color:'#f0e6cc' }}>{animal.name}</span>
+            <span style={{ fontSize:9, padding:'2px 7px', borderRadius:8, background:st[animal.status]||'#9e9e9e', color:'#fff', fontWeight:700, textTransform:'uppercase' }}>{animal.status}</span>
+          </div>
+          <span style={{ fontSize:11, color:'#c8a878' }}>
+            {animal.breed||'Unknown breed'} · {animal.sex} · {animal.tag_number&&!animal.tag_number.startsWith('AUTO-')?animal.tag_number:'No tag'}
+            {animal.birth_date ? ` · Born ${formatDate(animal.birth_date)}` : ''}
           </span>
         </div>
+        <span style={{ fontSize:11, color:'#c8a878', flexShrink:0 }}>{animalEvents.length} event{animalEvents.length!==1?'s':''}</span>
       </div>
 
-      {/* Summary stats */}
-      <div className="admin-stats" style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3,1fr)' : 'repeat(5, 1fr)', gap: 10, marginBottom: 20 }}>
-        <StatPill label="Animals"  value={animals.length} />
-        <StatPill label="Plants"   value={plants.length}  />
-        <StatPill label="Income"   value={`+${fmt(totalEarned)}`} color="#2e7d32" />
-        <StatPill label="Expenses" value={`-${fmt(totalSpent)}`}  color="#c62828" />
-        <StatPill label="Net P&L"  value={`${netPnL >= 0 ? '+' : ''}${fmt(netPnL)}`} color={netPnL >= 0 ? '#2e7d32' : '#c62828'} />
+      {/* Events timeline — read only */}
+      {animalEvents.length === 0 ? (
+        <p style={{ fontSize:13, color:'#a08060', padding:'16px 16px', margin:0, fontStyle:'italic' }}>No events logged for this animal.</p>
+      ) : (
+        <div style={{ padding:'12px 16px' }}>
+          {animalEvents.map((ev, i) => {
+            const icon  = EV_ICONS[ev.event_type] || '📝'
+            const color = EV_COLORS[ev.event_type] || '#5a3e1b'
+            const label = (ev.event_type||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())
+            const isAlert = ev.event_type==='sickness'||ev.event_type==='injury'
+            return (
+              <div key={ev.id} style={{ display:'flex', gap:10, paddingBottom:12,
+                borderBottom: i < animalEvents.length-1 ? '1px solid #f0ebe4' : 'none', marginBottom: i < animalEvents.length-1 ? 12 : 0 }}>
+                {/* Icon */}
+                <div style={{ width:36, height:36, borderRadius:8, background:isAlert?'#fff3f3':'#f7f4ef',
+                  border:`1px solid ${isAlert?'#f5c6c6':'#e8e0d0'}`, display:'flex', alignItems:'center',
+                  justifyContent:'center', fontSize:18, flexShrink:0 }}>
+                  {icon}
+                </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3, flexWrap:'wrap' }}>
+                    <span style={{ fontSize:13, fontWeight:700, color }}>{label}</span>
+                    {isAlert && <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:'#c62828', color:'#fff', fontWeight:700 }}>⚠ ALERT</span>}
+                    <span style={{ fontSize:11, color:'#a08060', marginLeft:'auto' }}>{formatDate((ev.event_date||'').slice(0,10))}</span>
+                  </div>
+                  {ev.notes && <p style={{ fontSize:12, color:'#4a3c28', margin:0, lineHeight:1.5 }}>{ev.notes}</p>}
+                  {ev.photo_url && (
+                    <div style={{ marginTop:6, borderRadius:6, overflow:'hidden', maxWidth:200 }}>
+                      <img src={ev.photo_url} alt={label} style={{ width:'100%', height:'auto', display:'block' }}/>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Expandable user row ───────────────────────────────────────────────────────
+function UserRow({ u, allEvents }) {
+  const [open,        setOpen]        = useState(false)
+  const [openAnimal,  setOpenAnimal]  = useState(null)
+
+  const flagColor = u.animalCount===0||u.eventCount===0 ? '#c62828'
+    : u.daysSinceActive!==null&&u.daysSinceActive>30 ? '#f57f17' : '#2e7d32'
+  const flagLabel = u.animalCount===0 ? 'No animals'
+    : u.eventCount===0 ? 'No events'
+    : u.daysSinceActive!==null&&u.daysSinceActive>30 ? 'Inactive'
+    : 'Active ✓'
+
+  return (
+    <div style={{ ...S.card, overflow:'hidden' }}>
+      {/* Header row — click to expand */}
+      <div onClick={()=>{ setOpen(v=>!v); setOpenAnimal(null) }}
+        style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 18px', cursor:'pointer',
+          background: open ? '#fdfaf0' : '#fff', userSelect:'none', transition:'background 0.15s' }}>
+
+        {/* User info */}
+        <div style={{ flex:1, minWidth:0 }}>
+          <p style={{ fontSize:14, fontWeight:600, color:'#2c2416', margin:'0 0 2px',
+            overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+            {u.email || <span style={{ color:'#a08060', fontStyle:'italic' }}>No email</span>}
+          </p>
+          <div style={{ display:'flex', gap:5, flexWrap:'wrap', alignItems:'center' }}>
+            {u.hasSheep    && <span style={{ fontSize:9, padding:'1px 5px', borderRadius:6, background:'#efebe9', color:'#5d4037', fontWeight:700 }}>🐑 Sheep</span>}
+            {u.hasChickens && <span style={{ fontSize:9, padding:'1px 5px', borderRadius:6, background:'#fff9e6', color:'#f57f17', fontWeight:700 }}>🐔 Chickens</span>}
+            <span style={{ fontSize:10, color:'#a08060' }}>joined {u.signedUpAt ? formatDate(u.signedUpAt.slice(0,10)) : '—'}</span>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div style={{ display:'flex', gap:20, alignItems:'center', flexShrink:0 }}>
+          <div style={{ textAlign:'center' }}>
+            <p style={{ fontSize:16, fontWeight:700, color:'#2c2416', margin:'0 0 1px' }}>{u.animalCount}</p>
+            <p style={{ fontSize:9, color:'#a08060', fontWeight:700, textTransform:'uppercase', margin:0 }}>Animals</p>
+          </div>
+          <div style={{ textAlign:'center' }}>
+            <p style={{ fontSize:16, fontWeight:700, color:'#1565c0', margin:'0 0 1px' }}>{u.eventCount}</p>
+            <p style={{ fontSize:9, color:'#a08060', fontWeight:700, textTransform:'uppercase', margin:0 }}>Events</p>
+          </div>
+          <div style={{ textAlign:'center' }}>
+            <p style={{ fontSize:16, fontWeight:700, color:'#2e7d32', margin:'0 0 1px' }}>{u.incomeTotal>0?fmt(u.incomeTotal):'—'}</p>
+            <p style={{ fontSize:9, color:'#a08060', fontWeight:700, textTransform:'uppercase', margin:0 }}>Income</p>
+          </div>
+          <ActivityBadge daysSince={u.daysSinceActive}/>
+          <span style={{ fontSize:9, padding:'2px 8px', borderRadius:8,
+            background:flagColor==='#2e7d32'?'#e8f5e9':flagColor==='#f57f17'?'#fff9e6':'#fff3f3',
+            color:flagColor, fontWeight:700 }}>{flagLabel}</span>
+        </div>
+
+        {/* Expand arrow */}
+        <span style={{ color:'#c8b89a', fontSize:16, transition:'transform 0.2s', transform:open?'rotate(90deg)':'none', flexShrink:0 }}>›</span>
       </div>
 
-      {/* Tabs */}
-      <div className="admin-tabs" style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
-        {[['animals','Animals'],['plants','Plants'],['costs','Expenses'],['income','Income']].map(([key, label]) => (
-          <button key={key} onClick={() => setTab(key)}
-            style={{ ...S.btn, padding: '7px 18px', fontSize: 13, background: tab === key ? '#5a3e1b' : '#fff', color: tab === key ? '#fff' : '#7a6648', border: '1px solid #d0c4b0' }}>
-            {label}
+      {/* Expanded — animal list */}
+      {open && (
+        <div style={{ borderTop:'1px solid #f0ebe4', background:'#fafaf8', padding:'14px 18px' }}>
+          {u.animals.length === 0 ? (
+            <p style={{ fontSize:13, color:'#a08060', margin:0, fontStyle:'italic' }}>This user hasn't added any animals yet.</p>
+          ) : (
+            <>
+              <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em', margin:'0 0 12px' }}>
+                Flock — {u.animals.length} animal{u.animals.length!==1?'s':''}
+              </p>
+              <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                {u.animals.map(a => {
+                  const isOpen = openAnimal===a.id
+                  const statusColors = { alive:'#4caf50', sold:'#9c27b0', deceased:'#9e9e9e', rented:'#f9a825' }
+                  const evCount = allEvents.filter(e=>e.animal_id===a.id).length
+                  return (
+                    <div key={a.id}>
+                      {/* Animal row */}
+                      <div onClick={()=>setOpenAnimal(isOpen?null:a.id)}
+                        style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px', borderRadius:9,
+                          background: isOpen ? '#f0ebe4' : '#fff', border:'1px solid #e8e0d0',
+                          cursor:'pointer', userSelect:'none', transition:'background 0.15s' }}>
+                        <div style={{ width:38, height:38, borderRadius:'50%', overflow:'hidden',
+                          border:`2px solid ${statusColors[a.status]||'#9e9e9e'}`, background:'#f0ebe4', flexShrink:0 }}>
+                          {a.photo_url
+                            ? <img src={a.photo_url} alt={a.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                            : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>
+                                {a.species==='chickens'?'🐔':'🐑'}
+                              </div>
+                          }
+                        </div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:2 }}>
+                            <span style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:14, color:'#2c2416' }}>{a.name}</span>
+                            <span style={{ fontSize:9, padding:'1px 6px', borderRadius:6, background:statusColors[a.status]||'#9e9e9e', color:'#fff', fontWeight:700, textTransform:'uppercase' }}>{a.status}</span>
+                          </div>
+                          <span style={{ fontSize:11, color:'#a08060' }}>
+                            {a.breed||'Unknown'} · {a.sex} · {evCount} event{evCount!==1?'s':''}
+                          </span>
+                        </div>
+                        <span style={{ color:'#c8b89a', fontSize:14, transition:'transform 0.2s', transform:isOpen?'rotate(90deg)':'none' }}>›</span>
+                      </div>
+
+                      {/* Animal events drill-down */}
+                      {isOpen && <AnimalDetailPanel animal={a} events={allEvents}/>}
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Main Admin Page ───────────────────────────────────────────────────────────
+export function AdminPage() {
+  const isAdmin  = useAdmin()
+  const navigate = useNavigate()
+  const [tab,     setTab]     = useState('overview')
+  const [loading, setLoading] = useState(true)
+  const [search,  setSearch]  = useState('')
+  const [data,    setData]    = useState({
+    users:         [],
+    totalAnimals:  0,
+    totalEvents:   0,
+    totalIncome:   0,
+    totalCosts:    0,
+    signupsByDay:  [],
+    eventsByType:  [],
+    speciesBreakdown: {},
+  })
+
+  useEffect(() => {
+    if (!isAdmin) return
+    loadAll()
+  }, [isAdmin])
+
+  const loadAll = async () => {
+    setLoading(true)
+    try {
+      // ── Fetch all users from auth (via a service-role workaround using public profiles)
+      // We use fh_animals grouped by user_id to infer users + activity
+      const [animals, events, income, costs, emailsRes] = await Promise.all([
+        supabase.from('fh_animals').select('id, user_id, species, status, created_at, name, breed, sex, tag_number, birth_date, photo_url'),
+        supabase.from('fh_animal_events').select('id, user_id, animal_id, event_type, event_date, notes, photo_url, created_at'),
+        supabase.from('fh_income').select('id, user_id, amount, date, created_at'),
+        supabase.from('fh_feed_costs').select('id, user_id, amount, date, created_at'),
+        supabase.rpc('get_admin_user_emails'),
+      ])
+
+      // Build email lookup map
+      const emailMap = {}
+      ;(emailsRes.data || []).forEach(u => { emailMap[u.id] = { email: u.email, signedUpAt: u.created_at, lastSignIn: u.last_sign_in_at } })
+
+      const animalsData = (animals.data || []).filter(a => a.user_id)
+      const eventsData  = (events.data  || []).filter(e => e.user_id)
+      const incomeData  = (income.data  || []).filter(i => i.user_id)
+      const costsData   = (costs.data   || []).filter(c => c.user_id)
+
+      // ── Build user map from all activity
+      const userMap = {}
+      const addUser = (uid, extra={}) => {
+        if (!userMap[uid]) userMap[uid] = {
+          id: uid, animals:[], events:[], income:[], costs:[],
+          firstSeen: null, lastActive: null,
+        }
+        Object.assign(userMap[uid], extra)
+      }
+
+      animalsData.forEach(a => {
+        addUser(a.user_id)
+        userMap[a.user_id].animals.push(a)
+        const d = new Date(a.created_at)
+        if (!userMap[a.user_id].firstSeen || d < new Date(userMap[a.user_id].firstSeen))
+          userMap[a.user_id].firstSeen = a.created_at
+      })
+
+      eventsData.forEach(e => {
+        addUser(e.user_id)
+        userMap[e.user_id].events.push(e)
+        const d = new Date(e.created_at)
+        if (!userMap[e.user_id].lastActive || d > new Date(userMap[e.user_id].lastActive))
+          userMap[e.user_id].lastActive = e.created_at
+      })
+
+      incomeData.forEach(i => {
+        addUser(i.user_id)
+        userMap[i.user_id].income.push(i)
+        const d = new Date(i.created_at)
+        if (!userMap[i.user_id].lastActive || d > new Date(userMap[i.user_id].lastActive))
+          userMap[i.user_id].lastActive = i.created_at
+      })
+
+      costsData.forEach(c => {
+        addUser(c.user_id)
+        userMap[c.user_id].costs.push(c)
+      })
+
+      animalsData.forEach(a => {
+        const d = new Date(a.created_at)
+        if (!userMap[a.user_id].lastActive || d > new Date(userMap[a.user_id].lastActive))
+          userMap[a.user_id].lastActive = a.created_at
+      })
+
+      // ── Compute days since last active
+      const now = new Date()
+      const users = Object.values(userMap).map(u => ({
+        ...u,
+        email:      emailMap[u.id]?.email        || null,
+        signedUpAt: emailMap[u.id]?.signedUpAt   || u.firstSeen,
+        lastSignIn: emailMap[u.id]?.lastSignIn   || null,
+        daysSinceActive: u.lastActive
+          ? Math.floor((now - new Date(u.lastActive)) / 86400000)
+          : null,
+        animalCount:  u.animals.length,
+        eventCount:   u.events.length,
+        incomeTotal:  u.income.reduce((s,i) => s + Number(i.amount), 0),
+        hasSheep:     u.animals.some(a => a.species === 'sheep'),
+        hasChickens:  u.animals.some(a => a.species === 'chickens'),
+        activeAnimals:u.animals.filter(a => a.status === 'alive' || a.status === 'rented').length,
+      })).sort((a,b) => (b.lastActive||'') > (a.lastActive||'') ? 1 : -1)
+
+      // ── Signups by day (last 14 days) — approximate from first animal added
+      const signupDays = {}
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i)
+        const key = d.toISOString().slice(0,10)
+        signupDays[key] = 0
+      }
+      users.forEach(u => {
+        if (u.firstSeen) {
+          const key = u.firstSeen.slice(0,10)
+          if (signupDays[key] !== undefined) signupDays[key]++
+        }
+      })
+      const signupsByDay = Object.entries(signupDays).map(([date, value]) => ({
+        label: new Date(date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}),
+        value,
+      }))
+
+      // ── Events by type
+      const typeMap = {}
+      eventsData.forEach(e => {
+        typeMap[e.event_type] = (typeMap[e.event_type]||0) + 1
+      })
+      const eventsByType = Object.entries(typeMap)
+        .map(([type, count]) => ({ type, count }))
+        .sort((a,b) => b.count - a.count)
+        .slice(0, 8)
+
+      // ── Species breakdown
+      const speciesBreakdown = {
+        sheep:    animalsData.filter(a => a.species==='sheep').length,
+        chickens: animalsData.filter(a => a.species==='chickens').length,
+      }
+
+      // Also add users who signed up but have zero farm data
+      ;(emailsRes.data || []).forEach(authUser => {
+        if (!userMap[authUser.id]) {
+          users.push({
+            id: authUser.id, email: authUser.email,
+            signedUpAt: authUser.created_at, lastSignIn: authUser.last_sign_in_at,
+            animals:[], events:[], income:[], costs:[],
+            firstSeen: authUser.created_at, lastActive: authUser.last_sign_in_at,
+            daysSinceActive: authUser.last_sign_in_at
+              ? Math.floor((now - new Date(authUser.last_sign_in_at)) / 86400000)
+              : null,
+            animalCount:0, eventCount:0, incomeTotal:0, activeAnimals:0,
+            hasSheep:false, hasChickens:false,
+          })
+        }
+      })
+
+      setData({
+        users,
+        totalAnimals:  animalsData.length,
+        totalEvents:   eventsData.length,
+        totalIncome:   incomeData.reduce((s,i) => s+Number(i.amount), 0),
+        totalCosts:    costsData.reduce((s,c) => s+Number(c.amount), 0),
+        signupsByDay,
+        eventsByType,
+        speciesBreakdown,
+      })
+    } catch (err) {
+      console.error('Admin load error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!isAdmin) return (
+    <div style={{ ...S.page, display:'flex', alignItems:'center', justifyContent:'center', minHeight:'60vh' }}>
+      <div style={{ textAlign:'center' }}>
+        <div style={{ fontSize:48, marginBottom:16 }}>🔒</div>
+        <p style={{ fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, marginBottom:8 }}>Admin Access Only</p>
+        <button onClick={()=>navigate('/')} style={{ ...S.btn, ...S.btnPrimary }}>Go Home</button>
+      </div>
+    </div>
+  )
+
+  // ── Derived stats
+  const activeThisWeek  = data.users.filter(u => u.daysSinceActive !== null && u.daysSinceActive <= 7).length
+  const activeThisMonth = data.users.filter(u => u.daysSinceActive !== null && u.daysSinceActive <= 30).length
+  const neverActive     = data.users.filter(u => u.eventCount === 0 && u.animalCount === 0).length
+  const atRisk          = data.users.filter(u => u.daysSinceActive !== null && u.daysSinceActive > 14).length
+  const avgAnimals      = data.users.length ? (data.totalAnimals / data.users.length).toFixed(1) : 0
+  const avgEvents       = data.users.length ? (data.totalEvents / data.users.length).toFixed(1) : 0
+
+  const filteredUsers = data.users.filter(u =>
+    !search ||
+    (u.email||'').toLowerCase().includes(search.toLowerCase()) ||
+    (u.id||'').toLowerCase().includes(search.toLowerCase()) ||
+    u.animals.some(a => (a.name||'').toLowerCase().includes(search.toLowerCase()))
+  )
+
+  const tabs = [
+    { key:'overview',  label:'📊 Overview' },
+    { key:'users',     label:'👥 Users' },
+    { key:'activity',  label:'⚡ Activity' },
+    { key:'health',    label:'🌾 Farm Health' },
+  ]
+
+  return (
+    <div style={{ ...S.page, padding:'24px', background:'#f7f4ef', minHeight:'100vh' }}>
+      <style>{`@media(max-width:767px){.admin-grid-3{grid-template-columns:1fr 1fr!important;}.admin-grid-4{grid-template-columns:1fr 1fr!important;}}`}</style>
+
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:12 }}>
+        <div>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:700, margin:'0 0 4px' }}>
+            🌾 FarmHand Admin
+          </h1>
+          <p style={{ fontSize:13, color:'#a08060', margin:0 }}>
+            Platform overview · {data.users.length} registered users
+          </p>
+        </div>
+        <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+          <button onClick={loadAll} style={{ ...S.btn, ...S.btnSecondary, padding:'7px 14px', fontSize:13 }}>
+            ↻ Refresh
+          </button>
+          <button onClick={()=>navigate('/')} style={{ ...S.btn, ...S.btnPrimary, padding:'7px 14px', fontSize:13 }}>
+            ← Back to App
+          </button>
+        </div>
+      </div>
+
+      {/* Tab nav */}
+      <div style={{ display:'flex', background:'#f0e8d8', borderRadius:10, padding:3, gap:2, marginBottom:24, width:'fit-content', flexWrap:'wrap' }}>
+        {tabs.map(t => (
+          <button key={t.key} onClick={()=>setTab(t.key)}
+            style={{ ...S.btn, padding:'7px 16px', fontSize:13, borderRadius:8,
+              background:tab===t.key?'#5a3e1b':'transparent',
+              color:tab===t.key?'#fff':'#7a6648', border:'none', transition:'all 0.2s' }}>
+            {t.label}
           </button>
         ))}
       </div>
 
-      {/* Animals tab */}
-      {tab === 'animals' && (
-        animals.length === 0
-          ? <div style={{ ...S.card, padding: 40, textAlign: 'center' }}><p style={{ color: '#a08060' }}>No animals recorded.</p></div>
-          : Object.entries(animalsBySpecies).map(([species, list]) => {
-              const meta = ANIMAL_META[species] || ANIMAL_META.sheep
-              return (
-                <div key={species} style={{ marginBottom: 24 }}>
-                  <p style={{ ...S.sectionLabel, marginBottom: 12 }}>{meta.emoji} {meta.label} ({list.length})</p>
-                  <div className="admin-animal-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill,minmax(260px,1fr))', gap: isMobile ? 8 : 12 }}>
-                    {list.map(a => {
-                      const statusColors = { alive: { bg: '#e8f5e9', text: '#2e7d32' }, sold: { bg: '#f3e5f5', text: '#6a1b9a' }, deceased: { bg: '#fafafa', text: '#616161' } }
-                      const st = statusColors[a.status] || statusColors.alive
-                      return (
-                        <div key={a.id} style={{ ...S.card, padding: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
-                          <div style={{ width: 48, height: 48, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#f0ebe4', border: '2px solid #e8e0d0' }}>
-                            <AnimalIllustration animal={a} size={48} />
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 2 }}>
-                              <p style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 15, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</p>
-                              <span style={{ display: 'inline-block', padding: '1px 7px', borderRadius: 10, fontSize: 9, fontWeight: 700, background: st.bg, color: st.text, textTransform: 'uppercase', flexShrink: 0 }}>{a.status}</span>
-                            </div>
-                            <p style={{ fontSize: 11, color: '#a08060', margin: '0 0 3px', fontFamily: 'monospace' }}>{a.tag_number}</p>
-                            <p style={{ fontSize: 11, color: '#7a6648', margin: 0 }}>
-                              {getSexLabel(a.sex)}{a.breed ? ` · ${a.breed}` : ''}{a.birth_date ? ` · ${calcAge(a.birth_date)}` : ''}
-                            </p>
-                          </div>
-                        </div>
-                      )
-                    })}
+      {loading ? (
+        <div style={{ textAlign:'center', padding:'80px 0' }}>
+          <div style={{ fontSize:32, marginBottom:12 }}>⏳</div>
+          <p style={{ color:'#a08060', fontSize:15 }}>Loading platform data…</p>
+        </div>
+      ) : (
+        <>
+          {/* ── OVERVIEW TAB ────────────────────────────────────────────── */}
+          {tab==='overview' && (
+            <>
+              {/* Top KPIs */}
+              <div className="admin-grid-4" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:20 }}>
+                <StatCard emoji="👥" label="Total Users"    value={data.users.length}    sub={`${activeThisMonth} active this month`} color="#2c2416"/>
+                <StatCard emoji="🐾" label="Total Animals"  value={data.totalAnimals}    sub={`avg ${avgAnimals} per farm`}           color="#5a3e1b"/>
+                <StatCard emoji="📋" label="Total Events"   value={data.totalEvents}     sub={`avg ${avgEvents} per farm`}            color="#1565c0"/>
+                <StatCard emoji="💰" label="Income Tracked" value={fmt(data.totalIncome)} sub={`${fmt(data.totalCosts)} expenses`}    color="#2e7d32" bg="#f1f8f1"/>
+              </div>
+
+              {/* Engagement KPIs */}
+              <div className="admin-grid-4" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:20 }}>
+                <StatCard emoji="🟢" label="Active (7d)"    value={activeThisWeek}   sub="logged in last 7 days"  color="#2e7d32" bg="#f1f8f1"/>
+                <StatCard emoji="🟡" label="Active (30d)"   value={activeThisMonth}  sub="logged in last 30 days" color="#f57f17" bg="#fff9e6"/>
+                <StatCard emoji="🔴" label="At Risk (14d+)" value={atRisk}           sub="no activity in 2 weeks" color="#c62828" bg="#fff3f3"/>
+                <StatCard emoji="⚪" label="Never Active"   value={neverActive}      sub="signed up, no activity" color="#9e9e9e"/>
+              </div>
+
+              {/* Species + signups charts side by side */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
+                {/* Signups over time */}
+                <div style={{ ...S.card, padding:'18px 20px' }}>
+                  <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:15, margin:'0 0 16px' }}>
+                    New Farms — Last 14 Days
+                  </p>
+                  <MiniBarChart data={data.signupsByDay} color="#5a3e1b" height={80}/>
+                </div>
+
+                {/* Species breakdown */}
+                <div style={{ ...S.card, padding:'18px 20px' }}>
+                  <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:15, margin:'0 0 16px' }}>
+                    Species on Platform
+                  </p>
+                  {[
+                    { label:'🐑 Sheep farms',    count: data.users.filter(u=>u.hasSheep).length,    color:'#5d4037', total:data.users.length },
+                    { label:'🐔 Chicken farms',  count: data.users.filter(u=>u.hasChickens).length, color:'#f9a825', total:data.users.length },
+                    { label:'🐑🐔 Both',          count: data.users.filter(u=>u.hasSheep&&u.hasChickens).length, color:'#2e7d32', total:data.users.length },
+                  ].map(s => (
+                    <div key={s.label} style={{ marginBottom:12 }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                        <span style={{ fontSize:13, fontWeight:600, color:'#2c2416' }}>{s.label}</span>
+                        <span style={{ fontSize:13, fontWeight:700, color:'#2c2416' }}>{s.count}</span>
+                      </div>
+                      <div style={{ height:8, borderRadius:4, background:'#f0ebe4', overflow:'hidden' }}>
+                        <div style={{ height:'100%', borderRadius:4, background:s.color, width:`${s.total ? (s.count/s.total)*100 : 0}%`, transition:'width 0.4s' }}/>
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{ marginTop:16 }}>
+                    <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em', margin:'0 0 10px' }}>Total Animals</p>
+                    {[
+                      { label:'🐑 Sheep',    count:data.speciesBreakdown.sheep    || 0, color:'#5d4037' },
+                      { label:'🐔 Chickens', count:data.speciesBreakdown.chickens || 0, color:'#f9a825' },
+                    ].map(s => (
+                      <div key={s.label} style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
+                        <span style={{ fontSize:13, color:'#4a3c28' }}>{s.label}</span>
+                        <span style={{ fontSize:13, fontWeight:700, color:s.color }}>{s.count}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              )
-            })
-      )}
+              </div>
 
-      {/* Plants tab */}
-      {tab === 'plants' && (
-        plants.length === 0
-          ? <div style={{ ...S.card, padding: 40, textAlign: 'center' }}><p style={{ color: '#a08060' }}>No plants recorded.</p></div>
-          : <div className="admin-plant-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill,minmax(260px,1fr))', gap: isMobile ? 8 : 12 }}>
-              {plants.map(p => (
-                <div key={p.id} style={{ ...S.card, padding: 16 }}>
-                  <p style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 15, margin: '0 0 3px' }}>{p.name}</p>
-                  <p style={{ fontSize: 11, color: '#a08060', margin: '0 0 3px' }}>
-                    {p.plant_category}{p.plant_subtype ? ` › ${p.plant_subtype}` : ''}{p.plant_subspecies ? ` › ${p.plant_subspecies}` : ''}
-                  </p>
-                  {p.location    && <p style={{ fontSize: 11, color: '#7a6648', margin: '0 0 2px' }}>📍 {p.location}</p>}
-                  {p.planted_date && <p style={{ fontSize: 11, color: '#5a3e1b', fontWeight: 600, margin: 0 }}>{calcAge(p.planted_date)}</p>}
-                </div>
-              ))}
-            </div>
-      )}
-
-      {/* Expenses tab */}
-      {tab === 'costs' && (
-        costs.length === 0
-          ? <div style={{ ...S.card, padding: 40, textAlign: 'center' }}><p style={{ color: '#a08060' }}>No expenses recorded.</p></div>
-          : <div style={{ ...S.card, padding: 22 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {costs.map(c => {
-                  const meta = ANIMAL_META[c.species] || ANIMAL_META.sheep
-                  return (
-                    <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 12px', borderRadius: 8, background: '#fdfaf6' }}>
-                      <span style={{ fontSize: 18 }}>{meta.emoji}</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.description}</p>
-                        <p style={{ fontSize: 11, color: '#a08060', margin: 0 }}>{meta.label} · {c.category || 'other'} · {formatDate(c.date)}</p>
+              {/* Top event types */}
+              <div style={{ ...S.card, padding:'18px 20px' }}>
+                <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:15, margin:'0 0 16px' }}>
+                  Most Used Event Types
+                </p>
+                {data.eventsByType.length === 0
+                  ? <p style={{ color:'#a08060', fontSize:13 }}>No events logged yet.</p>
+                  : data.eventsByType.map((e, i) => {
+                    const max = data.eventsByType[0]?.count || 1
+                    return (
+                      <div key={e.type} style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10 }}>
+                        <span style={{ fontSize:12, color:'#a08060', width:16, textAlign:'right' }}>#{i+1}</span>
+                        <span style={{ fontSize:13, fontWeight:600, color:'#2c2416', width:160, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {e.type.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}
+                        </span>
+                        <div style={{ flex:1, height:10, borderRadius:5, background:'#f0ebe4', overflow:'hidden' }}>
+                          <div style={{ height:'100%', borderRadius:5, background:'#5a3e1b', width:`${(e.count/max)*100}%`, transition:'width 0.4s' }}/>
+                        </div>
+                        <span style={{ fontSize:13, fontWeight:700, color:'#2c2416', width:32, textAlign:'right' }}>{e.count}</span>
                       </div>
-                      <span style={{ fontWeight: 700, fontSize: 14, color: '#c62828', flexShrink: 0 }}>-{fmt(c.amount)}</span>
+                    )
+                  })
+                }
+              </div>
+            </>
+          )}
+
+          {/* ── USERS TAB ────────────────────────────────────────────────── */}
+          {tab==='users' && (
+            <>
+              <input style={{ ...S.input, marginBottom:16, maxWidth:400 }}
+                placeholder="Search by email, user ID or animal name…"
+                value={search} onChange={e=>setSearch(e.target.value)}/>
+
+              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                {filteredUsers.length === 0
+                  ? <p style={{ color:'#a08060', fontSize:14, padding:'32px 0', textAlign:'center' }}>No users found.</p>
+                  : filteredUsers.map((u, idx) => (
+                    <UserRow key={u.id||idx} u={u} allEvents={u.events||[]}/>
+                  ))
+                }
+              </div>
+            </>
+          )}
+
+          {/* ── ACTIVITY TAB ─────────────────────────────────────────────── */}
+          {tab==='activity' && (
+            <>
+              <div className="admin-grid-3" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:20 }}>
+                {/* Most active farms */}
+                <div style={{ ...S.card, padding:'18px 20px', gridColumn:'span 2' }}>
+                  <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:15, margin:'0 0 14px' }}>
+                    🏆 Most Active Farms
+                  </p>
+                  {data.users
+                    .filter(u => u.eventCount > 0)
+                    .slice(0, 8)
+                    .map((u, i) => (
+                      <div key={u.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'8px 0',
+                        borderBottom:'1px solid #f0ebe4' }}>
+                        <span style={{ fontSize:13, fontWeight:700, color:'#c8a060', width:20 }}>#{i+1}</span>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <p style={{ fontSize:13, fontWeight:600, color:'#5a3e1b', margin:'0 0 2px',
+                            overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                            {u.email || (u.id||'unknown').slice(0,22)+'…'}
+                          </p>
+                          <p style={{ fontSize:11, color:'#a08060', margin:0 }}>
+                            {u.animalCount} animals · {u.hasSheep?'🐑':''}  {u.hasChickens?'🐔':''}
+                          </p>
+                        </div>
+                        <div style={{ textAlign:'right' }}>
+                          <p style={{ fontSize:15, fontWeight:700, color:'#1565c0', margin:'0 0 2px' }}>{u.eventCount} events</p>
+                          <ActivityBadge daysSince={u.daysSinceActive}/>
+                        </div>
+                      </div>
+                    ))
+                  }
+                  {data.users.filter(u => u.eventCount > 0).length === 0 &&
+                    <p style={{ color:'#a08060', fontSize:13 }}>No events logged yet.</p>}
+                </div>
+
+                {/* At-risk users */}
+                <div style={{ ...S.card, padding:'18px 20px' }}>
+                  <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:15, margin:'0 0 14px' }}>
+                    ⚠️ At Risk (14d+)
+                  </p>
+                  {data.users
+                    .filter(u => u.daysSinceActive !== null && u.daysSinceActive > 14)
+                    .slice(0, 8)
+                    .map(u => (
+                      <div key={u.id} style={{ padding:'8px 0', borderBottom:'1px solid #f0ebe4' }}>
+                        <p style={{ fontSize:13, fontWeight:600, color:'#c62828', margin:'0 0 2px',
+                          overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {u.email || (u.id||'unknown').slice(0,20)+'…'}
+                        </p>
+                        <p style={{ fontSize:11, color:'#a08060', margin:0 }}>
+                          {u.animalCount} animals · last active {u.daysSinceActive}d ago
+                        </p>
+                      </div>
+                    ))
+                  }
+                  {atRisk === 0 && <p style={{ color:'#2e7d32', fontSize:13 }}>✓ No at-risk users.</p>}
+                </div>
+              </div>
+
+              {/* Never active */}
+              {neverActive > 0 && (
+                <div style={{ ...S.card, padding:'18px 20px', background:'#fff3f3', border:'1px solid #f5c6c6' }}>
+                  <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:15, margin:'0 0 4px', color:'#c62828' }}>
+                    ⚪ {neverActive} User{neverActive!==1?'s':''} — Never Active
+                  </p>
+                  <p style={{ fontSize:13, color:'#7a3030', margin:'0 0 12px' }}>
+                    These users registered but have never added an animal or logged an event. Prime candidates for an onboarding follow-up.
+                  </p>
+                  {data.users.filter(u => u.eventCount===0 && u.animalCount===0).map(u => (
+                    <div key={u.id} style={{ fontSize:11, fontFamily:'monospace', color:'#c62828', marginBottom:4,
+                      overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                      {u.id} · joined {u.firstSeen ? formatDate(u.firstSeen.slice(0,10)) : 'unknown'}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── FARM HEALTH TAB ──────────────────────────────────────────── */}
+          {tab==='health' && (
+            <>
+              <div className="admin-grid-3" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:20 }}>
+                <StatCard emoji="📊" label="Avg Animals/Farm"    value={avgAnimals}   color="#5a3e1b"/>
+                <StatCard emoji="📋" label="Avg Events/Farm"     value={avgEvents}    color="#1565c0"/>
+                <StatCard emoji="💰" label="Avg Income/Farm"     value={fmt(data.users.length ? data.totalIncome/data.users.length : 0)} color="#2e7d32" bg="#f1f8f1"/>
+              </div>
+
+              {/* Engagement funnel */}
+              <div style={{ ...S.card, padding:'18px 20px', marginBottom:14 }}>
+                <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:15, margin:'0 0 16px' }}>
+                  Engagement Funnel
+                </p>
+                {[
+                  { label:'Registered',             count:data.users.length,                                                           color:'#5a3e1b' },
+                  { label:'Added at least 1 animal', count:data.users.filter(u=>u.animalCount>0).length,                               color:'#795548' },
+                  { label:'Logged at least 1 event', count:data.users.filter(u=>u.eventCount>0).length,                                color:'#1565c0' },
+                  { label:'Logged P&L entry',        count:data.users.filter(u=>u.incomeTotal>0).length,                               color:'#2e7d32' },
+                  { label:'Active this week',        count:activeThisWeek,                                                             color:'#4caf50' },
+                ].map((step, i) => {
+                  const pct = data.users.length ? Math.round((step.count/data.users.length)*100) : 0
+                  return (
+                    <div key={step.label} style={{ marginBottom:14 }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:5 }}>
+                        <span style={{ fontSize:13, fontWeight:600, color:'#2c2416' }}>{step.label}</span>
+                        <span style={{ fontSize:13, fontWeight:700, color:step.color }}>{step.count} <span style={{ color:'#a08060', fontWeight:400 }}>({pct}%)</span></span>
+                      </div>
+                      <div style={{ height:12, borderRadius:6, background:'#f0ebe4', overflow:'hidden' }}>
+                        <div style={{ height:'100%', borderRadius:6, background:step.color, width:`${pct}%`, transition:'width 0.4s', opacity:0.85 }}/>
+                      </div>
                     </div>
                   )
                 })}
               </div>
-              <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #f0ebe4', display: 'flex', justifyContent: 'flex-end' }}>
-                <span style={{ fontWeight: 700, color: '#c62828' }}>Total: -{fmt(totalSpent)}</span>
-              </div>
-            </div>
-      )}
 
-      {/* Income tab */}
-      {tab === 'income' && (
-        income.length === 0
-          ? <div style={{ ...S.card, padding: 40, textAlign: 'center' }}><p style={{ color: '#a08060' }}>No income recorded.</p></div>
-          : <div style={{ ...S.card, padding: 22 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {income.map(i => {
-                  const meta = ANIMAL_META[i.species] || ANIMAL_META.sheep
-                  return (
-                    <div key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 12px', borderRadius: 8, background: '#f1f8f1' }}>
-                      <span style={{ fontSize: 18 }}>{meta.emoji}</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.description}</p>
-                        <p style={{ fontSize: 11, color: '#a08060', margin: 0 }}>{meta.label} · {i.income_type?.replace(/_/g,' ')} · {formatDate(i.date)}</p>
-                      </div>
-                      <span style={{ fontWeight: 700, fontSize: 14, color: '#2e7d32', flexShrink: 0 }}>+{fmt(i.amount)}</span>
+              {/* Farms with most income tracked */}
+              <div style={{ ...S.card, padding:'18px 20px' }}>
+                <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:15, margin:'0 0 14px' }}>
+                  💰 Top Farms by Income Tracked
+                </p>
+                {data.users
+                  .filter(u => u.incomeTotal > 0)
+                  .sort((a,b) => b.incomeTotal - a.incomeTotal)
+                  .slice(0, 8)
+                  .map((u, i) => (
+                    <div key={u.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'8px 0', borderBottom:'1px solid #f0ebe4' }}>
+                      <span style={{ fontSize:13, fontWeight:700, color:'#c8a060', width:20 }}>#{i+1}</span>
+                      <p style={{ fontSize:13, fontWeight:600, color:'#5a3e1b', flex:1, margin:0,
+                        overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {u.email || (u.id||'unknown').slice(0,26)+'…'}
+                      </p>
+                      <span style={{ fontSize:14, fontWeight:700, color:'#2e7d32' }}>{fmt(u.incomeTotal)}</span>
                     </div>
-                  )
-                })}
+                  ))
+                }
+                {data.users.filter(u => u.incomeTotal > 0).length === 0 &&
+                  <p style={{ color:'#a08060', fontSize:13 }}>No income logged yet.</p>}
               </div>
-              <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #f0ebe4', display: 'flex', justifyContent: 'flex-end' }}>
-                <span style={{ fontWeight: 700, color: '#2e7d32' }}>Total: +{fmt(totalEarned)}</span>
-              </div>
-            </div>
-      )}
-    </div>
-  )
-}
-
-export function AdminPage() {
-  const { users, loading, error } = useAllUsers()
-  const isMobile = useIsMobile()
-  const [selectedUser, setSelectedUser] = useState(null)
-
-  if (selectedUser) return <UserFarmView user={selectedUser} onBack={() => setSelectedUser(null)} />
-
-  const totalAnimals = 0
-  const totalPlants  = 0
-
-  return (
-    <div style={{ ...S.page, padding: isMobile ? '16px 12px' : '32px 24px' }}>
-      {/* Header */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
-          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: isMobile ? 24 : 32, fontWeight: 700, margin: 0 }}>Admin Portal</h1>
-          <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: '#fff3e0', color: '#e65100', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🔒 Private</span>
-        </div>
-        <p style={{ fontSize: 13, color: '#a08060', margin: 0 }}>Overview of all registered farms — read only</p>
-      </div>
-
-      {/* Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
-        <StatPill label="Total Farms" value={users.length} />
-        <StatPill label="Active Today" value="—" />
-        <StatPill label="Total Users" value={users.length} />
-      </div>
-
-      {/* Farm list */}
-      {loading ? <Spinner /> : error ? <ErrorMsg message={error} /> : (
-        users.length === 0 ? (
-          <div style={{ ...S.card, padding: 60, textAlign: 'center' }}>
-            <p style={{ color: '#a08060', fontSize: 15 }}>No users registered yet.</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {users.map(u => (
-              <div key={u.id} onClick={() => setSelectedUser(u)}
-                style={{ ...S.card, padding: '18px 22px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16, transition: 'transform 0.12s, box-shadow 0.12s' }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(44,36,22,0.1)' }}
-                onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}>
-                {/* Avatar */}
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#5a3e1b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: '#f0e6cc', flexShrink: 0, fontFamily: "'Playfair Display',serif" }}>
-                  {u.email?.[0]?.toUpperCase() || '?'}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontFamily: "'Playfair Display',serif", fontWeight: 700, fontSize: 16, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {u.farm_name || u.email?.split('@')[0] + "'s Farm"}
-                  </p>
-                  <p style={{ fontSize: 12, color: '#a08060', margin: 0 }}>{u.email} · Joined {formatDate(u.created_at?.slice(0,10))}</p>
-                </div>
-                {u.is_admin && (
-                  <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 10, fontSize: 10, fontWeight: 700, background: '#fff3e0', color: '#e65100', textTransform: 'uppercase', flexShrink: 0 }}>Admin</span>
-                )}
-                <span style={{ fontSize: 20, color: '#c8b89a' }}>→</span>
-              </div>
-            ))}
-          </div>
-        )
+            </>
+          )}
+        </>
       )}
     </div>
   )
