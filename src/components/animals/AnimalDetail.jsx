@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAnimals, useSingleAnimal } from '../../hooks/useAnimals'
 import { useAnimalEvents } from '../../hooks/useAnimalEvents'
+import { usePhotoUpload } from '../../hooks/usePhotoUpload'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { S, AnimalIllustration, STATUS_STYLES, STATUS_DOT, SEX_LABELS, formatDate, calcAge, Spinner, ErrorMsg } from '../ui/shared'
 import { EventTimeline } from './EventTimeline'
+import { PhotoGallery } from './PhotoGallery'
 
 // ─── Mini lineage preview ──────────────────────────────────────────────────────
 function MiniLineage({ animal, allAnimals, navigate, isMobile }) {
@@ -71,15 +73,59 @@ export function AnimalDetailPage() {
   const { id }     = useParams()
   const navigate   = useNavigate()
   const isMobile   = useIsMobile()
+  const fileRef    = useRef()
   const { animal, loading, error } = useSingleAnimal(id)
-  const { animals: allAnimals, deleteAnimal } = useAnimals(animal?.species || 'sheep')
+  const { animals: allAnimals, deleteAnimal, updateAnimal } = useAnimals(animal?.species || 'sheep')
   const { events, loading:evLoading, addEvent, addPhotoToEvent, deleteEvent } = useAnimalEvents(id)
+  const { upload, uploading } = usePhotoUpload()
+  const [showGallery,   setShowGallery]   = useState(false)
+  const [captionPrompt, setCaptionPrompt] = useState(false)
+  const [pendingPhoto,  setPendingPhoto]  = useState(null)  // { url, file }
+  const [caption,       setCaption]       = useState('')
+  const [savingPhoto,   setSavingPhoto]   = useState(false)
 
   const handleDelete = async () => {
     if (!window.confirm(`Delete ${animal.name}? This also deletes all their events.`)) return
     try { await deleteAnimal(id); navigate(animal.species==='chickens'?'/chickens':'/') }
     catch (err) { alert(err.message) }
   }
+
+  // Profile photo upload — becomes avatar + auto-creates a photo_update event
+  const handleProfilePhotoSelect = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    try {
+      const url = await upload(file)
+      setPendingPhoto({ url, file })
+      setCaptionPrompt(true)  // ask for optional caption before saving
+    } catch (err) { alert('Upload failed: ' + err.message) }
+    e.target.value = ''  // reset input
+  }
+
+  const handlePhotoSave = async () => {
+    if (!pendingPhoto) return
+    setSavingPhoto(true)
+    try {
+      // 1. Update the animal's avatar
+      await updateAnimal(id, { photo_url: pendingPhoto.url })
+      // 2. Auto-create a photo_update event in the timeline
+      await addEvent({
+        event_type: 'photo_update',
+        event_date: new Date().toISOString().split('T')[0],
+        notes:      caption.trim() || '',
+        photo_url:  pendingPhoto.url,
+      })
+      setCaptionPrompt(false)
+      setPendingPhoto(null)
+      setCaption('')
+    } catch (err) { alert(err.message) }
+    finally { setSavingPhoto(false) }
+  }
+
+  // Most recent photo = avatar (from profile updates only, not event photos)
+  const latestProfilePhoto = [...events]
+    .filter(e => e.event_type === 'photo_update' && e.photo_url)
+    .sort((a,b) => b.event_date > a.event_date ? 1 : -1)[0]?.photo_url || animal?.photo_url
 
   if (loading) return <div style={S.page}><Spinner/></div>
   if (error||!animal) return <div style={S.page}><ErrorMsg message={error||'Animal not found.'}/></div>
@@ -100,12 +146,23 @@ export function AnimalDetailPage() {
             ← {meta.label}
           </button>
           <div style={{ display:'flex', gap:isMobile?12:18, alignItems:'flex-start' }}>
-            <div style={{ width:isMobile?64:80, height:isMobile?64:80, borderRadius:'50%', overflow:'hidden',
-              border:'3px solid rgba(255,255,255,0.25)', flexShrink:0, background:'rgba(255,255,255,0.08)' }}>
-              {animal.photo_url
-                ? <img src={animal.photo_url} alt={animal.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                : <AnimalIllustration animal={animal} size={isMobile?64:80}/>
-              }
+            <div style={{ position:'relative', flexShrink:0 }}>
+              <div style={{ width:isMobile?64:80, height:isMobile?64:80, borderRadius:'50%', overflow:'hidden',
+                border:'3px solid rgba(255,255,255,0.25)', background:'rgba(255,255,255,0.08)' }}>
+                {latestProfilePhoto
+                  ? <img src={latestProfilePhoto} alt={animal.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                  : <AnimalIllustration animal={animal} size={isMobile?64:80}/>
+                }
+              </div>
+              {/* Update photo button — sits on avatar */}
+              <label title="Update profile photo"
+                style={{ position:'absolute', bottom:-2, right:-2, width:24, height:24, borderRadius:'50%',
+                  background:'#c8a060', border:'2px solid #2c2416', display:'flex', alignItems:'center',
+                  justifyContent:'center', cursor:'pointer', fontSize:12 }}>
+                📷
+                <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }}
+                  onChange={handleProfilePhotoSelect} disabled={uploading}/>
+              </label>
             </div>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, flexWrap:'wrap' }}>
@@ -127,6 +184,18 @@ export function AnimalDetailPage() {
             </div>
             {!isMobile && (
               <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+                <label style={{ ...S.btn, background:'rgba(200,160,96,0.25)', color:'#f0e6cc',
+                  border:'1px solid rgba(200,160,96,0.4)', padding:'7px 14px', fontSize:13,
+                  cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6 }}>
+                  📷 Update Photo
+                  <input type="file" accept="image/*" style={{ display:'none' }}
+                    onChange={handleProfilePhotoSelect} disabled={uploading}/>
+                </label>
+                <button onClick={()=>setShowGallery(true)}
+                  style={{ ...S.btn, background:'rgba(255,255,255,0.1)', color:'#f0e6cc',
+                    border:'1px solid rgba(255,255,255,0.2)', padding:'7px 14px', fontSize:13 }}>
+                  🖼 Photos
+                </button>
                 <button onClick={()=>navigate(`/lineage?id=${id}&species=${animal.species||'sheep'}`)}
                   style={{ ...S.btn, background:'rgba(76,175,80,0.2)', color:'#a5d6a7',
                     border:'1px solid rgba(76,175,80,0.35)', padding:'7px 14px', fontSize:13, fontWeight:700 }}>
@@ -147,6 +216,19 @@ export function AnimalDetailPage() {
           </div>
           {isMobile && (
             <div style={{ display:'flex', gap:8, marginTop:12, flexWrap:'wrap' }}>
+              <label style={{ ...S.btn, flex:1, justifyContent:'center', cursor:'pointer',
+                background:'rgba(200,160,96,0.25)', color:'#f0e6cc',
+                border:'1px solid rgba(200,160,96,0.4)',
+                display:'inline-flex', alignItems:'center', gap:5 }}>
+                📷 Photo
+                <input type="file" accept="image/*" style={{ display:'none' }}
+                  onChange={handleProfilePhotoSelect} disabled={uploading}/>
+              </label>
+              <button onClick={()=>setShowGallery(true)}
+                style={{ ...S.btn, flex:1, justifyContent:'center', background:'rgba(255,255,255,0.1)',
+                  color:'#f0e6cc', border:'1px solid rgba(255,255,255,0.2)' }}>
+                🖼 History
+              </button>
               <button onClick={()=>navigate(`/lineage?id=${id}&species=${animal.species||'sheep'}`)}
                 style={{ ...S.btn, flex:1, justifyContent:'center', background:'rgba(76,175,80,0.2)',
                   color:'#a5d6a7', border:'1px solid rgba(76,175,80,0.35)', fontWeight:700 }}>
@@ -206,6 +288,61 @@ export function AnimalDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Caption prompt after profile photo upload */}
+      {captionPrompt && pendingPhoto && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:8000,
+          display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+          <div style={{ background:'#fff', borderRadius:14, padding:24, maxWidth:380, width:'100%',
+            boxShadow:'0 20px 60px rgba(0,0,0,0.4)' }}>
+            <div style={{ width:100, height:100, borderRadius:12, overflow:'hidden',
+              margin:'0 auto 16px', border:'3px solid #c8a060' }}>
+              <img src={pendingPhoto.url} alt="Preview"
+                style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+            </div>
+            <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:17,
+              margin:'0 0 4px', textAlign:'center' }}>
+              Update {animal.name}'s photo
+            </p>
+            <p style={{ fontSize:13, color:'#a08060', margin:'0 0 16px', textAlign:'center', lineHeight:1.5 }}>
+              This becomes the new avatar. The old photo is kept in the timeline.
+            </p>
+            <label style={S.label}>Add a caption (optional)</label>
+            <input style={{ ...S.input, marginBottom:16 }}
+              value={caption} onChange={e=>setCaption(e.target.value)}
+              placeholder="e.g. Post-shearing, looking great"
+              autoFocus
+              onKeyDown={e=>e.key==='Enter'&&handlePhotoSave()}/>
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={handlePhotoSave} disabled={savingPhoto}
+                style={{ ...S.btn, ...S.btnPrimary, flex:1, justifyContent:'center',
+                  opacity:savingPhoto?0.7:1 }}>
+                {savingPhoto?'Saving…':'Save Photo'}
+              </button>
+              <button onClick={()=>{ setCaptionPrompt(false); setPendingPhoto(null); setCaption('') }}
+                style={{ ...S.btn, ...S.btnSecondary }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photo gallery overlay */}
+      {showGallery && (
+        <PhotoGallery
+          events={events}
+          animalName={animal.name}
+          onClose={()=>setShowGallery(false)}
+          onUploadPhoto={async(file)=>{
+            try {
+              const url = await upload(file)
+              setPendingPhoto({ url, file })
+              setCaptionPrompt(true)
+            } catch(err){ alert('Upload failed: '+err.message) }
+          }}
+        />
+      )}
     </div>
   )
 }

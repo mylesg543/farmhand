@@ -19,6 +19,7 @@ const EVENT_META = {
   breeding:        { icon:'❤️',  label:'Breeding',         color:'#ad1457', bg:'#fce4ec', border:'#f48fb1' },
   sale:            { icon:'💰', label:'Sale',               color:'#2e7d32', bg:'#e8f5e9', border:'#a5d6a7' },
   weight:          { icon:'⚖️',  label:'Weight',           color:'#00695c', bg:'#e0f2f1', border:'#80cbc4' },
+  photo_update:    { icon:'📷', label:'New Photo',         color:'#5a3e1b', bg:'#fdfaf6', border:'#d0c4b0' },
   custom:          { icon:'📝', label:'Note',               color:'#5a3e1b', bg:'#fdfaf6', border:'#d0c4b0' },
 }
 const getMeta = (type) => EVENT_META[type] || EVENT_META.custom
@@ -27,7 +28,7 @@ const getMeta = (type) => EVENT_META[type] || EVENT_META.custom
 function groupByMonth(events) {
   const map = new Map()
   for (const ev of events) {
-    const key = (ev.event_date || '').slice(0, 7) // Always 'YYYY-MM'
+    const key = (ev.event_date || '').slice(0, 7) // 'YYYY-MM'
     if (!key || key.length < 7) continue
     if (!map.has(key)) {
       const [year, month] = key.split('-')
@@ -37,7 +38,15 @@ function groupByMonth(events) {
     }
     map.get(key).events.push(ev)
   }
+  // Sort groups newest first, events within each group newest first
   return Array.from(map.values())
+    .sort((a, b) => b.key > a.key ? 1 : -1)
+    .map(g => ({
+      ...g,
+      events: [...g.events].sort((a, b) =>
+        (b.event_date||'').slice(0,10) > (a.event_date||'').slice(0,10) ? 1 : -1
+      )
+    }))
 }
 
 // ─── Single event card ─────────────────────────────────────────────────────────
