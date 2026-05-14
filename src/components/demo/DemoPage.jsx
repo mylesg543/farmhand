@@ -78,20 +78,104 @@ function Nav({ screen, species, isMobile }) {
 }
 
 function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
-  const text=(step.tip||'').replace(/{name}/g,name), isLast=!!step.isLast
+  const text    = (step.tip||'').replace(/{name}/g,name)
+  const isLast  = !!step.isLast
+  const [idle,  setIdle]    = useState(0)   // seconds since last Next tap
+  const [pulse, setPulse]   = useState(false)
+  const idleRef = useRef(null)
+
+  // Reset idle counter whenever step changes
+  useEffect(()=>{
+    setIdle(0); setPulse(false)
+    clearInterval(idleRef.current)
+    idleRef.current = setInterval(()=>{
+      setIdle(prev=>{
+        const next = prev + 1
+        if (next >= 3) setPulse(true)   // start pulsing at 3s
+        return next
+      })
+    }, 1000)
+    return ()=>clearInterval(idleRef.current)
+  }, [stepIdx])
+
+  const handleNext = ()=>{ setIdle(0); setPulse(false); onNext() }
+
   return (
-    <div style={{ position:'fixed',bottom:isMobile?82:28,left:'50%',transform:'translateX(-50%)',width:isMobile?'calc(100% - 24px)':'440px',maxWidth:'95vw',background:'#2c2416',borderRadius:12,padding:'16px 18px',boxShadow:'0 8px 32px rgba(0,0,0,0.4)',zIndex:1000,border:'1px solid rgba(255,255,255,0.08)' }}>
-      <div style={{ display:'flex',gap:3,marginBottom:12 }}>
-        {Array.from({length:total},(_,i)=><div key={i} style={{ height:2,borderRadius:1,flex:1,background:i<=stepIdx?'#c8a060':'rgba(255,255,255,0.1)' }}/>)}
+    <>
+      {/* Floating "ready to continue" indicator — appears after 5s idle */}
+      {idle >= 5 && !isLast && (
+        <div style={{
+          position:'fixed',
+          bottom: isMobile ? 170 : 110,
+          left:'50%', transform:'translateX(-50%)',
+          background:'#c8a060', color:'#2c2416', borderRadius:20,
+          padding: isMobile ? '10px 20px' : '8px 18px',
+          fontSize: isMobile ? 14 : 13,
+          fontWeight:700, zIndex:1001, whiteSpace:'nowrap',
+          boxShadow:'0 4px 20px rgba(0,0,0,0.3)',
+          animation:'floatPulse 1.5s ease-in-out infinite',
+          cursor:'pointer', display:'flex', alignItems:'center', gap:6,
+        }} onClick={handleNext}>
+          Ready to continue? →
+        </div>
+      )}
+
+      {/* Tooltip card */}
+      <div style={{ position:'fixed', bottom:isMobile?82:28, left:'50%', transform:'translateX(-50%)',
+        width:isMobile?'calc(100% - 24px)':'440px', maxWidth:'95vw', background:'#2c2416',
+        borderRadius:12, padding:'16px 18px', boxShadow:'0 8px 32px rgba(0,0,0,0.4)',
+        zIndex:1000, border:`1px solid ${pulse?'rgba(200,160,96,0.6)':'rgba(255,255,255,0.08)'}`,
+        transition:'border-color 0.3s',
+        animation: pulse ? 'tipPulse 1.5s ease-in-out infinite' : 'none',
+      }}>
+        <style>{`
+          @keyframes tipPulse {
+            0%,100% { box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+            50%      { box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 4px rgba(200,160,96,0.35); }
+          }
+          @keyframes floatPulse {
+            0%,100% { transform: translateX(-50%) translateY(0);   opacity:1; }
+            50%      { transform: translateX(-50%) translateY(-4px); opacity:0.85; }
+          }
+          @keyframes nextPulse {
+            0%,100% { transform: scale(1); }
+            50%      { transform: scale(1.06); }
+          }
+        `}</style>
+
+        <div style={{ display:'flex', gap:3, marginBottom:12 }}>
+          {Array.from({length:total},(_,i)=>(
+            <div key={i} style={{ height:2, borderRadius:1, flex:1,
+              background:i<=stepIdx?'#c8a060':'rgba(255,255,255,0.1)' }}/>
+          ))}
+        </div>
+
+        <p style={{ fontSize:14, color:'#f0e6cc', margin:'0 0 8px', lineHeight:1.6 }}>{text}</p>
+
+        {/* "Some features are interactive" hint — hide on small mobile */}
+        {!isLast && !isMobile && (
+          <p style={{ fontSize:11, color:'rgba(255,255,255,0.3)', margin:'0 0 12px', fontStyle:'italic' }}>
+            Feel free to explore — tap Next when you're ready to continue.
+          </p>
+        )}
+
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <button onClick={onSkip} style={{ background:'none', border:'none',
+            color:'rgba(255,255,255,0.3)', cursor:'pointer', fontSize:12,
+            fontFamily:"'Lato',sans-serif", padding:0 }}>
+            Skip tour
+          </button>
+          <button onClick={handleNext}
+            style={{ ...S.btn, marginLeft:'auto',
+              background:isLast?'#4caf50':'#c8a060',
+              color:isLast?'#fff':'#2c2416', fontWeight:700, padding:'9px 22px', fontSize:14,
+              animation: pulse ? 'nextPulse 1.5s ease-in-out infinite' : 'none',
+            }}>
+            {isLast?'🌾 Get Started Free':'Next →'}
+          </button>
+        </div>
       </div>
-      <p style={{ fontSize:14,color:'#f0e6cc',margin:'0 0 14px',lineHeight:1.6 }}>{text}</p>
-      <div style={{ display:'flex',alignItems:'center',gap:10 }}>
-        <button onClick={onSkip} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.3)',cursor:'pointer',fontSize:12,fontFamily:"'Lato',sans-serif",padding:0 }}>Skip</button>
-        <button onClick={onNext} style={{ ...S.btn,marginLeft:'auto',background:isLast?'#4caf50':'#c8a060',color:isLast?'#fff':'#2c2416',fontWeight:700,padding:'9px 22px',fontSize:14 }}>
-          {isLast?'🌾 Get Started Free':'Next →'}
-        </button>
-      </div>
-    </div>
+    </>
   )
 }
 
@@ -1108,46 +1192,103 @@ function BulkAddScreen({ name, species, highlight, isMobile }) {
 }
 
 function Personalise({ name, setName, species, setSpecies, onStart, isMobile }) {
-  const ref=useRef()
+  const ref  = useRef()
+  const demo = species==='sheep' ? DEMO_SHEEP[0] : DEMO_CHICKENS[0]
+  const defaultName = species==='sheep' ? 'Bella' : 'Goldie'
+
+  // Auto-populate default name on mount and on species change
+  useEffect(()=>{
+    if (!name.trim()) setName(defaultName)
+  }, [species])
+
   useEffect(()=>{ setTimeout(()=>ref.current?.focus(),300) },[])
-  const demo=species==='sheep'?DEMO_SHEEP[0]:DEMO_CHICKENS[0]
+
+  const displayName = name.trim() || defaultName
+
   return (
     <div style={{ minHeight:'80vh',display:'flex',alignItems:'center',justifyContent:'center',padding:isMobile?'24px 16px':'40px 24px' }}>
       <div style={{ maxWidth:440,width:'100%' }}>
         <div style={{ textAlign:'center',marginBottom:28 }}>
           <div style={{ fontSize:48,marginBottom:10 }}>🌾</div>
-          <h1 style={{ fontFamily:"'Playfair Display',serif",fontSize:isMobile?24:32,fontWeight:700,color:'#f0e6cc',margin:'0 0 10px',lineHeight:1.2 }}>Set up a quick demo farm</h1>
-          <p style={{ fontSize:isMobile?14:15,color:'#c8b89a',margin:0,lineHeight:1.6 }}>Tell us what you raise and give one animal a name.</p>
+          <h1 style={{ fontFamily:"'Playfair Display',serif",fontSize:isMobile?24:32,fontWeight:700,color:'#f0e6cc',margin:'0 0 10px',lineHeight:1.2 }}>
+            Set up your demo farm
+          </h1>
+          <p style={{ fontSize:isMobile?14:15,color:'#c8b89a',margin:0,lineHeight:1.6 }}>
+            Pick what you raise — we'll build a real demo farm around it.
+          </p>
         </div>
+
         <div style={{ background:'rgba(255,255,255,0.06)',borderRadius:16,padding:isMobile?24:32,border:'1px solid rgba(255,255,255,0.1)' }}>
-          <label style={{ fontSize:12,fontWeight:700,color:'#c8a060',textTransform:'uppercase',letterSpacing:'0.1em',display:'block',marginBottom:10 }}>What do you raise?</label>
-          <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20 }}>
+
+          {/* Species picker */}
+          <label style={{ fontSize:12,fontWeight:700,color:'#c8a060',textTransform:'uppercase',letterSpacing:'0.1em',display:'block',marginBottom:10 }}>
+            What do you raise?
+          </label>
+          <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:24 }}>
             {[['sheep','🐑','Sheep'],['chickens','🐔','Chickens']].map(([k,e,l])=>(
               <button key={k} onClick={()=>setSpecies(k)}
-                style={{ padding:'14px',borderRadius:10,border:`2px solid ${species===k?'#c8a060':'rgba(255,255,255,0.15)'}`,background:species===k?'rgba(200,160,96,0.15)':'rgba(255,255,255,0.05)',cursor:'pointer',fontFamily:"'Lato',sans-serif",display:'flex',flexDirection:'column',alignItems:'center',gap:6,transition:'all 0.15s' }}>
+                style={{ padding:'14px',borderRadius:10,
+                  border:`2px solid ${species===k?'#c8a060':'rgba(255,255,255,0.15)'}`,
+                  background:species===k?'rgba(200,160,96,0.15)':'rgba(255,255,255,0.05)',
+                  cursor:'pointer',fontFamily:"'Lato',sans-serif",
+                  display:'flex',flexDirection:'column',alignItems:'center',gap:6,transition:'all 0.15s' }}>
                 <span style={{ fontSize:28 }}>{e}</span>
                 <span style={{ fontSize:14,fontWeight:700,color:species===k?'#f0e6cc':'#c8b89a' }}>{l}</span>
                 {species===k&&<span style={{ fontSize:10,color:'#c8a060',fontWeight:700 }}>✓ Selected</span>}
               </button>
             ))}
           </div>
-          <label style={{ fontSize:12,fontWeight:700,color:'#c8a060',textTransform:'uppercase',letterSpacing:'0.1em',display:'block',marginBottom:10 }}>
-            Name one of your {species==='sheep'?'sheep':'chickens'}
-          </label>
-          <input ref={ref} value={name} onChange={e=>setName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&onStart()}
-            placeholder={species==='sheep'?'e.g. Bella, Daisy, Duke…':'e.g. Goldie, Pepper, Big Red…'}
-            style={{ width:'100%',padding:'13px 16px',borderRadius:10,border:`2px solid ${name.trim()?'#c8a060':'rgba(255,255,255,0.15)'}`,background:'rgba(255,255,255,0.07)',fontFamily:"'Lato',sans-serif",fontSize:16,color:'#f0e6cc',outline:'none',boxSizing:'border-box',marginBottom:16,transition:'border-color 0.2s' }}/>
-          <div style={{ background:'rgba(200,160,96,0.1)',border:'1px solid rgba(200,160,96,0.25)',borderRadius:10,padding:'12px 14px',marginBottom:18,display:'flex',gap:12,alignItems:'center' }}>
+
+          {/* Name field — pre-filled, clearly optional */}
+          <div style={{ marginBottom:16 }}>
+            <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6 }}>
+              <label style={{ fontSize:12,fontWeight:700,color:'#c8a060',textTransform:'uppercase',letterSpacing:'0.1em' }}>
+                Name your first {species==='sheep'?'sheep':'chicken'}
+              </label>
+              <span style={{ fontSize:11,color:'rgba(255,255,255,0.3)',fontStyle:'italic' }}>optional</span>
+            </div>
+            <input
+              ref={ref}
+              value={name}
+              onChange={e=>setName(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&onStart()}
+              style={{ width:'100%', padding:'13px 16px', borderRadius:10,
+                border:'2px solid rgba(200,160,96,0.4)',
+                background:'rgba(255,255,255,0.07)', fontFamily:"'Lato',sans-serif",
+                fontSize:16, color:'#f0e6cc', outline:'none', boxSizing:'border-box',
+                transition:'border-color 0.2s',
+                WebkitAppearance:'none',  // prevents iOS styling
+              }}
+            />
+            <p style={{ fontSize:11,color:'rgba(255,255,255,0.3)',margin:'6px 0 0',fontStyle:'italic' }}>
+              We've suggested {defaultName} — feel free to change it to anything you like
+            </p>
+          </div>
+
+          {/* Live preview */}
+          <div style={{ background:'rgba(200,160,96,0.1)',border:'1px solid rgba(200,160,96,0.25)',
+            borderRadius:10,padding:'12px 14px',marginBottom:18,display:'flex',gap:12,alignItems:'center' }}>
             <div style={{ width:44,height:44,borderRadius:'50%',overflow:'hidden',border:'2px solid #c8a060',flexShrink:0 }}>
-              <img src={demo.photo_url} alt={name||demo.name} style={{ width:'100%',height:'100%',objectFit:'cover' }} onError={e=>{ e.target.style.display='none' }}/>
+              <img src={demo.photo_url} alt={displayName}
+                style={{ width:'100%',height:'100%',objectFit:'cover' }}
+                onError={e=>{ e.target.style.display='none' }}/>
             </div>
             <div>
-              <p style={{ fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:16,color:'#f0e6cc',margin:'0 0 2px' }}>{name.trim()||demo.name}</p>
-              <p style={{ fontSize:12,color:'#c8a878',margin:0 }}>{species==='sheep'?'Merino · Ewe · 4 years old':'Rhode Island Red · Hen · 1 year old'}</p>
+              <p style={{ fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:16,color:'#f0e6cc',margin:'0 0 2px' }}>
+                {displayName}
+              </p>
+              <p style={{ fontSize:12,color:'#c8a878',margin:0 }}>
+                {species==='sheep'?'Merino · Ewe · 4 years old':'Rhode Island Red · Hen · 1 year old'}
+              </p>
             </div>
           </div>
-          <button onClick={onStart} style={{ width:'100%',padding:'14px',borderRadius:10,border:'none',cursor:'pointer',fontFamily:"'Lato',sans-serif",fontSize:16,fontWeight:700,background:'#c8a060',color:'#2c2416' }}>Show me the app →</button>
-          <button onClick={onStart} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.25)',cursor:'pointer',fontSize:12,fontFamily:"'Lato',sans-serif",display:'block',margin:'10px auto 0',textDecoration:'underline' }}>Skip — use demo data</button>
+
+          <button onClick={onStart}
+            style={{ width:'100%',padding:'14px',borderRadius:10,border:'none',cursor:'pointer',
+              fontFamily:"'Lato',sans-serif",fontSize:16,fontWeight:700,
+              background:'#c8a060',color:'#2c2416' }}>
+            Show me the app →
+          </button>
         </div>
       </div>
     </div>
@@ -1160,33 +1301,33 @@ export function DemoPage() {
   const [rawName,setRawName]=useState('')
   const [species,setSpecies]=useState('sheep')
   const [step,setStep]=useState(0)
-  const name=rawName.trim()||(species==='sheep'?DEMO_SHEEP[0].name:DEMO_CHICKENS[0].name)
-  const steps=buildSteps(species), cur=steps[step]
-  const next=()=>{ if(cur.isLast) navigate('/'); else setStep(i=>i+1) }
-  const skip=()=>navigate('/')
+  const name = rawName.trim() || (species==='sheep' ? 'Bella' : 'Goldie')
+  const steps = buildSteps(species), cur = steps[step]
+  const next  = ()=>{ if(cur.isLast) navigate('/'); else setStep(i=>i+1) }
+  const skip  = ()=>navigate('/')
 
   useEffect(()=>{
     if(phase!=='tour') return
-    window.scrollTo({ top:0,behavior:'instant' })
+    window.scrollTo({ top:0, behavior:'instant' })
     if(cur.scrollTo){
-      const t=setTimeout(()=>{ const el=document.getElementById(cur.scrollTo); if(el) el.scrollIntoView({ behavior:'smooth',block:'center' }) },300)
+      const t=setTimeout(()=>{ const el=document.getElementById(cur.scrollTo); if(el) el.scrollIntoView({ behavior:'smooth', block:'center' }) },300)
       return ()=>clearTimeout(t)
     }
   },[step,phase])
 
   const screens={
-    flock:   <FlockScreen    name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    profile: <ProfileScreen  name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    event:   <EventScreen    name={name} species={species} step={cur} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    bulk:    <BulkScreen     name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    lineage: <LineageDemoScreen name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    pnl:     <PnLScreen      name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    dash1:   <DashChartScreen    highlight={cur.scrollTo} isMobile={isMobile}/>,
-    dash2:   <DashAnimalsScreen  species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    dash3:   <DashDonutsScreen   highlight={cur.scrollTo} isMobile={isMobile}/>,
-    dash4:   <DashCustomerPieScreen highlight={cur.scrollTo} isMobile={isMobile}/>,
-    plants:  <PlantsScreen       highlight={cur.scrollTo} isMobile={isMobile}/>,
-    bulkadd: <BulkAddScreen  name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
+    flock:   <FlockScreen       key={`flock-${step}`}   name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
+    profile: <ProfileScreen     key={`profile-${step}`} name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
+    event:   <EventScreen       key={`event-${step}`}   name={name} species={species} step={cur} highlight={cur.scrollTo} isMobile={isMobile}/>,
+    bulk:    <BulkScreen        key={`bulk-${step}`}    name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
+    lineage: <LineageDemoScreen key={`lineage-${step}`} name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
+    pnl:     <PnLScreen         key={`pnl-${step}`}     name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
+    dash1:   <DashChartScreen       key={`dash1-${step}`} highlight={cur.scrollTo} isMobile={isMobile}/>,
+    dash2:   <DashAnimalsScreen     key={`dash2-${step}`} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
+    dash3:   <DashDonutsScreen      key={`dash3-${step}`} highlight={cur.scrollTo} isMobile={isMobile}/>,
+    dash4:   <DashCustomerPieScreen key={`dash4-${step}`} highlight={cur.scrollTo} isMobile={isMobile}/>,
+    plants:  <PlantsScreen          key={`plants-${step}`} highlight={cur.scrollTo} isMobile={isMobile}/>,
+    bulkadd: <BulkAddScreen    key={`bulkadd-${step}`}  name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
   }
 
   if(phase==='name') return (
