@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAnimals } from '../../hooks/useAnimals'
 import { useIsMobile } from '../../hooks/useIsMobile'
+import { useAuth } from '../../hooks/useAuth'
+import { supabase } from '../../lib/supabase'
 import { S, AnimalIllustration, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS } from '../ui/shared'
 
 const SPECIES_META = {
@@ -9,71 +11,142 @@ const SPECIES_META = {
   chickens: { emoji:'🐔', singular:'Chicken', plural:'Chickens', label:'Chickens' },
 }
 
-// ─── Compact sticky strip ──────────────────────────────────────────────────────
-function FlockStrip({ animals, species, activeCount, isMobile, onAdd, onBulkEvent, navigate }) {
-  const meta     = SPECIES_META[species] || SPECIES_META.sheep
-  const active   = animals.filter(a => a.status==='alive'||a.status==='rented')
-  const inactive = animals.filter(a => a.status!=='alive'&&a.status!=='rented')
-  const all      = [...active, ...inactive]
+const EVENT_TYPES = [
+  { value:'vaccination',    label:'💉 Vaccination' },
+  { value:'worming',        label:'🪱 Worming' },
+  { value:'hoof_trimming',  label:'✂️ Hoof Trimming' },
+  { value:'shearing',       label:'✂️ Shearing' },
+  { value:'weight_check',   label:'⚖️ Weight Check' },
+  { value:'pregnancy_check',label:'🔍 Pregnancy Check' },
+  { value:'breeding',       label:'❤️ Breeding' },
+  { value:'lambing',        label:'🐣 Lambing' },
+  { value:'weaning',        label:'🍼 Weaning' },
+  { value:'egg_production', label:'🥚 Egg Production' },
+  { value:'injury',         label:'🩹 Injury' },
+  { value:'sale',           label:'💸 Sale' },
+  { value:'custom',         label:'📝 Custom / Note' },
+]
+
+// ─── Mobile inline event panel ──────────────────────────────────────────────
+function MobileEventPanel({ animals, species, user, onDone, onCancel }) {
+  const meta          = SPECIES_META[species] || SPECIES_META.sheep
+  const active        = animals.filter(a => a.status==='alive'||a.status==='rented')
+  const [picked,      setPicked]    = useState(new Set())
+  const [eventType,   setEventType] = useState('')
+  const [eventDate,   setEventDate] = useState(new Date().toISOString().split('T')[0])
+  const [notes,       setNotes]     = useState('')
+  const [saving,      setSaving]    = useState(false)
+  const [done,        setDone]      = useState(false)
+
+  const toggle = (id) => setPicked(prev => {
+    const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n
+  })
+  const toggleAll = () => setPicked(picked.size===active.length ? new Set() : new Set(active.map(a=>a.id)))
+
+  const handleSave = async () => {
+    if (picked.size===0) { alert(`Select at least one ${meta.singular.toLowerCase()}.`); return }
+    if (!eventType)      { alert('Select an event type.'); return }
+    setSaving(true)
+    try {
+      const rows = [...picked].map(animal_id => ({
+        animal_id, event_type: eventType, event_date: eventDate,
+        notes: notes || null, user_id: user.id,
+      }))
+      const { error } = await supabase.from('fh_animal_events').insert(rows)
+      if (error) throw error
+      setDone(true)
+      setTimeout(() => onDone(), 1000)
+    } catch(err) {
+      alert('Failed: ' + err.message)
+      setSaving(false)
+    }
+  }
+
+  if (done) return (
+    <div style={{ background:'#f0f9f0', border:'1px solid #a5d6a7', borderRadius:12,
+      padding:20, marginBottom:12, textAlign:'center' }}>
+      <div style={{ fontSize:32, marginBottom:6 }}>✅</div>
+      <p style={{ fontWeight:700, color:'#2e7d32', margin:0, fontSize:14 }}>
+        Event logged for {picked.size} {picked.size===1?meta.singular.toLowerCase():meta.plural.toLowerCase()}!
+      </p>
+    </div>
+  )
 
   return (
-    <div style={{ background:'linear-gradient(160deg,#2c2416 0%,#4a3520 100%)',
-      padding:'8px 14px', display:'flex', alignItems:'center', gap:10,
-      borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
-      {/* Active count badge */}
-      <div style={{ background:'rgba(200,160,96,0.2)', border:'1px solid rgba(200,160,96,0.4)',
-        borderRadius:8, padding:'4px 10px', textAlign:'center', flexShrink:0 }}>
-        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:700,
-          color:'#c8a060', lineHeight:1 }}>{activeCount}</div>
-        <div style={{ fontSize:8, color:'#a08060', fontWeight:700, textTransform:'uppercase',
-          letterSpacing:'0.05em' }}>Active</div>
+    <div style={{ background:'#fff', border:'1px solid #e8e0d0', borderRadius:12,
+      padding:'16px 14px', marginBottom:12, boxShadow:'0 2px 12px rgba(44,36,22,0.08)' }}>
+
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+        <p style={{ fontFamily:"'Playfair Display',serif", fontSize:15, fontWeight:700,
+          color:'#2c2416', margin:0 }}>Log an Event</p>
+        <button onClick={onCancel}
+          style={{ background:'none', border:'none', color:'#a08060', fontSize:20,
+            cursor:'pointer', lineHeight:1, padding:0 }}>×</button>
       </div>
 
-      {/* Scrollable avatars */}
-      <div style={{ display:'flex', gap:6, overflowX:'auto', flex:1,
-        WebkitOverflowScrolling:'touch', scrollbarWidth:'none' }}>
-        {all.map(a => {
-          const isInactive = a.status!=='alive'&&a.status!=='rented'
-          return (
-            <div key={a.id} onClick={()=>navigate(`/animals/${a.id}`)}
-              style={{ display:'flex', flexDirection:'column', alignItems:'center',
-                gap:2, flexShrink:0, cursor:'pointer', opacity:isInactive?0.4:1 }}>
-              <div style={{ position:'relative' }}>
-                <div style={{ width:32, height:32, borderRadius:'50%', overflow:'hidden',
-                  border:`2px solid ${isInactive?'#666':(STATUS_DOT[a.status]||'#9e9e9e')}`,
-                  filter:isInactive?'grayscale(0.7)':'none', background:'#f0ebe4' }}>
-                  {a.photo_url
-                    ? <img src={a.photo_url} alt={a.name} style={{ width:'100%',height:'100%',objectFit:'cover' }}/>
-                    : <AnimalIllustration animal={a} size={32}/>
-                  }
-                </div>
-                {isInactive && <div style={{ width:6,height:6,borderRadius:'50%',
-                  background:'#c62828',position:'absolute',bottom:0,right:0,
-                  border:'1px solid #2c2416' }}/>}
-              </div>
-              <span style={{ fontSize:7, fontWeight:700, color:isInactive?'#6a5040':'#c8a878',
-                textTransform:'uppercase', whiteSpace:'nowrap', maxWidth:36,
-                overflow:'hidden', textOverflow:'ellipsis', textAlign:'center' }}>
-                {a.name}
-              </span>
-            </div>
-          )
-        })}
+      {/* Step 1: pick animals */}
+      <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase',
+        letterSpacing:'0.06em', margin:'0 0 8px' }}>1. Select {meta.plural}</p>
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:4 }}>
+        <button onClick={toggleAll}
+          style={{ ...S.btn, fontSize:11, padding:'4px 10px',
+            background:picked.size===active.length?'#5a3e1b':'#f0ebe4',
+            color:picked.size===active.length?'#fff':'#5a3e1b',
+            border:'1px solid #d0c4b0', borderRadius:20 }}>
+          {picked.size===active.length?'✓ All selected':'Select All'}
+        </button>
+        {active.map(a => (
+          <button key={a.id} onClick={()=>toggle(a.id)}
+            style={{ ...S.btn, fontSize:12, padding:'5px 11px',
+              background:picked.has(a.id)?'#5a3e1b':'#f7f4ef',
+              color:picked.has(a.id)?'#fff':'#2c2416',
+              border:picked.has(a.id)?'none':'1px solid #d0c4b0',
+              borderRadius:20, fontWeight:picked.has(a.id)?700:400 }}>
+            {picked.has(a.id)?'✓ ':''}{a.name}
+          </button>
+        ))}
+      </div>
+      {picked.size>0 && (
+        <p style={{ fontSize:11, color:'#5a3e1b', margin:'4px 0 12px', fontWeight:600 }}>
+          {picked.size} {picked.size===1?meta.singular.toLowerCase():meta.plural.toLowerCase()} selected
+        </p>
+      )}
+
+      {/* Step 2: event type */}
+      <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase',
+        letterSpacing:'0.06em', margin:'12px 0 8px' }}>2. Event Type</p>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginBottom:12 }}>
+        {EVENT_TYPES.map(et => (
+          <button key={et.value} onClick={()=>setEventType(et.value)}
+            style={{ ...S.btn, fontSize:12, padding:'7px 10px', textAlign:'left',
+              background:eventType===et.value?'#5a3e1b':'#f7f4ef',
+              color:eventType===et.value?'#fff':'#2c2416',
+              border:eventType===et.value?'none':'1px solid #e0d8cc',
+              borderRadius:8, fontWeight:eventType===et.value?700:400 }}>
+            {et.label}
+          </button>
+        ))}
       </div>
 
-      {/* Action buttons */}
-      <div style={{ display:'flex', gap:6, flexShrink:0 }}>
-        <button onClick={onAdd}
-          style={{ ...S.btn, background:'#c8a060', color:'#2c2416',
-            fontWeight:700, padding:'6px 10px', fontSize:11, borderRadius:7 }}>
-          ＋ Add
-        </button>
-        <button onClick={onBulkEvent}
-          style={{ ...S.btn, background:'rgba(255,255,255,0.12)', color:'#f0e6cc',
-            border:'1px solid rgba(255,255,255,0.2)', padding:'6px 10px', fontSize:11, borderRadius:7 }}>
-          ☑ Bulk Event
-        </button>
-      </div>
+      {/* Step 3: date + notes */}
+      <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase',
+        letterSpacing:'0.06em', margin:'0 0 6px' }}>3. Date</p>
+      <input type="date"
+        style={{ ...S.input, marginBottom:10 }}
+        value={eventDate} onChange={e=>setEventDate(e.target.value)}/>
+      <textarea
+        style={{ ...S.input, height:60, resize:'none', marginBottom:14 }}
+        placeholder="Notes (optional)…"
+        value={notes} onChange={e=>setNotes(e.target.value)}/>
+
+      {/* Save */}
+      <button onClick={handleSave} disabled={saving||picked.size===0||!eventType}
+        style={{ ...S.btn, ...S.btnPrimary, width:'100%', justifyContent:'center',
+          opacity:saving||picked.size===0||!eventType?0.55:1,
+          fontSize:14, padding:'11px 0', fontWeight:700 }}>
+        {saving ? 'Saving…' : `Log Event for ${picked.size||'?'} ${picked.size===1?meta.singular:meta.plural}`}
+      </button>
     </div>
   )
 }
@@ -82,14 +155,18 @@ function FlockStrip({ animals, species, activeCount, isMobile, onAdd, onBulkEven
 export function AnimalList({ species = 'sheep' }) {
   const navigate  = useNavigate()
   const isMobile  = useIsMobile()
+  const { user }  = useAuth()
   const { animals = [], loading, error } = useAnimals(species)
   const meta      = SPECIES_META[species] || SPECIES_META.sheep
-  const [filter,     setFilter]     = useState('alive')
-  const [search,     setSearch]     = useState('')
-  const [selecting,  setSelecting]  = useState(false)
-  const [selected,   setSelected]   = useState(new Set())
-  const [showBulkMenu, setShowBulkMenu] = useState(false)
+  const [filter,        setFilter]        = useState('alive')
+  const [search,        setSearch]        = useState('')
+  const [selecting,     setSelecting]     = useState(false)
+  const [selected,      setSelected]      = useState(new Set())
+  const [showBulkMenu,  setShowBulkMenu]  = useState(false)
+  const [showAddMenu,   setShowAddMenu]   = useState(false)
+  const [showEventPanel,setShowEventPanel]= useState(false)
   const bulkMenuRef = useRef()
+  const addMenuRef  = useRef()
 
   const newPath       = species==='chickens' ? '/chickens/new'  : '/animals/new'
   const bulkPath      = species==='chickens' ? '/chickens/bulk' : '/animals/bulk'
@@ -119,9 +196,12 @@ export function AnimalList({ species = 'sheep' }) {
   })
   const cancelSelect = () => { setSelecting(false); setSelected(new Set()) }
 
-  // Close bulk menu on outside click
+  // Close menus on outside click
   useEffect(() => {
-    const fn = (e) => { if (bulkMenuRef.current && !bulkMenuRef.current.contains(e.target)) setShowBulkMenu(false) }
+    const fn = (e) => {
+      if (bulkMenuRef.current && !bulkMenuRef.current.contains(e.target)) setShowBulkMenu(false)
+      if (addMenuRef.current  && !addMenuRef.current.contains(e.target))  setShowAddMenu(false)
+    }
     document.addEventListener('mousedown', fn)
     return () => document.removeEventListener('mousedown', fn)
   }, [])
@@ -164,54 +244,86 @@ export function AnimalList({ species = 'sheep' }) {
               </div>
             </div>
 
-            {/* Action buttons — desktop */}
+            {/* ── Desktop buttons ── */}
             {!selecting && !isMobile && (
               <div style={{ display:'flex', gap:8, flexShrink:0 }}>
-                {/* Bulk Event button with dropdown */}
+                {/* Add Event dropdown */}
                 <div style={{ position:'relative' }} ref={bulkMenuRef}>
                   <button onClick={()=>setShowBulkMenu(v=>!v)}
                     style={{ ...S.btn, background:'rgba(255,255,255,0.12)', color:'#f0e6cc',
                       border:'1px solid rgba(255,255,255,0.25)', padding:'8px 14px', fontSize:13 }}>
-                    ☑ Bulk Event ▾
+                    ☑ Add Event ▾
                   </button>
                   {showBulkMenu && (
                     <div style={{ position:'absolute', top:'calc(100% + 6px)', right:0,
-                      background:'#2c2416', borderRadius:10, padding:8, minWidth:220,
+                      background:'#2c2416', borderRadius:10, padding:8, minWidth:260,
                       boxShadow:'0 8px 32px rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.1)',
                       zIndex:100 }}>
                       <p style={{ fontSize:10, color:'#6a5040', fontWeight:700, textTransform:'uppercase',
                         letterSpacing:'0.06em', margin:'4px 8px 8px', padding:0 }}>Log an event for…</p>
-                      <button onClick={()=>{ setShowBulkMenu(false); setSelecting(true) }}
+                      {/* Single first */}
+                      <button onClick={()=>{ setShowBulkMenu(false); navigate(species==='chickens'?'/chickens':'/') }}
                         style={{ ...S.btn, width:'100%', justifyContent:'flex-start',
                           background:'rgba(255,255,255,0.06)', color:'#f0e6cc', border:'none',
                           padding:'9px 12px', fontSize:13, marginBottom:4, borderRadius:7 }}>
                         <div>
-                          <div style={{ fontWeight:700, marginBottom:1 }}>☑ Multiple {meta.plural}</div>
-                          <div style={{ fontSize:11, color:'#a08060' }}>Select animals — same event type for all</div>
+                          <div style={{ fontWeight:700, marginBottom:1 }}>＋ Single {meta.singular}</div>
+                          <div style={{ fontSize:11, color:'#a08060' }}>Tap a {meta.singular.toLowerCase()} from the list, then log an event on their profile</div>
                         </div>
                       </button>
-                      <button onClick={()=>{ setShowBulkMenu(false); navigate(species==='chickens'?'/chickens':'/') }}
+                      {/* Multiple second */}
+                      <button onClick={()=>{ setShowBulkMenu(false); setSelecting(true) }}
                         style={{ ...S.btn, width:'100%', justifyContent:'flex-start',
                           background:'rgba(255,255,255,0.06)', color:'#f0e6cc', border:'none',
                           padding:'9px 12px', fontSize:13, borderRadius:7 }}>
                         <div>
-                          <div style={{ fontWeight:700, marginBottom:1 }}>＋ Single {meta.singular}</div>
-                          <div style={{ fontSize:11, color:'#a08060' }}>Tap a {meta.singular.toLowerCase()} below, then tap Add Event on their profile</div>
+                          <div style={{ fontWeight:700, marginBottom:1 }}>☑ Multiple {meta.plural}</div>
+                          <div style={{ fontSize:11, color:'#a08060' }}>Select animals — same event type logged for all</div>
                         </div>
                       </button>
                     </div>
                   )}
                 </div>
-                <button onClick={()=>navigate(newPath)}
-                  style={{ ...S.btn, background:'#c8a060', color:'#2c2416',
-                    fontWeight:700, padding:'8px 18px', fontSize:13 }}>
-                  ＋ Add {meta.singular}
-                </button>
+                {/* Add Sheep button — same style as Add Event, with dropdown */}
+                <div style={{ position:'relative' }} ref={addMenuRef}>
+                  <button onClick={()=>setShowAddMenu(v=>!v)}
+                    style={{ ...S.btn, background:'#c8a060', color:'#2c2416',
+                      fontWeight:700, padding:'8px 14px', fontSize:13 }}>
+                    ＋ Add {meta.singular} ▾
+                  </button>
+                  {showAddMenu && (
+                    <div style={{ position:'absolute', top:'calc(100% + 6px)', right:0,
+                      background:'#2c2416', borderRadius:10, padding:8, minWidth:240,
+                      boxShadow:'0 8px 32px rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.1)',
+                      zIndex:100 }}>
+                      <p style={{ fontSize:10, color:'#6a5040', fontWeight:700, textTransform:'uppercase',
+                        letterSpacing:'0.06em', margin:'4px 8px 8px', padding:0 }}>Add {meta.plural}…</p>
+                      <button onClick={()=>{ setShowAddMenu(false); navigate(newPath) }}
+                        style={{ ...S.btn, width:'100%', justifyContent:'flex-start',
+                          background:'rgba(255,255,255,0.06)', color:'#f0e6cc', border:'none',
+                          padding:'9px 12px', fontSize:13, marginBottom:4, borderRadius:7 }}>
+                        <div>
+                          <div style={{ fontWeight:700, marginBottom:1 }}>＋ Single {meta.singular}</div>
+                          <div style={{ fontSize:11, color:'#a08060' }}>Add one {meta.singular.toLowerCase()} with a full profile</div>
+                        </div>
+                      </button>
+                      <button onClick={()=>{ setShowAddMenu(false); navigate(bulkPath) }}
+                        style={{ ...S.btn, width:'100%', justifyContent:'flex-start',
+                          background:'rgba(255,255,255,0.06)', color:'#f0e6cc', border:'none',
+                          padding:'9px 12px', fontSize:13, borderRadius:7 }}>
+                        <div>
+                          <div style={{ fontWeight:700, marginBottom:1 }}>⚡ Bulk Add {meta.plural}</div>
+                          <div style={{ fontSize:11, color:'#a08060' }}>Add multiple {meta.plural.toLowerCase()} at once via spreadsheet</div>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* Mobile selecting cancel */}
-            {selecting && (
+            {/* Selecting cancel (desktop) */}
+            {selecting && !isMobile && (
               <div style={{ display:'flex', gap:8, flexShrink:0, alignItems:'center' }}>
                 <span style={{ fontSize:13, color:'#c8a878' }}>{selected.size} selected</span>
                 <button onClick={cancelSelect}
@@ -220,6 +332,29 @@ export function AnimalList({ species = 'sheep' }) {
                   ✕ Cancel
                 </button>
               </div>
+            )}
+
+            {/* ── Mobile buttons (in hero) ── */}
+            {isMobile && !selecting && (
+              <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+                <button onClick={()=>{ setShowEventPanel(v=>!v) }}
+                  style={{ ...S.btn, background:'rgba(255,255,255,0.12)', color:'#f0e6cc',
+                    border:'1px solid rgba(255,255,255,0.25)', padding:'7px 11px', fontSize:12, borderRadius:7 }}>
+                  ☑ Add Event
+                </button>
+                <button onClick={()=>navigate(newPath)}
+                  style={{ ...S.btn, background:'#c8a060', color:'#2c2416',
+                    fontWeight:700, padding:'7px 11px', fontSize:12, borderRadius:7 }}>
+                  ＋ Add
+                </button>
+              </div>
+            )}
+            {isMobile && selecting && (
+              <button onClick={cancelSelect}
+                style={{ ...S.btn, background:'rgba(255,255,255,0.1)', color:'#f0e6cc',
+                  border:'1px solid rgba(255,255,255,0.2)', padding:'7px 10px', fontSize:12 }}>
+                ✕ Cancel
+              </button>
             )}
           </div>
 
@@ -262,69 +397,26 @@ export function AnimalList({ species = 'sheep' }) {
         </div>
       </div>
 
-      {/* ── Mobile sticky compact strip ──────────────────────────────────── */}
-      {isMobile && (
-        <div style={{ position:'sticky', top:0, zIndex:50,
-          background:'linear-gradient(160deg,#2c2416 0%,#3a2c16 100%)',
-          borderBottom:'1px solid rgba(255,255,255,0.08)',
-          display:'flex', alignItems:'center', gap:8, padding:'6px 12px' }}>
-          {/* Count */}
-          <div style={{ background:'rgba(200,160,96,0.2)', border:'1px solid rgba(200,160,96,0.4)',
-            borderRadius:7, padding:'3px 8px', textAlign:'center', flexShrink:0 }}>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:14, fontWeight:700,
-              color:'#c8a060', lineHeight:1 }}>{activeAnimals.length}</div>
-            <div style={{ fontSize:7, color:'#a08060', fontWeight:700, textTransform:'uppercase' }}>Active</div>
-          </div>
-          {/* Tiny avatar strip */}
-          <div style={{ display:'flex', gap:5, flex:1, overflowX:'auto',
-            WebkitOverflowScrolling:'touch', scrollbarWidth:'none' }}>
-            {[...activeAnimals,...soldAnimals,...deceasedAnimals].map(a=>{
-              const isInactive = a.status!=='alive'&&a.status!=='rented'
-              return (
-                <div key={a.id} onClick={()=>navigate(`/animals/${a.id}`)}
-                  style={{ flexShrink:0, opacity:isInactive?0.4:1 }}>
-                  <div style={{ width:28,height:28,borderRadius:'50%',overflow:'hidden',
-                    border:`2px solid ${isInactive?'#555':(STATUS_DOT[a.status]||'#9e9e9e')}`,
-                    filter:isInactive?'grayscale(0.7)':'none', background:'#f0ebe4' }}>
-                    {a.photo_url
-                      ? <img src={a.photo_url} alt={a.name} style={{ width:'100%',height:'100%',objectFit:'cover' }}/>
-                      : <div style={{ width:'100%',height:'100%',display:'flex',alignItems:'center',
-                          justifyContent:'center',fontSize:14 }}>{meta.emoji}</div>
-                    }
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          {/* Compact buttons */}
-          <button onClick={()=>navigate(newPath)}
-            style={{ ...S.btn, background:'#c8a060', color:'#2c2416',
-              fontWeight:700, padding:'5px 9px', fontSize:11, borderRadius:6, flexShrink:0 }}>
-            ＋ Add
-          </button>
-          <button onClick={()=>setSelecting(true)}
-            style={{ ...S.btn, background:'rgba(255,255,255,0.12)', color:'#f0e6cc',
-              border:'1px solid rgba(255,255,255,0.2)', padding:'5px 9px', fontSize:11,
-              borderRadius:6, flexShrink:0 }}>
-            ☑ Bulk
-          </button>
-        </div>
-      )}
-
       {/* ── List area ────────────────────────────────────────────────────── */}
       <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'12px 12px':'16px 24px' }}>
 
-        {/* Mobile add/bulk row */}
-        {isMobile && !selecting && (
-          <div style={{ display:'flex', gap:8, marginBottom:12 }}>
-            <button onClick={()=>navigate(newPath)}
-              style={{ ...S.btn, ...S.btnPrimary, flex:1, justifyContent:'center' }}>
-              ＋ Add {meta.singular}
-            </button>
-            <button onClick={()=>setSelecting(true)}
-              style={{ ...S.btn, ...S.btnSecondary, flex:1, justifyContent:'center' }}>
-              ☑ Bulk Event
-            </button>
+        {/* Mobile inline event panel */}
+        {isMobile && showEventPanel && (
+          <MobileEventPanel
+            animals={animals}
+            species={species}
+            user={user}
+            onDone={()=>setShowEventPanel(false)}
+            onCancel={()=>setShowEventPanel(false)}
+          />
+        )}
+
+        {/* Desktop selecting instruction */}
+        {!isMobile && selecting && (
+          <div style={{ background:'#fdfaf0', border:'1px solid #e8d8a0', borderRadius:10,
+            padding:'10px 14px', marginBottom:12, fontSize:13, color:'#5a3e1b' }}>
+            <strong>☑ Add Event</strong> — Tap {meta.plural.toLowerCase()} below to select them, then choose an event type to log for all selected.
+            One event type applies to every selected animal.
           </div>
         )}
 
@@ -352,15 +444,6 @@ export function AnimalList({ species = 'sheep' }) {
         <input style={{ ...S.input, marginBottom:12 }}
           placeholder={`Search ${meta.plural.toLowerCase()}…`}
           value={search} onChange={e=>setSearch(e.target.value)}/>
-
-        {/* Selecting instruction banner */}
-        {selecting && (
-          <div style={{ background:'#fdfaf0', border:'1px solid #e8d8a0', borderRadius:10,
-            padding:'10px 14px', marginBottom:12, fontSize:13, color:'#5a3e1b' }}>
-            <strong>☑ Bulk Event</strong> — Tap animals below, then choose an event type to log for all of them.
-            One event type applies to every selected animal.
-          </div>
-        )}
 
         {/* Empty state */}
         {animals.length===0 && (
@@ -450,9 +533,9 @@ export function AnimalList({ species = 'sheep' }) {
           )
         })}
 
-        {/* Bulk action bar */}
-        {selecting && selected.size>0 && (
-          <div style={{ position:'fixed', bottom:isMobile?70:20, left:'50%',
+        {/* Desktop bulk action bar */}
+        {!isMobile && selecting && selected.size>0 && (
+          <div style={{ position:'fixed', bottom:20, left:'50%',
             transform:'translateX(-50%)', background:'#2c2416', borderRadius:12,
             padding:'14px 20px', display:'flex', alignItems:'center', gap:12,
             boxShadow:'0 8px 32px rgba(0,0,0,0.4)', zIndex:100,
