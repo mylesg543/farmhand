@@ -184,66 +184,82 @@ export function AnimalDetailPage() {
               </p>
             </div>
             {!isMobile && (
-              <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+              <div style={{ display:'flex', gap:8, flexShrink:0, alignItems:'center' }}>
                 <label style={{ ...S.btn, background:'rgba(200,160,96,0.25)', color:'#f0e6cc',
                   border:'1px solid rgba(200,160,96,0.4)', padding:'7px 14px', fontSize:13,
-                  cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6 }}>
-                  ⊕ Update Photo
+                  cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6, whiteSpace:'nowrap' }}>
+                  📷 Add Photo
                   <input type="file" accept="image/*" style={{ display:'none' }}
                     onChange={handleProfilePhotoSelect} disabled={uploading}/>
                 </label>
                 <button onClick={()=>setShowGallery(true)}
                   style={{ ...S.btn, background:'rgba(255,255,255,0.1)', color:'#f0e6cc',
-                    border:'1px solid rgba(255,255,255,0.2)', padding:'7px 14px', fontSize:13 }}>
-                  🎞 Photo History
+                    border:'1px solid rgba(255,255,255,0.2)', padding:'7px 14px', fontSize:13, whiteSpace:'nowrap' }}>
+                  🔍 Photo History
                 </button>
                 <button onClick={()=>navigate(`/lineage?id=${id}&species=${animal.species||'sheep'}`)}
                   style={{ ...S.btn, background:'rgba(76,175,80,0.2)', color:'#a5d6a7',
-                    border:'1px solid rgba(76,175,80,0.35)', padding:'7px 14px', fontSize:13, fontWeight:700 }}>
+                    border:'1px solid rgba(76,175,80,0.35)', padding:'7px 14px', fontSize:13, fontWeight:700, whiteSpace:'nowrap' }}>
                   ⑂ Lineage
                 </button>
                 <button onClick={()=>navigate(`/animals/${id}/edit`)}
                   style={{ ...S.btn, background:'rgba(255,255,255,0.1)', color:'#f0e6cc',
-                    border:'1px solid rgba(255,255,255,0.2)', padding:'7px 14px', fontSize:13 }}>
-                  Edit
+                    border:'1px solid rgba(255,255,255,0.2)', padding:'7px 14px', fontSize:13, whiteSpace:'nowrap' }}>
+                  ✏️ Edit
                 </button>
                 <button onClick={handleDelete}
                   style={{ ...S.btn, background:'rgba(255,80,80,0.15)', color:'#ef9a9a',
-                    border:'1px solid rgba(255,80,80,0.25)', padding:'7px 14px', fontSize:13 }}>
-                  Delete
+                    border:'1px solid rgba(255,80,80,0.25)', padding:'7px 14px', fontSize:13, whiteSpace:'nowrap' }}>
+                  🗑 Delete
                 </button>
               </div>
             )}
           </div>
+
+          {/* Mobile action buttons — 4 equal tiles + full-width delete */}
           {isMobile && (
-            <div style={{ display:'flex', gap:8, marginTop:12, flexWrap:'wrap' }}>
-              <label style={{ ...S.btn, flex:1, justifyContent:'center', cursor:'pointer',
-                background:'rgba(200,160,96,0.25)', color:'#f0e6cc',
-                border:'1px solid rgba(200,160,96,0.4)',
-                display:'inline-flex', alignItems:'center', gap:5 }}>
-                ⊕ Photo
-                <input type="file" accept="image/*" style={{ display:'none' }}
-                  onChange={handleProfilePhotoSelect} disabled={uploading}/>
-              </label>
-              <button onClick={()=>setShowGallery(true)}
-                style={{ ...S.btn, flex:1, justifyContent:'center', background:'rgba(255,255,255,0.1)',
-                  color:'#f0e6cc', border:'1px solid rgba(255,255,255,0.2)' }}>
-                🎞 History
-              </button>
-              <button onClick={()=>navigate(`/lineage?id=${id}&species=${animal.species||'sheep'}`)}
-                style={{ ...S.btn, flex:1, justifyContent:'center', background:'rgba(76,175,80,0.2)',
-                  color:'#a5d6a7', border:'1px solid rgba(76,175,80,0.35)', fontWeight:700 }}>
-                ⑂ Lineage
-              </button>
-              <button onClick={()=>navigate(`/animals/${id}/edit`)}
-                style={{ ...S.btn, flex:1, justifyContent:'center', background:'rgba(255,255,255,0.1)',
-                  color:'#f0e6cc', border:'1px solid rgba(255,255,255,0.2)' }}>
-                ✎ Edit
-              </button>
+            <div style={{ marginTop:14 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:8, marginBottom:8 }}>
+                <label style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5,
+                  background:'rgba(200,160,96,0.25)', border:'1px solid rgba(200,160,96,0.4)',
+                  borderRadius:10, padding:'12px 6px', cursor:'pointer', color:'#f0e6cc' }}>
+                  <span style={{ fontSize:22, lineHeight:1 }}>📷</span>
+                  <span style={{ fontSize:11, fontWeight:600 }}>Add Photo</span>
+                  <input type="file" accept="image/*" style={{ display:'none' }}
+                    onChange={handleProfilePhotoSelect} disabled={uploading}/>
+                </label>
+                <button onClick={()=>setShowGallery(true)}
+                  style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5,
+                    background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)',
+                    borderRadius:10, padding:'12px 6px', cursor:'pointer', color:'#f0e6cc',
+                    fontFamily:"'Lato',sans-serif" }}>
+                  <span style={{ fontSize:22, lineHeight:1 }}>🔍</span>
+                  <span style={{ fontSize:11, fontWeight:600 }}>Photos</span>
+                </button>
+                <button onClick={()=>navigate(`/lineage?id=${id}&species=${animal.species||'sheep'}`)}
+                  style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5,
+                    background:'rgba(76,175,80,0.2)', border:'1px solid rgba(76,175,80,0.35)',
+                    borderRadius:10, padding:'12px 6px', cursor:'pointer', color:'#a5d6a7',
+                    fontFamily:"'Lato',sans-serif" }}>
+                  <span style={{ fontSize:22, lineHeight:1 }}>⑂</span>
+                  <span style={{ fontSize:11, fontWeight:700 }}>Lineage</span>
+                </button>
+                <button onClick={()=>navigate(`/animals/${id}/edit`)}
+                  style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5,
+                    background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)',
+                    borderRadius:10, padding:'12px 6px', cursor:'pointer', color:'#f0e6cc',
+                    fontFamily:"'Lato',sans-serif" }}>
+                  <span style={{ fontSize:22, lineHeight:1 }}>✏️</span>
+                  <span style={{ fontSize:11, fontWeight:600 }}>Edit</span>
+                </button>
+              </div>
+              {/* Delete full width */}
               <button onClick={handleDelete}
-                style={{ ...S.btn, flex:1, justifyContent:'center', background:'rgba(255,80,80,0.15)',
-                  color:'#ef9a9a', border:'1px solid rgba(255,80,80,0.25)' }}>
-                🗑 Delete
+                style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                  background:'rgba(255,80,80,0.15)', border:'1px solid rgba(255,80,80,0.25)',
+                  borderRadius:10, padding:'12px', cursor:'pointer', color:'#ef9a9a',
+                  fontFamily:"'Lato',sans-serif", fontSize:14, fontWeight:600 }}>
+                <span style={{ fontSize:18, lineHeight:1 }}>🗑</span> Delete
               </button>
             </div>
           )}
