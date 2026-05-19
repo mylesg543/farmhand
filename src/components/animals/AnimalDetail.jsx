@@ -17,7 +17,7 @@ function MiniLineage({ animal, allAnimals, navigate, isMobile }) {
   return (
     <div style={{ ...S.card, padding:isMobile?'14px 16px':'18px 22px', marginBottom:14 }}>
       <div style={{ display:'flex', alignItems:'center', marginBottom:hasParents?14:0 }}>
-        <span style={{ fontSize:10, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em' }}>🌳 Lineage</span>
+        <span style={{ fontSize:10, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em' }}>⑂ Lineage</span>
         <button onClick={()=>navigate(`/lineage?id=${animal.id}&species=${animal.species||'sheep'}`)}
           style={{ marginLeft:'auto', ...S.btn, background:'#f0ebe4', color:'#5a3e1b',
             border:'1px solid #d0c4b0', padding:'6px 12px', fontSize:12, fontWeight:600 }}>
@@ -154,12 +154,13 @@ export function AnimalDetailPage() {
                   : <AnimalIllustration animal={animal} size={isMobile?64:80}/>
                 }
               </div>
-              {/* Update photo button — sits on avatar */}
+              {/* Camera badge - clean circle, no emoji weirdness */}
               <label title="Update profile photo"
-                style={{ position:'absolute', bottom:-2, right:-2, width:24, height:24, borderRadius:'50%',
+                style={{ position:'absolute', bottom:-2, right:-2, width:26, height:26, borderRadius:'50%',
                   background:'#c8a060', border:'2px solid #2c2416', display:'flex', alignItems:'center',
-                  justifyContent:'center', cursor:'pointer', fontSize:12 }}>
-                📷
+                  justifyContent:'center', cursor:'pointer', fontSize:13, lineHeight:1,
+                  boxShadow:'0 2px 6px rgba(0,0,0,0.3)' }}>
+                <span style={{ fontSize:13 }}>+</span>
                 <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }}
                   onChange={handleProfilePhotoSelect} disabled={uploading}/>
               </label>
@@ -187,19 +188,19 @@ export function AnimalDetailPage() {
                 <label style={{ ...S.btn, background:'rgba(200,160,96,0.25)', color:'#f0e6cc',
                   border:'1px solid rgba(200,160,96,0.4)', padding:'7px 14px', fontSize:13,
                   cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6 }}>
-                  📷 Update Photo
+                  ⊕ Update Photo
                   <input type="file" accept="image/*" style={{ display:'none' }}
                     onChange={handleProfilePhotoSelect} disabled={uploading}/>
                 </label>
                 <button onClick={()=>setShowGallery(true)}
                   style={{ ...S.btn, background:'rgba(255,255,255,0.1)', color:'#f0e6cc',
                     border:'1px solid rgba(255,255,255,0.2)', padding:'7px 14px', fontSize:13 }}>
-                  🖼 Photos
+                  🎞 Photo History
                 </button>
                 <button onClick={()=>navigate(`/lineage?id=${id}&species=${animal.species||'sheep'}`)}
                   style={{ ...S.btn, background:'rgba(76,175,80,0.2)', color:'#a5d6a7',
                     border:'1px solid rgba(76,175,80,0.35)', padding:'7px 14px', fontSize:13, fontWeight:700 }}>
-                  🌳 Lineage
+                  ⑂ Lineage
                 </button>
                 <button onClick={()=>navigate(`/animals/${id}/edit`)}
                   style={{ ...S.btn, background:'rgba(255,255,255,0.1)', color:'#f0e6cc',
@@ -220,19 +221,19 @@ export function AnimalDetailPage() {
                 background:'rgba(200,160,96,0.25)', color:'#f0e6cc',
                 border:'1px solid rgba(200,160,96,0.4)',
                 display:'inline-flex', alignItems:'center', gap:5 }}>
-                📷 Photo
+                ⊕ Photo
                 <input type="file" accept="image/*" style={{ display:'none' }}
                   onChange={handleProfilePhotoSelect} disabled={uploading}/>
               </label>
               <button onClick={()=>setShowGallery(true)}
                 style={{ ...S.btn, flex:1, justifyContent:'center', background:'rgba(255,255,255,0.1)',
                   color:'#f0e6cc', border:'1px solid rgba(255,255,255,0.2)' }}>
-                🖼 History
+                🎞 History
               </button>
               <button onClick={()=>navigate(`/lineage?id=${id}&species=${animal.species||'sheep'}`)}
                 style={{ ...S.btn, flex:1, justifyContent:'center', background:'rgba(76,175,80,0.2)',
                   color:'#a5d6a7', border:'1px solid rgba(76,175,80,0.35)', fontWeight:700 }}>
-                🌳 Lineage
+                ⑂ Lineage
               </button>
               <button onClick={()=>navigate(`/animals/${id}/edit`)}
                 style={{ ...S.btn, flex:1, justifyContent:'center', background:'rgba(255,255,255,0.1)',

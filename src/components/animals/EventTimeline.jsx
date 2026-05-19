@@ -291,7 +291,7 @@ function LogEventForm({ onSave, onCancel, isMobile }) {
 export function EventTimeline({ events=[], loading=false, onAddEvent, onAddPhoto, onDelete, isMobile }) {
   const [showForm, setShowForm] = useState(false)
   // Debug: log raw event_date values so we can see what Supabase returns
-  if (events.length > 0) console.log('EventTimeline dates:', events.map(e => e.event_date))
+
   const groups = groupByMonth(events)
 
   const handleSave = async (form) => {

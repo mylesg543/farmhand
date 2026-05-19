@@ -36,43 +36,62 @@ function Avatar({ animal, size=56 }) {
 }
 
 function buildSteps(species) {
-  const isSheep=species==='sheep', label=isSheep?'flock':'chickens'
+  const isSheep = species==='sheep'
+  const animal  = isSheep ? 'sheep' : 'chicken'
+  const flock   = isSheep ? 'flock' : 'chickens'
   return [
-    { screen:'flock',   scrollTo:null,              tip:`Welcome to FarmHand. This is your ${label} — every animal you raise, in one place.` },
-    { screen:'flock',   scrollTo:'your-animal',     tip:`That's {name} at the top. Photo, status, breed, and age — all at a glance.` },
-    { screen:'profile', scrollTo:null,              tip:`{name}'s full profile — age, breed, tag, and ${isSheep?'health history':'egg history'}. See that 🌳 Lineage button? Tap it from any animal to trace their bloodlines.` },
-    { screen:'profile', scrollTo:'events',          tip:`Every event logged here with dates and notes. ${isSheep?'Vaccinations, lambing, shearing':'Egg production, illness, moulting'} — all searchable.` },
-    { screen:'event',   scrollTo:'event-form',      tip:`Log an event for {name} — pick what happened, add a note, save it.`, eventTypes:isSheep?['vaccination','worming','hoof_trimming','shearing','sickness','lambing']:['vaccination','egg_production','moulting','sickness','custom'] },
-    { screen:'bulk',    scrollTo:'bulk-chips',      tip:`${isSheep?'Trimmed hooves on a few today?':'Wormed the whole flock?'} Tap which ones — log it once for all of them.` },
-    { screen:'bulk',    scrollTo:'bulk-save',       tip:`One save, logged on every selected animal. Whether it's 2 or 20.` },
-    { screen:'lineage', scrollTo:'lineage-intro', tip:`This is the family tree for {name}. 4 generations — built automatically as you record sires and dams. No spreadsheet, no paper studbook.` },
-    { screen:'lineage', scrollTo:'lineage-tree',  tip:`Great-grandparents at the top, {name} at the bottom. Every bloodline in rows. Tap any ancestor to jump to their tree.` },
-    { screen:'lineage', scrollTo:'lineage-warn',  tip:`${isSheep?`And if two sheep share an ancestor, FarmHand flags it. No guessing before breeding season.`:`Track your rooster's bloodlines across hatches. FarmHand flags shared ancestors automatically.`}` },
-    { screen:'pnl',     scrollTo:'pnl-top',         tip:`Every dollar tracked as you go. No spreadsheet — just log it and the P&L updates instantly.` },
-    { screen:'dash1',   scrollTo:'dash-chart',      tip:`The dashboard shows income vs expenses month by month. See your trends before they become problems.` },
-    { screen:'dash2',   scrollTo:'dash-animals',    tip:`See your ${isSheep?'sheep':'chickens'} broken down by sex, status, and breed.` },
-    { screen:'dash3',   scrollTo:'dash-donuts',     tip:`Income and expense breakdown as pie charts — see what's driving your revenue and your costs.` },
-    { screen:'dash4',   scrollTo:'dash-cust-pie',   tip:`Revenue by customer. See who your best buyers are and exactly how much each has spent.` },
-    { screen:'plants',  scrollTo:'plants-list',     tip:`Got an orchard or a veggie garden? Plants and trees get their own page too. Quick look, then we'll wrap up.` },
-    { screen:'bulkadd', scrollTo:'bulk-rows',       tip:`Getting started? Add your whole existing ${label} in one go. Name is all you need. Done in minutes.` },
-    { screen:'flock',   scrollTo:null,              tip:`That's FarmHand. Ready to set up your real farm?`, isLast:true },
+    {
+      screen:'hero_profiles',
+      tip:`Every ${animal} on your farm — photo, status, breed, age — in one place. No more trying to remember which one had the bad leg last spring.`,
+    },
+    {
+      screen:'hero_events',
+      tip:`Every health event logged with a date, notes, and a photo. Vaccinations, ${isSheep?'lambing, shearing':'egg production, moulting'} — all searchable. Your whole history, never lost.`,
+    },
+    {
+      screen:'hero_lineage',
+      tip:`${isSheep?'Before breeding season, check here. FarmHand shows who\'s related to who across 4 generations — and flags shared ancestors automatically. This used to cost thousands in herd management software.':'Track your rooster\'s bloodlines across hatches. 4 generations, built automatically as you record sires and hens.'}`,
+    },
+    {
+      screen:'hero_pnl',
+      tip:`Every dollar in and out — ${isSheep?'wool sales, lamb sales, feed bills':'egg sales, feed costs'} — tracked as you go. See exactly what your farm makes. No spreadsheet needed.`,
+    },
+    {
+      screen:'hero_dashboard',
+      tip:`Income vs expenses at a glance. See your trends by month, by animal type, by customer. Know what's working before it's too late to act on it.`,
+    },
+    {
+      screen:'hero_bulkadd',
+      tip:`Getting started? Add your whole ${flock} in one go — name, breed, date of birth. Most farms are set up in under 10 minutes. Ready to try it on your real farm?`,
+      isLast: true,
+    },
   ]
 }
 
-function Nav({ screen, species, isMobile }) {
-  const isAnimals=['flock','profile','event','bulk','bulkadd'].includes(screen)
-  const isPnL=screen==='pnl', isDash=screen.startsWith('dash'), isPlants=screen==='plants', isLineage=screen==='lineage'
+function Nav({ screen, species, isMobile, onExit, name }) {
+  const labels = {
+    hero_profiles: `${species==='sheep'?'🐑':'🐔'} ${species==='sheep'?'Sheep':'Chickens'}`,
+    hero_events:   `${species==='sheep'?'🐑':'🐔'} Health Timeline`,
+    hero_lineage:  '🌳 Lineage',
+    hero_pnl:      '💰 Profit & Loss',
+    hero_dashboard:'📊 Dashboard',
+    hero_bulkadd:  '⚡ Quick Setup',
+  }
+  const activeLabel = labels[screen] || '🌾 FarmHand'
   return (
-    <div style={{ background:'#2c2416' }}>
-      <div style={{ display:'flex',alignItems:'center',padding:'0 16px',height:isMobile?44:52,gap:10 }}>
-        <span style={{ fontFamily:"'Playfair Display',serif",fontSize:isMobile?16:20,fontWeight:700,color:'#f0e6cc' }}>🌾 FarmHand</span>
-        <div style={{ marginLeft:'auto',fontSize:11,color:'#a08060' }}>demo farm</div>
-      </div>
-      <div style={{ display:'flex',borderTop:'1px solid rgba(255,255,255,0.07)',padding:'0 8px' }}>
-        {[[`${species==='sheep'?'🐑':'🐔'} ${species==='sheep'?'Sheep':'Chickens'}`,isAnimals],['🌳 Lineage',isLineage],['🌱 Plants',isPlants],['💰 P & L',isPnL],['📊 Dashboard',isDash]].map(([l,a])=>(
-          <div key={l} style={{ padding:isMobile?'8px 8px':'10px 12px',fontSize:isMobile?10:12,fontWeight:600,color:a?'#f0e6cc':'#6a5040',borderBottom:a?'2px solid #c8a060':'2px solid transparent',whiteSpace:'nowrap' }}>{l}</div>
-        ))}
-      </div>
+    <div style={{ background:'#2c2416', height:isMobile?38:42,
+      display:'flex', alignItems:'center', justifyContent:'space-between',
+      padding:'0 16px', flexShrink:0, position:'sticky', top:0, zIndex:200 }}>
+      <span style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?14:16,
+        fontWeight:700, color:'#f0e6cc' }}>🌾 FarmHand</span>
+      <span style={{ fontSize:11, color:'#c8a060', fontWeight:600 }}>{activeLabel}</span>
+      {onExit
+        ? <button onClick={onExit}
+            style={{ background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)',
+              color:'#f0e6cc', borderRadius:6, padding:'4px 12px', cursor:'pointer',
+              fontSize:11, fontFamily:"'Lato',sans-serif" }}>Exit</button>
+        : <span style={{ fontSize:10, color:'#6a5040' }}>demo</span>
+      }
     </div>
   )
 }
@@ -102,24 +121,6 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
 
   return (
     <>
-      {/* Floating "ready to continue" indicator — appears after 5s idle */}
-      {idle >= 5 && !isLast && (
-        <div style={{
-          position:'fixed',
-          bottom: isMobile ? 170 : 110,
-          left:'50%', transform:'translateX(-50%)',
-          background:'#c8a060', color:'#2c2416', borderRadius:20,
-          padding: isMobile ? '10px 20px' : '8px 18px',
-          fontSize: isMobile ? 14 : 13,
-          fontWeight:700, zIndex:1001, whiteSpace:'nowrap',
-          boxShadow:'0 4px 20px rgba(0,0,0,0.3)',
-          animation:'floatPulse 1.5s ease-in-out infinite',
-          cursor:'pointer', display:'flex', alignItems:'center', gap:6,
-        }} onClick={handleNext}>
-          Ready to continue? →
-        </div>
-      )}
-
       {/* Tooltip card */}
       <div style={{ position:'fixed', bottom:isMobile?82:28, left:'50%', transform:'translateX(-50%)',
         width:isMobile?'calc(100% - 24px)':'440px', maxWidth:'95vw', background:'#2c2416',
@@ -159,14 +160,24 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
           </p>
         )}
 
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           <button onClick={onSkip} style={{ background:'none', border:'none',
             color:'rgba(255,255,255,0.3)', cursor:'pointer', fontSize:12,
             fontFamily:"'Lato',sans-serif", padding:0 }}>
             Skip tour
           </button>
+          <div style={{ flex:1 }}/>
+          {idle >= 5 && !isLast && (
+            <button onClick={handleNext}
+              style={{ background:'transparent', border:'2px solid #c8a060',
+                color:'#c8a060', borderRadius:8, padding:'9px 16px', fontSize:13,
+                fontWeight:700, cursor:'pointer', fontFamily:"'Lato',sans-serif",
+                animation:'nextPulse 1.2s ease-in-out infinite' }}>
+              Ready? →
+            </button>
+          )}
           <button onClick={handleNext}
-            style={{ ...S.btn, marginLeft:'auto',
+            style={{ ...S.btn,
               background:isLast?'#4caf50':'#c8a060',
               color:isLast?'#fff':'#2c2416', fontWeight:700, padding:'9px 22px', fontSize:14,
               animation: pulse ? 'nextPulse 1.5s ease-in-out infinite' : 'none',
@@ -1191,165 +1202,641 @@ function BulkAddScreen({ name, species, highlight, isMobile }) {
   )
 }
 
-function Personalise({ name, setName, species, setSpecies, onStart, isMobile }) {
-  const ref  = useRef()
-  const demo = species==='sheep' ? DEMO_SHEEP[0] : DEMO_CHICKENS[0]
-  const defaultName = species==='sheep' ? 'Bella' : 'Goldie'
-
-  // Auto-populate default name on mount and on species change
-  useEffect(()=>{
-    if (!name.trim()) setName(defaultName)
-  }, [species])
-
-  useEffect(()=>{ setTimeout(()=>ref.current?.focus(),300) },[])
-
-  const displayName = name.trim() || defaultName
+// ─── HERO SCREEN 1: Animal Profiles ───────────────────────────────────────────
+function HeroProfiles({ name, species, isMobile }) {
+  const isSheep = species==='sheep'
+  const animals = (isSheep ? DEMO_SHEEP : DEMO_CHICKENS)
+    .slice(0,isMobile?3:4)
+    .map((a,i)=>i===0?{...a,name}:a)
+  const statusColors = { alive:'#4caf50', sold:'#9c27b0', deceased:'#9e9e9e', rented:'#f9a825' }
 
   return (
-    <div style={{ minHeight:'80vh',display:'flex',alignItems:'center',justifyContent:'center',padding:isMobile?'24px 16px':'40px 24px' }}>
-      <div style={{ maxWidth:440,width:'100%' }}>
-        <div style={{ textAlign:'center',marginBottom:28 }}>
-          <div style={{ fontSize:48,marginBottom:10 }}>🌾</div>
-          <h1 style={{ fontFamily:"'Playfair Display',serif",fontSize:isMobile?24:32,fontWeight:700,color:'#f0e6cc',margin:'0 0 10px',lineHeight:1.2 }}>
-            Set up your demo farm
-          </h1>
-          <p style={{ fontSize:isMobile?14:15,color:'#c8b89a',margin:0,lineHeight:1.6 }}>
-            Pick what you raise — we'll build a real demo farm around it.
-          </p>
+    <div style={{ minHeight:'calc(100vh - 40px)', display:'flex', flexDirection:'column', justifyContent:'center',
+      padding:isMobile?'12px 16px':'20px 40px', maxWidth:1100, margin:'0 auto' }}>
+      <p style={{ fontSize:isMobile?11:12, fontWeight:700, color:'#c8a060', textTransform:'uppercase',
+        letterSpacing:'0.1em', margin:'0 0 10px' }}>Animal Profiles</p>
+      <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?26:38, fontWeight:700,
+        color:'#2c2416', margin:'0 0 8px', lineHeight:1.2 }}>
+        Know every animal on your farm
+      </h2>
+      <p style={{ fontSize:isMobile?14:17, color:'#7a6648', margin:'0 0 20px', lineHeight:1.5 }}>
+        Photo, status, breed, age — at a glance. No more guessing which one had the bad leg last spring.
+      </p>
+
+      {/* Animal cards — above the fold, no scroll */}
+      <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+        {animals.map((a,i)=>{
+          const isActive = a.status==='alive'||a.status==='rented'
+          const sc = statusColors[a.status]||'#9e9e9e'
+          return (
+            <div key={a.id} style={{ display:'flex', alignItems:'center', gap:14, padding:isMobile?'14px 16px':'16px 22px',
+              background:'#fff', borderRadius:12, border:'1px solid #e8e0d0',
+              boxShadow: i===0?'0 4px 24px rgba(44,36,22,0.1)':'none',
+              transform: i===0?'scale(1.01)':'scale(1)',
+              opacity: !isActive ? 0.6 : 1 }}>
+              <div style={{ position:'relative', flexShrink:0 }}>
+                <div style={{ width:isMobile?48:60, height:isMobile?48:60, borderRadius:'50%', overflow:'hidden',
+                  border:`3px solid ${sc}`, background:'#f0ebe4' }}>
+                  {a.photo_url
+                    ? <img src={a.photo_url} alt={a.name} style={{ width:'100%',height:'100%',objectFit:'cover' }}/>
+                    : <div style={{ width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:isMobile?22:26 }}>
+                        {isSheep?'🐑':'🐔'}
+                      </div>
+                  }
+                </div>
+                <div style={{ width:10,height:10,borderRadius:'50%',background:sc,
+                  position:'absolute',bottom:0,right:0,border:'2px solid #fff' }}/>
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
+                  <span style={{ fontFamily:"'Playfair Display',serif", fontWeight:700,
+                    fontSize:isMobile?15:17, color:'#2c2416' }}>{a.name}</span>
+                  <span style={{ fontSize:9, fontWeight:700, padding:'2px 8px', borderRadius:8,
+                    background:sc, color:'#fff', textTransform:'uppercase' }}>{a.status}</span>
+                </div>
+                <span style={{ fontSize:isMobile?11:13, color:'#a08060' }}>
+                  {a.breed||'Unknown'} · {a.sex==='ewe'||a.sex==='hen'?'Female':'Male'} · {calcAge(a.birth_date)}
+                </span>
+              </div>
+              <span style={{ color:'#c8b89a', fontSize:20 }}>›</span>
+            </div>
+          )
+        })}
+        {/* "and more" hint */}
+        <p style={{ fontSize:12, color:'#c8b89a', textAlign:'center', margin:'4px 0 0', fontStyle:'italic' }}>
+          + {(isSheep?DEMO_SHEEP:DEMO_CHICKENS).length - animals.length} more {isSheep?'sheep':'chickens'} in your flock
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ─── HERO SCREEN 2: Health Timeline ───────────────────────────────────────────
+function HeroEvents({ name, species, isMobile }) {
+  const isSheep = species==='sheep'
+  const events = isSheep ? [
+    { type:'lambing',     date:'Apr 2, 2024',  notes:'Twins born — Rosie and Clover. Both healthy.', icon:'🐣', color:'#e65100', bg:'#fff3e0' },
+    { type:'Illness',     date:'Sep 14, 2024', notes:'Limping on left front. Penicillin 3ml.', icon:'🤒', color:'#c62828', bg:'#fff3f3', alert:true },
+    { type:'Shearing',    date:'May 15, 2024', notes:'Fleece 4.2kg. Good staple length.', icon:'✂️', color:'#2e7d32', bg:'#e8f5e9' },
+  ] : [
+    { type:'Egg Production', date:'Jan 15, 2025', notes:'Averaging 6 eggs/week. Consistent through winter.', icon:'🥚', color:'#f57f17', bg:'#fff9e6' },
+    { type:'Illness',        date:'Aug 20, 2024', notes:'Lethargic, not eating. Heat stress — recovered in 2 days.', icon:'🤒', color:'#c62828', bg:'#fff3f3', alert:true },
+    { type:'Vaccination',    date:'Nov 10, 2024', notes:'Newcastle disease vaccine.', icon:'💉', color:'#1565c0', bg:'#e3f2fd' },
+  ]
+
+  return (
+    <div style={{ minHeight:'calc(100vh - 40px)', display:'flex', flexDirection:'column', justifyContent:'center',
+      padding:isMobile?'12px 16px':'20px 40px', maxWidth:1100, margin:'0 auto' }}>
+      <p style={{ fontSize:isMobile?11:12, fontWeight:700, color:'#c8a060', textTransform:'uppercase',
+        letterSpacing:'0.1em', margin:'0 0 10px' }}>Health Timeline</p>
+      <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?26:38, fontWeight:700,
+        color:'#2c2416', margin:'0 0 8px', lineHeight:1.2 }}>
+        Never lose a health record again
+      </h2>
+      <p style={{ fontSize:isMobile?14:17, color:'#7a6648', margin:'0 0 18px', lineHeight:1.5 }}>
+        Every event dated, noted, and photographed. Your whole history in one place — searchable, forever.
+      </p>
+
+      <div style={{ position:'relative' }}>
+        {/* Timeline line */}
+        <div style={{ position:'absolute', left:isMobile?30:38, top:0, bottom:0, width:2,
+          background:'linear-gradient(to bottom,#e8e0d0,#f7f4ef)', borderRadius:1 }}/>
+
+        {events.map((ev,i)=>(
+          <div key={i} style={{ display:'flex', gap:0, marginBottom:i<events.length-1?8:0 }}>
+            {/* Date col */}
+            <div style={{ width:isMobile?24:32, flexShrink:0, paddingTop:6, textAlign:'right', paddingRight:8 }}>
+              <span style={{ fontSize:8, color:'#a08060', fontWeight:700, lineHeight:1.2,
+                display:'block', whiteSpace:'nowrap' }}>
+                {ev.date.split(' ').slice(0,2).join('\n')}
+              </span>
+            </div>
+            {/* Icon */}
+            <div style={{ width:isMobile?40:48, flexShrink:0, display:'flex', justifyContent:'center', paddingTop:2, zIndex:1 }}>
+              <div style={{ width:isMobile?36:44, height:isMobile?36:44, borderRadius:9,
+                background:ev.bg, border:`2px solid ${ev.color}33`, display:'flex',
+                alignItems:'center', justifyContent:'center', fontSize:isMobile?18:20,
+                boxShadow:ev.alert?`0 0 0 3px rgba(198,40,40,0.2)`:'none' }}>
+                {ev.icon}
+              </div>
+            </div>
+            {/* Content */}
+            <div style={{ flex:1, paddingLeft:10, paddingBottom:8, paddingTop:4 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3, flexWrap:'wrap' }}>
+                <span style={{ fontSize:isMobile?12:14, fontWeight:700, color:ev.color }}>{ev.type}</span>
+                {ev.alert && <span style={{ fontSize:9, fontWeight:700, padding:'1px 6px',
+                  borderRadius:8, background:'#c62828', color:'#fff', textTransform:'uppercase' }}>⚠ Alert</span>}
+                <span style={{ fontSize:10, color:'#a08060' }}>{ev.date}</span>
+              </div>
+              <p style={{ fontSize:isMobile?12:13, color:'#4a3c28', margin:0, lineHeight:1.5 }}>{ev.notes}</p>
+              <span style={{ fontSize:10, color:'#c8b89a', fontStyle:'italic', marginTop:3, display:'block' }}>📷 add photo</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── HERO SCREEN 3: Bloodlines ─────────────────────────────────────────────────
+function HeroLineage({ name, species, isMobile }) {
+  const isSheep = species==='sheep'
+  const em = isSheep ? { root:'🐑', male:'🐏', female:'🐑' } : { root:'🐔', male:'🐓', female:'🐔' }
+  const sexBg = { male:'#5d4037', female:'#a1887f' }
+  const tree = isSheep ? {
+    root: { name, sex:'female', status:'alive' },
+    parents: [{ name:'Duke', sex:'male', status:'alive' }, { name:'Iris', sex:'female', status:'alive' }],
+    grandparents: [{ name:'Magnus', sex:'male', status:'deceased' }, { name:'Fern', sex:'female', status:'sold' }, { name:'Chester', sex:'male', status:'sold' }, { name:'Pearl', sex:'female', status:'deceased' }],
+  } : {
+    root: { name, sex:'female', status:'alive' },
+    parents: [{ name:'Redford', sex:'male', status:'alive' }, { name:'Goldie', sex:'female', status:'alive' }],
+    grandparents: [{ name:'Colonel', sex:'male', status:'deceased' }, { name:'Maple', sex:'female', status:'sold' }, { name:'Rex', sex:'male', status:'sold' }, { name:'Clover', sex:'female', status:'deceased' }],
+  }
+
+  const nodeSize = isMobile ? 40 : 52
+  const slotW    = isMobile ? 70 : 90
+  const connH    = isMobile ? 22 : 30
+  const totalW   = 4 * slotW
+
+  function Node({ node, isRoot }) {
+    const sz = isRoot ? nodeSize + 10 : nodeSize
+    const sd = sexBg[node.sex]||'#d7ccc8'
+    const dimmed = node.status!=='alive'
+    return (
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, opacity:dimmed?0.55:1 }}>
+        <div style={{ position:'relative' }}>
+          <div style={{ width:sz, height:sz, borderRadius:'50%', background:'#f0ebe4',
+            border:isRoot?'3px solid #c8a060':'2px solid #e8e0d0',
+            boxShadow:isRoot?'0 0 0 4px rgba(200,160,96,0.2)':'none',
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:sz*0.4 }}>
+            {node.sex==='male' ? em.male : em.female}
+          </div>
+          <div style={{ width:8, height:8, borderRadius:'50%', background:sd,
+            position:'absolute', bottom:0, right:0, border:'2px solid #fff' }}/>
         </div>
+        <span style={{ fontSize:isRoot?(isMobile?11:12):(isMobile?8:9), fontWeight:700,
+          color:'#2c2416', whiteSpace:'nowrap', fontFamily:"'Playfair Display',serif",
+          maxWidth:slotW-8, overflow:'hidden', textOverflow:'ellipsis', textAlign:'center' }}>
+          {node.name}
+        </span>
+      </div>
+    )
+  }
 
-        <div style={{ background:'rgba(255,255,255,0.06)',borderRadius:16,padding:isMobile?24:32,border:'1px solid rgba(255,255,255,0.1)' }}>
+  const rows = [
+    { label:'Grandparents', nodes: tree.grandparents },
+    { label:'Parents',      nodes: tree.parents      },
+    { label:'Your Animal',  nodes: [tree.root]        },
+  ]
 
-          {/* Species picker */}
-          <label style={{ fontSize:12,fontWeight:700,color:'#c8a060',textTransform:'uppercase',letterSpacing:'0.1em',display:'block',marginBottom:10 }}>
-            What do you raise?
-          </label>
-          <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:24 }}>
-            {[['sheep','🐑','Sheep'],['chickens','🐔','Chickens']].map(([k,e,l])=>(
-              <button key={k} onClick={()=>setSpecies(k)}
-                style={{ padding:'14px',borderRadius:10,
-                  border:`2px solid ${species===k?'#c8a060':'rgba(255,255,255,0.15)'}`,
-                  background:species===k?'rgba(200,160,96,0.15)':'rgba(255,255,255,0.05)',
-                  cursor:'pointer',fontFamily:"'Lato',sans-serif",
-                  display:'flex',flexDirection:'column',alignItems:'center',gap:6,transition:'all 0.15s' }}>
-                <span style={{ fontSize:28 }}>{e}</span>
-                <span style={{ fontSize:14,fontWeight:700,color:species===k?'#f0e6cc':'#c8b89a' }}>{l}</span>
-                {species===k&&<span style={{ fontSize:10,color:'#c8a060',fontWeight:700 }}>✓ Selected</span>}
-              </button>
-            ))}
-          </div>
+  return (
+    <div style={{ minHeight:'calc(100vh - 40px)', display:'flex', flexDirection:'column', justifyContent:'center',
+      padding:isMobile?'12px 16px':'20px 40px', maxWidth:1100, margin:'0 auto' }}>
+      <p style={{ fontSize:isMobile?11:12, fontWeight:700, color:'#c8a060', textTransform:'uppercase',
+        letterSpacing:'0.1em', margin:'0 0 10px' }}>Bloodlines</p>
+      <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?26:38, fontWeight:700,
+        color:'#2c2416', margin:'0 0 8px', lineHeight:1.2 }}>
+        Know who's related to who
+      </h2>
+      <p style={{ fontSize:isMobile?14:17, color:'#7a6648', margin:'0 0 18px', lineHeight:1.5 }}>
+        {isSheep
+          ? 'Before breeding season — check here. FarmHand builds the family tree automatically and flags shared ancestors. No more accidental inbreeding.'
+          : 'Track your rooster\'s bloodlines across hatches. Built automatically as you record sires and hens. 4 generations, always up to date.'
+        }
+      </p>
 
-          {/* Name field — pre-filled, clearly optional */}
-          <div style={{ marginBottom:16 }}>
-            <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6 }}>
-              <label style={{ fontSize:12,fontWeight:700,color:'#c8a060',textTransform:'uppercase',letterSpacing:'0.1em' }}>
-                Name your first {species==='sheep'?'sheep':'chicken'}
-              </label>
-              <span style={{ fontSize:11,color:'rgba(255,255,255,0.3)',fontStyle:'italic' }}>optional</span>
-            </div>
-            <input
-              ref={ref}
-              value={name}
-              onChange={e=>setName(e.target.value)}
-              onKeyDown={e=>e.key==='Enter'&&onStart()}
-              style={{ width:'100%', padding:'13px 16px', borderRadius:10,
-                border:'2px solid rgba(200,160,96,0.4)',
-                background:'rgba(255,255,255,0.07)', fontFamily:"'Lato',sans-serif",
-                fontSize:16, color:'#f0e6cc', outline:'none', boxSizing:'border-box',
-                transition:'border-color 0.2s',
-                WebkitAppearance:'none',  // prevents iOS styling
-              }}
-            />
-            <p style={{ fontSize:11,color:'rgba(255,255,255,0.3)',margin:'6px 0 0',fontStyle:'italic' }}>
-              We've suggested {defaultName} — feel free to change it to anything you like
-            </p>
-          </div>
-
-          {/* Live preview */}
-          <div style={{ background:'rgba(200,160,96,0.1)',border:'1px solid rgba(200,160,96,0.25)',
-            borderRadius:10,padding:'12px 14px',marginBottom:18,display:'flex',gap:12,alignItems:'center' }}>
-            <div style={{ width:44,height:44,borderRadius:'50%',overflow:'hidden',border:'2px solid #c8a060',flexShrink:0 }}>
-              <img src={demo.photo_url} alt={displayName}
-                style={{ width:'100%',height:'100%',objectFit:'cover' }}
-                onError={e=>{ e.target.style.display='none' }}/>
-            </div>
-            <div>
-              <p style={{ fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:16,color:'#f0e6cc',margin:'0 0 2px' }}>
-                {displayName}
-              </p>
-              <p style={{ fontSize:12,color:'#c8a878',margin:0 }}>
-                {species==='sheep'?'Merino · Ewe · 4 years old':'Rhode Island Red · Hen · 1 year old'}
-              </p>
-            </div>
-          </div>
-
-          <button onClick={onStart}
-            style={{ width:'100%',padding:'14px',borderRadius:10,border:'none',cursor:'pointer',
-              fontFamily:"'Lato',sans-serif",fontSize:16,fontWeight:700,
-              background:'#c8a060',color:'#2c2416' }}>
-            Show me the app →
-          </button>
+      {/* Compact 3-gen tree — fits above fold */}
+      <div style={{ background:'#fff', borderRadius:14, padding:isMobile?'16px 12px':'24px 20px',
+        border:'1px solid #e8e0d0', boxShadow:'0 4px 24px rgba(44,36,22,0.08)', overflowX:'auto' }}>
+        <div style={{ minWidth:isMobile?260:350 }}>
+          {rows.map((row, ri)=>{
+            const count   = row.nodes.length
+            const mySlotW = totalW / count
+            const nextRow = rows[ri+1]
+            const nextSlotW = nextRow ? totalW / nextRow.nodes.length : 0
+            return (
+              <div key={ri}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, marginTop:ri===0?0:2 }}>
+                  <span style={{ fontSize:isMobile?8:9, fontWeight:700, color:'#a08060',
+                    textTransform:'uppercase', letterSpacing:'0.06em', whiteSpace:'nowrap',
+                    background:'#f7f4ef', padding:'2px 8px', borderRadius:20 }}>
+                    {row.label}
+                  </span>
+                  <div style={{ flex:1, height:1, background:'#f0ebe4' }}/>
+                </div>
+                <div style={{ display:'flex', width:'100%', marginBottom:0 }}>
+                  {row.nodes.map((n,ni)=>(
+                    <div key={ni} style={{ flex:1, display:'flex', justifyContent:'center' }}>
+                      <Node node={n} isRoot={ri===rows.length-1}/>
+                    </div>
+                  ))}
+                </div>
+                {ri < rows.length-1 && (
+                  <svg width="100%" viewBox={`0 0 ${totalW} ${connH}`}
+                    style={{ display:'block', marginBottom:2 }} preserveAspectRatio="xMidYMid meet">
+                    {nextRow.nodes.map((_,ci)=>{
+                      const par0X = mySlotW*(ci*2)   + mySlotW/2
+                      const par1X = mySlotW*(ci*2+1) + mySlotW/2
+                      const midX  = (par0X+par1X)/2
+                      const childX= nextSlotW*ci     + nextSlotW/2
+                      const jY    = connH*0.55
+                      return (
+                        <g key={ci}>
+                          <line x1={par0X} y1={0}   x2={par0X}  y2={jY}    stroke="#d0c4b0" strokeWidth={1.5}/>
+                          <line x1={par1X} y1={0}   x2={par1X}  y2={jY}    stroke="#d0c4b0" strokeWidth={1.5}/>
+                          <line x1={par0X} y1={jY}  x2={par1X}  y2={jY}    stroke="#d0c4b0" strokeWidth={1.5}/>
+                          <line x1={midX}  y1={jY}  x2={childX} y2={connH} stroke="#d0c4b0" strokeWidth={1.5}/>
+                        </g>
+                      )
+                    })}
+                  </svg>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        {/* Inbreeding check */}
+        <div style={{ marginTop:14, padding:'10px 14px', borderRadius:8,
+          background:'#f1f8f1', border:'1px solid #a5d6a7', display:'flex', gap:8, alignItems:'center' }}>
+          <span style={{ fontSize:16 }}>✓</span>
+          <span style={{ fontSize:12, color:'#2e7d32', fontWeight:600 }}>
+            No shared ancestors detected — safe to breed.
+          </span>
         </div>
       </div>
     </div>
   )
 }
 
+// ─── HERO SCREEN 4: P&L ────────────────────────────────────────────────────────
+function HeroPnL({ name, species, isMobile }) {
+  const isSheep = species==='sheep'
+  const totalIn  = isSheep ? 2840 : 1240
+  const totalOut = isSheep ? 1120 : 480
+  const net      = totalIn - totalOut
+  const entries  = isSheep ? [
+    { desc:'Wool sale — spring clip', type:'Wool Sale', amount:680, income:true,  date:'May 12' },
+    { desc:'Lamb sale × 3',           type:'Animal Sale', amount:900, income:true, date:'Apr 28' },
+    { desc:'Hay bales × 40',          type:'Hay',       amount:480, income:false, date:'Apr 10' },
+  ] : [
+    { desc:'Egg sale — 12 dozen',  type:'Egg Sales', amount:60,  income:true,  date:'May 11' },
+    { desc:'Egg sale — 8 dozen',   type:'Egg Sales', amount:40,  income:true,  date:'May 4'  },
+    { desc:'Feed bags × 4',        type:'Feed',      amount:80,  income:false, date:'May 1'  },
+  ]
+
+  return (
+    <div style={{ minHeight:'calc(100vh - 40px)', display:'flex', flexDirection:'column', justifyContent:'center',
+      padding:isMobile?'12px 16px':'20px 40px', maxWidth:1100, margin:'0 auto' }}>
+      <p style={{ fontSize:isMobile?11:12, fontWeight:700, color:'#c8a060', textTransform:'uppercase',
+        letterSpacing:'0.1em', margin:'0 0 10px' }}>Profit & Loss</p>
+      <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?26:38, fontWeight:700,
+        color:'#2c2416', margin:'0 0 8px', lineHeight:1.2 }}>
+        See exactly what your farm makes
+      </h2>
+      <p style={{ fontSize:isMobile?14:17, color:'#7a6648', margin:'0 0 14px', lineHeight:1.5 }}>
+        Every dollar in and out — tracked as you go. No spreadsheet. Just log it and the numbers update.
+      </p>
+
+      {/* Summary tiles */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
+        {[
+          { label:'Income',   value:'+'+fmt(totalIn),  color:'#2e7d32', bg:'#f1f8f1' },
+          { label:'Expenses', value:'-'+fmt(totalOut), color:'#c62828', bg:'#fff3f3' },
+          { label:'Net P&L',  value:'+'+fmt(net),      color:'#2e7d32', bg:'#e8f5e9' },
+        ].map(s=>(
+          <div key={s.label} style={{ padding:isMobile?'12px 8px':'16px 14px', borderRadius:10,
+            background:s.bg, textAlign:'center' }}>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?16:22,
+              fontWeight:700, color:s.color }}>{s.value}</div>
+            <div style={{ fontSize:9, color:'#a08060', fontWeight:700,
+              textTransform:'uppercase', marginTop:2 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Recent entries */}
+      <div style={{ background:'#fff', borderRadius:12, border:'1px solid #e8e0d0',
+        boxShadow:'0 4px 24px rgba(44,36,22,0.06)', overflow:'hidden' }}>
+        {entries.map((e,i)=>(
+          <div key={i} style={{ display:'flex', alignItems:'center', gap:12,
+            padding:isMobile?'12px 14px':'13px 18px',
+            borderBottom: i<entries.length-1?'1px solid #f7f4ef':'none',
+            background: e.income ? '#fafffe' : '#fffafa' }}>
+            <div style={{ flex:1, minWidth:0 }}>
+              <p style={{ fontSize:isMobile?12:14, fontWeight:600, margin:'0 0 2px',
+                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{e.desc}</p>
+              <p style={{ fontSize:10, color:'#a08060', margin:0 }}>{e.type} · {e.date}</p>
+            </div>
+            <span style={{ fontSize:isMobile?13:15, fontWeight:700, flexShrink:0,
+              color:e.income?'#2e7d32':'#c62828' }}>
+              {e.income?'+':'-'}{fmt(e.amount)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── HERO SCREEN 5: Dashboard ──────────────────────────────────────────────────
+function HeroDashboard({ species, isMobile }) {
+  const isSheep = species==='sheep'
+
+  // Full year data
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const inc = isSheep
+    ? [0,   200, 340, 280, 520, 460, 390, 480, 320, 560, 410, 380]
+    : [60,  80,  120, 100, 160, 140, 130, 150, 110, 170, 130, 120]
+  const exp = isSheep
+    ? [220, 180, 260, 200, 310, 240, 280, 220, 190, 300, 250, 200]
+    : [80,  80,  100, 90,  120, 100, 95,  110, 85,  125, 100, 90 ]
+  const maxV = Math.max(...inc,...exp,1)
+
+  // Bar chart dimensions — fixed height, scaled to fit 12 months
+  const chartH = isMobile ? 70 : 90
+  const barW   = isMobile ? 8  : 14
+  const gap    = isMobile ? 2  : 4
+  const groupW = barW*2+gap
+  const colGap = isMobile ? 4  : 8
+  const padL   = 24
+  const totalW = padL + months.length*(groupW+colGap) + 8
+
+  // Donut — proper arc path calculation with viewBox="0 0 100 100"
+  const donutSegs = isSheep
+    ? [{ label:'Wool',  v:680, color:'#90caf9' },
+       { label:'Lambs', v:900, color:'#5d4037' },
+       { label:'Other', v:260, color:'#78909c' }]
+    : [{ label:'Eggs',  v:960, color:'#f9a825' },
+       { label:'Other', v:280, color:'#78909c' }]
+  const total = donutSegs.reduce((s,sg)=>s+sg.v, 0)
+
+  // Build arc paths correctly
+  let cumAngle = -90
+  const arcs = donutSegs.map(sg => {
+    const pct   = sg.v / total
+    const start = cumAngle
+    const end   = cumAngle + pct * 360
+    cumAngle    = end
+    const sRad  = start * Math.PI / 180
+    const eRad  = end   * Math.PI / 180
+    const cx=50, cy=50, r=38, ri=24
+    const x1=cx+r*Math.cos(sRad), y1=cy+r*Math.sin(sRad)
+    const x2=cx+r*Math.cos(eRad), y2=cy+r*Math.sin(eRad)
+    const large = (end-start) > 180 ? 1 : 0
+    // Donut arc (not pie) — draw outer arc then inner arc back
+    const d = `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} L ${(cx+ri*Math.cos(eRad)).toFixed(2)} ${(cy+ri*Math.sin(eRad)).toFixed(2)} A ${ri} ${ri} 0 ${large} 0 ${(cx+ri*Math.cos(sRad)).toFixed(2)} ${(cy+ri*Math.sin(sRad)).toFixed(2)} Z`
+    return { ...sg, d, pct }
+  })
+
+  return (
+    <div style={{ minHeight:'calc(100vh - 42px)', display:'flex', flexDirection:'column',
+      justifyContent:'center', padding:isMobile?'12px 16px':'20px 40px',
+      maxWidth:1100, margin:'0 auto' }}>
+      <p style={{ fontSize:isMobile?11:12, fontWeight:700, color:'#c8a060',
+        textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 6px' }}>Dashboard</p>
+      <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:34,
+        fontWeight:700, color:'#2c2416', margin:'0 0 6px', lineHeight:1.2 }}>
+        Your whole farm in one view
+      </h2>
+      <p style={{ fontSize:isMobile?13:15, color:'#7a6648', margin:'0 0 14px', lineHeight:1.5 }}>
+        Income vs expenses by month. See your trends before they become problems.
+      </p>
+
+      <div style={{ display:'grid', gridTemplateColumns:isMobile?'1fr':'3fr 2fr',
+        gap:12, alignItems:'stretch' }}>
+
+        {/* Bar chart — fixed height card */}
+        <div style={{ background:'#fff', borderRadius:12,
+          padding:isMobile?'12px 10px':'16px 16px',
+          border:'1px solid #e8e0d0', boxShadow:'0 4px 20px rgba(44,36,22,0.06)' }}>
+          <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700,
+            fontSize:13, margin:'0 0 10px' }}>Income vs Expenses — Full Year</p>
+          <svg width="100%" viewBox={`0 0 ${totalW} ${chartH+22}`}
+            style={{ display:'block', height:isMobile?100:130 }}>
+            {months.map((mo,i)=>{
+              const x    = padL + i*(groupW+colGap)
+              const incH = Math.max((inc[i]/maxV)*chartH, inc[i]>0?2:0)
+              const expH = Math.max((exp[i]/maxV)*chartH, 2)
+              return (
+                <g key={mo}>
+                  <rect x={x}          y={chartH-incH} width={barW} height={incH} fill="#4caf50" rx={2} opacity={0.85}/>
+                  <rect x={x+barW+gap} y={chartH-expH} width={barW} height={expH} fill="#c62828" rx={2} opacity={0.75}/>
+                  <text x={x+barW} y={chartH+14} textAnchor="middle"
+                    fontSize={isMobile?6:8} fill="#7a6648" fontWeight={600}>{mo}</text>
+                </g>
+              )
+            })}
+            <line x1={padL} x2={totalW-4} y1={chartH} y2={chartH}
+              stroke="#e8e0d0" strokeWidth={1}/>
+          </svg>
+          <div style={{ display:'flex', gap:14, marginTop:4 }}>
+            {[['#4caf50','Income'],['#c62828','Expenses']].map(([c,l])=>(
+              <div key={l} style={{ display:'flex', alignItems:'center', gap:5 }}>
+                <div style={{ width:8, height:8, borderRadius:2, background:c }}/>
+                <span style={{ fontSize:10, color:'#4a3c28', fontWeight:600 }}>{l}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Donut chart */}
+        <div style={{ background:'#fff', borderRadius:12,
+          padding:isMobile?'12px 10px':'16px 16px',
+          border:'1px solid #e8e0d0', boxShadow:'0 4px 20px rgba(44,36,22,0.06)',
+          display:'flex', flexDirection:'column' }}>
+          <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700,
+            fontSize:13, margin:'0 0 10px' }}>Income Breakdown</p>
+          <div style={{ flex:1, display:'flex', alignItems:'center', gap:16 }}>
+            {/* Fixed viewBox so donut is never cropped */}
+            <svg viewBox="0 0 100 100" width={isMobile?80:100} height={isMobile?80:100}
+              style={{ flexShrink:0 }}>
+              {arcs.map((a,i)=>(
+                <path key={i} d={a.d} fill={a.color} opacity={0.92}/>
+              ))}
+              <text x={50} y={46} textAnchor="middle" fontSize={7}
+                fill="#a08060" fontWeight={600}>Total</text>
+              <text x={50} y={57} textAnchor="middle" fontSize={9}
+                fill="#2c2416" fontWeight={700}>{fmt(total)}</text>
+            </svg>
+            <div style={{ flex:1 }}>
+              {arcs.map((a,i)=>(
+                <div key={i} style={{ display:'flex', alignItems:'center',
+                  gap:7, marginBottom:8 }}>
+                  <div style={{ width:10, height:10, borderRadius:'50%',
+                    background:a.color, flexShrink:0 }}/>
+                  <span style={{ fontSize:12, color:'#4a3c28', fontWeight:600, flex:1 }}>
+                    {a.label}
+                  </span>
+                  <span style={{ fontSize:12, fontWeight:700, color:'#2c2416' }}>
+                    {Math.round(a.pct*100)}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── HERO SCREEN 6: Bulk Add ───────────────────────────────────────────────────
+function HeroBulkAdd({ name, species, isMobile }) {
+  const isSheep = species==='sheep'
+  const rows = [
+    { name, sex:isSheep?'Ewe':'Hen', dob:isSheep?'03/15/2021':'06/01/2023', filled:true },
+    { name:'Rosie', sex:isSheep?'Ewe':'Hen', dob:isSheep?'04/02/2022':'05/15/2023', filled:true },
+    { name:'Duke', sex:isSheep?'Ram':'Rooster', dob:isSheep?'01/10/2020':'04/01/2023', filled:true },
+    { name:'', sex:isSheep?'Ewe':'Hen', dob:'', filled:false },
+  ]
+  const inp = { padding:'7px 10px', borderRadius:6, border:'1px solid #d0c4b0',
+    background:'#fdfaf6', fontSize:isMobile?12:13, width:'100%', boxSizing:'border-box' }
+
+  return (
+    <div style={{ minHeight:'calc(100vh - 40px)', display:'flex', flexDirection:'column', justifyContent:'center',
+      padding:isMobile?'12px 16px':'20px 40px', maxWidth:1100, margin:'0 auto' }}>
+      <p style={{ fontSize:isMobile?11:12, fontWeight:700, color:'#c8a060', textTransform:'uppercase',
+        letterSpacing:'0.1em', margin:'0 0 10px' }}>Getting Started</p>
+      <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?26:38, fontWeight:700,
+        color:'#2c2416', margin:'0 0 8px', lineHeight:1.2 }}>
+        Your whole flock — set up in minutes
+      </h2>
+      <p style={{ fontSize:isMobile?14:17, color:'#7a6648', margin:'0 0 14px', lineHeight:1.5 }}>
+        Add every animal at once. Name is all you need. Most farms are up and running in under 10 minutes.
+      </p>
+
+      <div style={{ background:'#fff', borderRadius:12, border:'1px solid #e8e0d0',
+        boxShadow:'0 4px 24px rgba(44,36,22,0.08)', overflow:'hidden' }}>
+        {/* Header */}
+        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:8,
+          padding:isMobile?'10px 12px':'12px 16px', borderBottom:'2px solid #e8e0d0', background:'#fdfaf6' }}>
+          {['Name','Sex','Date of Birth'].map(h=>(
+            <span key={h} style={{ fontSize:9, fontWeight:700, color:'#a08060',
+              textTransform:'uppercase', letterSpacing:'0.06em' }}>{h}</span>
+          ))}
+        </div>
+        {/* Rows */}
+        {rows.map((row,i)=>(
+          <div key={i} style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:8,
+            padding:isMobile?'8px 12px':'10px 16px', borderBottom:'1px solid #f7f4ef',
+            background: i%2===0?'#fff':'#fdfaf6', alignItems:'center' }}>
+            <input style={{ ...inp, borderColor:row.filled?'#a5d6a7':'#d0c4b0' }}
+              defaultValue={row.name} placeholder="Name…" readOnly/>
+            <input style={inp} defaultValue={row.sex} readOnly/>
+            <input style={inp} defaultValue={row.dob} placeholder="mm/dd/yyyy" readOnly/>
+          </div>
+        ))}
+        <div style={{ padding:isMobile?'10px 12px':'12px 16px', display:'flex',
+          alignItems:'center', justifyContent:'space-between', background:'#fdfaf6',
+          borderTop:'1px solid #e8e0d0' }}>
+          <span style={{ fontSize:12, color:'#a08060' }}>3 of 4 rows filled</span>
+          <div style={{ background:'#c8a060', color:'#2c2416', fontWeight:700,
+            padding:'8px 20px', borderRadius:8, fontSize:13 }}>
+            Save 3 Animals
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Personalise({ species, setSpecies, onStart, isMobile }) {
+  return (
+    <div style={{ minHeight:'80vh', display:'flex', alignItems:'center',
+      justifyContent:'center', padding:isMobile?'24px 16px':'40px 24px' }}>
+      <div style={{ maxWidth:400, width:'100%' }}>
+        <div style={{ textAlign:'center', marginBottom:28 }}>
+          <div style={{ fontSize:52, marginBottom:10 }}>🌾</div>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:32,
+            fontWeight:700, color:'#f0e6cc', margin:'0 0 10px', lineHeight:1.2 }}>
+            What do you raise?
+          </h1>
+          <p style={{ fontSize:isMobile?14:15, color:'#c8b89a', margin:0, lineHeight:1.6 }}>
+            Pick what's on your farm and we'll show you what FarmHand can do.
+          </p>
+        </div>
+        <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:16,
+          padding:isMobile?24:32, border:'1px solid rgba(255,255,255,0.1)' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:20 }}>
+            {[['sheep','🐑','Sheep','Merino · Suffolk · Dorset'],
+              ['chickens','🐔','Chickens','Layers · Broilers · Mixed']].map(([k,e,l,sub])=>(
+              <button key={k} onClick={()=>setSpecies(k)}
+                style={{ padding:isMobile?'16px 10px':'20px 14px', borderRadius:12,
+                  border:`2px solid ${species===k?'#c8a060':'rgba(255,255,255,0.15)'}`,
+                  background:species===k?'rgba(200,160,96,0.15)':'rgba(255,255,255,0.05)',
+                  cursor:'pointer', fontFamily:"'Lato',sans-serif",
+                  display:'flex', flexDirection:'column', alignItems:'center',
+                  gap:6, transition:'all 0.15s' }}>
+                <span style={{ fontSize:36 }}>{e}</span>
+                <span style={{ fontSize:15, fontWeight:700,
+                  color:species===k?'#f0e6cc':'#c8b89a' }}>{l}</span>
+                <span style={{ fontSize:11, color:'#6a5040' }}>{sub}</span>
+                {species===k && (
+                  <span style={{ fontSize:10, color:'#c8a060', fontWeight:700, marginTop:2 }}>✓ Selected</span>
+                )}
+              </button>
+            ))}
+          </div>
+          <button onClick={onStart}
+            style={{ width:'100%', padding:'15px', borderRadius:10, border:'none',
+              cursor:'pointer', fontFamily:"'Lato',sans-serif", fontSize:16, fontWeight:700,
+              background:'#c8a060', color:'#2c2416' }}>
+            Show me the app →
+          </button>
+          <p style={{ fontSize:11, color:'rgba(255,255,255,0.2)', textAlign:'center', margin:'10px 0 0' }}>
+            No sign-up required · 2 minute tour
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 export function DemoPage() {
   const navigate=useNavigate(), isMobile=useIsMobile()
-  const [phase,setPhase]=useState('name')
-  const [rawName,setRawName]=useState('')
-  const [species,setSpecies]=useState('sheep')
-  const [step,setStep]=useState(0)
-  const name = rawName.trim() || (species==='sheep' ? 'Bella' : 'Goldie')
+  const [phase,  setPhase]   = useState('name')
+  const [species,setSpecies] = useState('sheep')
+  const [step,   setStep]    = useState(0)
+  // Always use default name based on species — no user input needed
+  const name  = species==='sheep' ? 'Bella' : 'Goldie'
   const steps = buildSteps(species), cur = steps[step]
   const next  = ()=>{ if(cur.isLast) navigate('/'); else setStep(i=>i+1) }
   const skip  = ()=>navigate('/')
 
+  // Reset step when species changes on personalise screen
+  const handleSpecies = (s) => { setSpecies(s); setStep(0) }
+
   useEffect(()=>{
     if(phase!=='tour') return
     window.scrollTo({ top:0, behavior:'instant' })
-    if(cur.scrollTo){
-      const t=setTimeout(()=>{ const el=document.getElementById(cur.scrollTo); if(el) el.scrollIntoView({ behavior:'smooth', block:'center' }) },300)
-      return ()=>clearTimeout(t)
-    }
   },[step,phase])
 
   const screens={
-    flock:   <FlockScreen       key={`flock-${step}`}   name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    profile: <ProfileScreen     key={`profile-${step}`} name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    event:   <EventScreen       key={`event-${step}`}   name={name} species={species} step={cur} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    bulk:    <BulkScreen        key={`bulk-${step}`}    name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    lineage: <LineageDemoScreen key={`lineage-${step}`} name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    pnl:     <PnLScreen         key={`pnl-${step}`}     name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    dash1:   <DashChartScreen       key={`dash1-${step}`} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    dash2:   <DashAnimalsScreen     key={`dash2-${step}`} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    dash3:   <DashDonutsScreen      key={`dash3-${step}`} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    dash4:   <DashCustomerPieScreen key={`dash4-${step}`} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    plants:  <PlantsScreen          key={`plants-${step}`} highlight={cur.scrollTo} isMobile={isMobile}/>,
-    bulkadd: <BulkAddScreen    key={`bulkadd-${step}`}  name={name} species={species} highlight={cur.scrollTo} isMobile={isMobile}/>,
+    hero_profiles:  <HeroProfiles  key={`profiles-${step}`}  name={name} species={species} isMobile={isMobile}/>,
+    hero_events:    <HeroEvents    key={`events-${step}`}    name={name} species={species} isMobile={isMobile}/>,
+    hero_lineage:   <HeroLineage   key={`lineage-${step}`}   name={name} species={species} isMobile={isMobile}/>,
+    hero_pnl:       <HeroPnL       key={`pnl-${step}`}       name={name} species={species} isMobile={isMobile}/>,
+    hero_dashboard: <HeroDashboard key={`dashboard-${step}`} species={species} isMobile={isMobile}/>,
+    hero_bulkadd:   <HeroBulkAdd   key={`bulkadd-${step}`}   name={name} species={species} isMobile={isMobile}/>,
   }
 
   if(phase==='name') return (
-    <div style={{ minHeight:'100vh',background:'linear-gradient(160deg,#2c2416 0%,#4a3520 50%,#6b4f2e 100%)',fontFamily:"'Lato',sans-serif" }}>
-      <div style={{ padding:'12px 20px',display:'flex',justifyContent:'space-between',alignItems:'center' }}>
-        <span style={{ fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:700,color:'#f0e6cc' }}>🌾 FarmHand</span>
-        <button onClick={skip} style={{ background:'none',border:'1px solid rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.5)',borderRadius:6,padding:'5px 12px',cursor:'pointer',fontSize:12,fontFamily:"'Lato',sans-serif" }}>Skip</button>
+    <div style={{ minHeight:'100vh', background:'linear-gradient(160deg,#2c2416 0%,#4a3520 50%,#6b4f2e 100%)', fontFamily:"'Lato',sans-serif" }}>
+      <div style={{ padding:'12px 20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <span style={{ fontFamily:"'Playfair Display',serif", fontSize:16, fontWeight:700, color:'#f0e6cc' }}>🌾 FarmHand</span>
+        <button onClick={skip} style={{ background:'none', border:'1px solid rgba(255,255,255,0.15)', color:'rgba(255,255,255,0.5)', borderRadius:6, padding:'5px 12px', cursor:'pointer', fontSize:12, fontFamily:"'Lato',sans-serif" }}>Skip</button>
       </div>
-      <Personalise name={rawName} setName={setRawName} species={species} setSpecies={setSpecies} onStart={()=>setPhase('tour')} isMobile={isMobile}/>
+      <Personalise species={species} setSpecies={handleSpecies} onStart={()=>setPhase('tour')} isMobile={isMobile}/>
     </div>
   )
 
   return (
-    <div style={{ minHeight:'100vh',background:'#f7f4ef',fontFamily:"'Lato',sans-serif",color:'#2c2416',paddingBottom:isMobile?200:160 }}>
-      <div style={{ background:'#5a3e1b',padding:'8px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:200 }}>
-        <span style={{ fontSize:11,fontWeight:700,color:'#c8a060',textTransform:'uppercase',letterSpacing:'0.06em' }}>🌾 FarmHand · {name}'s Farm</span>
-        <button onClick={skip} style={{ background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',color:'#f0e6cc',borderRadius:6,padding:'5px 12px',cursor:'pointer',fontSize:11,fontFamily:"'Lato',sans-serif" }}>Exit</button>
-      </div>
-      <Nav screen={cur.screen} species={species} isMobile={isMobile}/>
-      <div style={{ maxWidth:1100,margin:'0 auto' }}>{screens[cur.screen]||screens.flock}</div>
+    <div style={{ minHeight:'100vh', background:'#f7f4ef', fontFamily:"'Lato',sans-serif",
+      color:'#2c2416', paddingBottom:isMobile?180:150, display:'flex', flexDirection:'column' }}>
+      <Nav screen={cur.screen} species={species} isMobile={isMobile} onExit={skip} name={name}/>
+      <div style={{ flex:1, maxWidth:1100, margin:'0 auto', width:'100%' }}>{screens[cur.screen]||screens.hero_profiles}</div>
       <Tip step={cur} stepIdx={step} total={steps.length} onNext={next} onSkip={skip} name={name} isMobile={isMobile}/>
-      {cur.scrollTo&&<div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,0.15)',pointerEvents:'none',zIndex:500 }}/>}
     </div>
   )
 }

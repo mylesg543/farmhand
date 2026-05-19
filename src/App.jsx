@@ -8,6 +8,7 @@ import { AnimalListPage } from './components/animals/AnimalList'
 import { AnimalDetailPage } from './components/animals/AnimalDetail'
 import { AddAnimalPage, EditAnimalPage } from './components/animals/AnimalForm'
 import { BulkAddPage } from './components/animals/BulkAddPage'
+import { BulkEventPage } from './components/animals/BulkEventPage'
 import { PlantsPage } from './components/plants/PlantsPage'
 import { PnLPage } from './components/costs/PnLPage'
 import { DashboardPage } from './components/dashboard/DashboardPage'
@@ -15,7 +16,7 @@ import { CustomersPage } from './components/customers/CustomersPage'
 import { LineagePage } from './components/lineage/LineagePage'
 import { DemoPage } from './components/demo/DemoPage'
 
-// ─── Responsive hook ──────────────────────────────────────────────────────────
+// ─── Responsive hook ────────────────────────────────────────────────────────
 function useIsMobile() {
   const [mobile, setMobile] = useState(window.innerWidth < 768)
   useEffect(() => {
@@ -26,7 +27,7 @@ function useIsMobile() {
   return mobile
 }
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// ─── Data ───────────────────────────────────────────────────────────────────
 const ANIMALS = [
   { key: 'sheep',    label: 'Sheep',    emoji: '🐑', path: '/',         active: true  },
   { key: 'chickens', label: 'Chickens', emoji: '🐔', path: '/chickens', active: true  },
@@ -45,7 +46,7 @@ const PLANT_CATEGORIES = [
   { key: 'other',      label: 'Other',            emoji: '🪴' },
 ]
 
-// ─── Desktop dropdown ─────────────────────────────────────────────────────────
+// ─── Desktop dropdown ────────────────────────────────────────────────────────
 function Dropdown({ trigger, children }) {
   const [open, setOpen] = useState(false)
   const ref = useRef()
@@ -66,7 +67,7 @@ function Dropdown({ trigger, children }) {
   )
 }
 
-// ─── Mobile sheet (slides up from bottom) ─────────────────────────────────────
+// ─── Mobile sheet ────────────────────────────────────────────────────────────
 function MobileSheet({ title, children, onClose }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 800, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
@@ -82,14 +83,15 @@ function MobileSheet({ title, children, onClose }) {
   )
 }
 
-// ─── Desktop nav ──────────────────────────────────────────────────────────────
+// ─── Desktop nav ─────────────────────────────────────────────────────────────
 function DesktopNav({ user, isAdmin, navigate, location, signOut }) {
   const [toast, setToast] = useState(null)
   const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
-  const isAnimals = location.pathname === '/' || location.pathname.startsWith('/animals') || location.pathname === '/chickens' || location.pathname === '/chickens/new' || location.pathname === '/chickens/bulk'
+  const isAnimals = location.pathname === '/' || location.pathname.startsWith('/animals') || location.pathname === '/chickens' || location.pathname.startsWith('/chickens')
   const isPlants  = location.pathname.startsWith('/plants')
   const isPnL     = location.pathname.startsWith('/pnl')
+  const isDash    = location.pathname.startsWith('/dashboard')
   const isAdminP  = location.pathname.startsWith('/admin')
 
   const tabStyle = active => ({
@@ -182,16 +184,8 @@ function DesktopNav({ user, isAdmin, navigate, location, signOut }) {
             <span style={{ fontSize: 15 }}>💰</span>P & L
           </button>
           <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '8px 4px' }} />
-          <button onClick={() => navigate('/dashboard')} style={tabStyle(location.pathname.startsWith('/dashboard'))}>
+          <button onClick={() => navigate('/dashboard')} style={tabStyle(isDash)}>
             <span style={{ fontSize: 15 }}>📊</span>Dashboard
-          </button>
-          <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '8px 4px' }} />
-          <button onClick={() => navigate('/lineage')} style={tabStyle(location.pathname.startsWith('/lineage'))}>
-            <span style={{ fontSize: 15 }}>🌳</span>Lineage
-          </button>
-          <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '8px 4px' }} />
-          <button onClick={() => navigate('/customers')} style={tabStyle(location.pathname.startsWith('/customers'))}>
-            <span style={{ fontSize: 15 }}>👥</span>Customers
           </button>
           {isAdmin && (
             <>
@@ -207,17 +201,17 @@ function DesktopNav({ user, isAdmin, navigate, location, signOut }) {
   )
 }
 
-// ─── Mobile nav — bottom tab bar + top header ─────────────────────────────────
+// ─── Mobile nav ───────────────────────────────────────────────────────────────
 function MobileNav({ user, isAdmin, navigate, location, signOut }) {
-  const [sheet, setSheet] = useState(null) // null | 'animals' | 'plants' | 'more'
+  const [sheet, setSheet] = useState(null)
   const [toast, setToast] = useState(null)
   const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
-  const isAnimals   = location.pathname === '/' || location.pathname.startsWith('/animals') || location.pathname.startsWith('/chickens')
-  const isPlants    = location.pathname.startsWith('/plants')
-  const isPnL       = location.pathname.startsWith('/pnl')
-  const isDashboard = location.pathname.startsWith('/dashboard')
-  const isAdminP    = location.pathname.startsWith('/admin')
+  const isAnimals = location.pathname === '/' || location.pathname.startsWith('/animals') || location.pathname.startsWith('/chickens')
+  const isPlants  = location.pathname.startsWith('/plants')
+  const isPnL     = location.pathname.startsWith('/pnl')
+  const isDash    = location.pathname.startsWith('/dashboard')
+  const isAdminP  = location.pathname.startsWith('/admin')
 
   const tabBtn = (active, emoji, label, onClick) => (
     <button onClick={onClick} style={{
@@ -250,12 +244,12 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
   return (
     <>
       {toast && (
-        <div style={{ position: 'fixed', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 700, background: '#2c2416', color: '#f0e6cc', borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 600, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', whiteSpace: 'nowrap', zIndex: 900 }}>
+        <div style={{ position: 'fixed', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 900, background: '#2c2416', color: '#f0e6cc', borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 600, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', whiteSpace: 'nowrap' }}>
           {toast}
         </div>
       )}
 
-      {/* Mobile top header — compact */}
+      {/* Mobile top header */}
       <div style={{ background: '#2c2416', padding: '0 16px', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
         <span onClick={() => navigate('/')} style={{ fontFamily: "'Playfair Display',serif", fontSize: 17, fontWeight: 700, color: '#f0e6cc', cursor: 'pointer' }}>
           🌾 FarmHand
@@ -267,18 +261,14 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
       </div>
 
       {/* Bottom tab bar */}
-      <div style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
-        background: '#2c2416', borderTop: '1px solid rgba(255,255,255,0.1)',
-        display: 'flex', paddingBottom: 'env(safe-area-inset-bottom)',
-      }}>
-        {tabBtn(isAnimals,   '🐾', 'Animals',   () => setSheet('animals'))}
-        {tabBtn(isPnL,       '💰', 'P & L',     () => navigate('/pnl'))}
-        {tabBtn(isDashboard, '📊', 'Dashboard', () => navigate('/dashboard'))}
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200, background: '#2c2416', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        {tabBtn(isAnimals, '🐾', 'Animals', () => setSheet('animals'))}
+        {tabBtn(isPlants,  '🌱', 'Plants',  () => setSheet('plants'))}
+        {tabBtn(isPnL,     '💰', 'P & L',   () => navigate('/pnl'))}
+        {tabBtn(isDash,    '📊', 'Dash',    () => navigate('/dashboard'))}
         {tabBtn(isAdminP || sheet === 'more', '⚙️', 'More', () => setSheet('more'))}
       </div>
 
-      {/* Animals sheet */}
       {sheet === 'animals' && (
         <MobileSheet title="Animals" onClose={() => setSheet(null)}>
           {ANIMALS.map(a => sheetItem(
@@ -290,7 +280,6 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
         </MobileSheet>
       )}
 
-      {/* Plants sheet */}
       {sheet === 'plants' && (
         <MobileSheet title="Plants & Trees" onClose={() => setSheet(null)}>
           {sheetItem('🌱', 'All Plants', 'View and manage all plants', () => { setSheet(null); navigate('/plants') })}
@@ -298,12 +287,8 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
         </MobileSheet>
       )}
 
-      {/* More sheet */}
       {sheet === 'more' && (
         <MobileSheet title="More" onClose={() => setSheet(null)}>
-          {sheetItem('🌱', 'Plants & Trees', 'Manage your plants', () => { setSheet(null); navigate('/plants') })}
-          {sheetItem('🌳', 'Lineage',        'Family tree for your flock', () => { setSheet(null); navigate('/lineage') })}
-          {sheetItem('👥', 'Customers',       'Manage your buyers', () => { setSheet(null); navigate('/customers') })}
           {isAdmin && sheetItem('🔒', 'Admin Portal', 'View all farms', () => { setSheet(null); navigate('/admin') })}
           {sheetItem('👤', user?.email?.split('@')[0] || 'Account', user?.email, null)}
           <button onClick={() => { setSheet(null); signOut() }}
@@ -339,29 +324,29 @@ function Nav() {
 function FarmApp() {
   const isMobile = useIsMobile()
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#f7f4ef',
-      fontFamily: "'Lato',sans-serif",
-      color: '#2c2416',
-      paddingBottom: isMobile ? 80 : 0, // room for bottom tab bar
-    }}>
+    <div style={{ minHeight: '100vh', background: '#f7f4ef', fontFamily: "'Lato',sans-serif", color: '#2c2416', paddingBottom: isMobile ? 80 : 0 }}>
       <Nav />
       <Routes>
-        <Route path="/"                   element={<AnimalListPage species="sheep" />} />
-        <Route path="/animals/new"        element={<AddAnimalPage species="sheep" />} />
-        <Route path="/animals/bulk"       element={<BulkAddPage species="sheep" />} />
-        <Route path="/animals/:id"        element={<AnimalDetailPage />} />
-        <Route path="/animals/:id/edit"   element={<EditAnimalPage />} />
-        <Route path="/chickens"           element={<AnimalListPage species="chickens" />} />
-        <Route path="/chickens/new"       element={<AddAnimalPage species="chickens" />} />
-        <Route path="/chickens/bulk"      element={<BulkAddPage species="chickens" />} />
-        <Route path="/plants"             element={<PlantsPage />} />
-        <Route path="/pnl"               element={<PnLPage />} />
-        <Route path="/dashboard"         element={<DashboardPage />} />
-        <Route path="/customers"         element={<CustomersPage />} />
-        <Route path="/lineage"           element={<LineagePage />} />
-        <Route path="/admin"             element={<AdminPage />} />
+        {/* CRITICAL: bulk-event routes MUST come before /:id routes */}
+        <Route path="/"                        element={<AnimalListPage species="sheep" />} />
+        <Route path="/animals/new"             element={<AddAnimalPage species="sheep" />} />
+        <Route path="/animals/bulk"            element={<BulkAddPage species="sheep" />} />
+        <Route path="/animals/bulk-event"      element={<BulkEventPage species="sheep" />} />
+        <Route path="/animals/:id"             element={<AnimalDetailPage />} />
+        <Route path="/animals/:id/edit"        element={<EditAnimalPage />} />
+        <Route path="/chickens"                element={<AnimalListPage species="chickens" />} />
+        <Route path="/chickens/new"            element={<AddAnimalPage species="chickens" />} />
+        <Route path="/chickens/bulk"           element={<BulkAddPage species="chickens" />} />
+        <Route path="/chickens/bulk-event"     element={<BulkEventPage species="chickens" />} />
+        <Route path="/chickens/:id"            element={<AnimalDetailPage />} />
+        <Route path="/chickens/:id/edit"       element={<EditAnimalPage />} />
+        <Route path="/plants"                  element={<PlantsPage />} />
+        <Route path="/pnl"                     element={<PnLPage />} />
+        <Route path="/dashboard"               element={<DashboardPage />} />
+        <Route path="/customers"               element={<CustomersPage />} />
+        <Route path="/lineage"                 element={<LineagePage />} />
+        <Route path="/admin"                   element={<AdminPage />} />
+        <Route path="/demo"                    element={<DemoPage />} />
       </Routes>
     </div>
   )
@@ -372,6 +357,7 @@ function AuthGate() {
   const { user, loading } = useAuth()
   const location = useLocation()
 
+  // /demo is always public — no auth required
   if (location.pathname === '/demo') return <DemoPage />
 
   if (loading) {
