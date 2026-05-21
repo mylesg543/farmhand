@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-ro
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import { useAdminStatus } from './hooks/useAdmin'
 import { LoginPage } from './pages/LoginPage'
-import { AdminPage } from './pages/AdminPage'
+import { AdminPage, EmulationBanner, getEmulatedUser } from './pages/AdminPage'
 import { AnimalListPage } from './components/animals/AnimalList'
 import { AnimalDetailPage } from './components/animals/AnimalDetail'
 import { AddAnimalPage, EditAnimalPage } from './components/animals/AnimalForm'
@@ -325,6 +325,7 @@ function FarmApp() {
   const isMobile = useIsMobile()
   return (
     <div style={{ minHeight: '100vh', background: '#f7f4ef', fontFamily: "'Lato',sans-serif", color: '#2c2416', paddingBottom: isMobile ? 80 : 0 }}>
+      <EmulationBanner />
       <Nav />
       <Routes>
         {/* CRITICAL: bulk-event routes MUST come before /:id routes */}

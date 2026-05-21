@@ -14,6 +14,7 @@ const EVENT_TYPES = [
   { value: 'vaccination',    label: '💉 Vaccination' },
   { value: 'worming',        label: '🪱 Worming' },
   { value: 'hoof_trimming',  label: '✂️ Hoof Trimming' },
+  { value: 'hoof_treatment', label: '🩹 Hoof Treatment' },
   { value: 'shearing',       label: '✂️ Shearing' },
   { value: 'weight_check',   label: '⚖️ Weight Check' },
   { value: 'pregnancy_check',label: '🔍 Pregnancy Check' },

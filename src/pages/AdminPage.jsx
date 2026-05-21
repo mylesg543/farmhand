@@ -59,13 +59,13 @@ function ActivityBadge({ daysSince }) {
 
 // ─── Event type icons (same as EventTimeline) ─────────────────────────────────
 const EV_ICONS = {
-  vaccination:'💉', worming:'💊', hoof_trimming:'🪛', shearing:'✂️',
+  vaccination:'💉', worming:'💊', hoof_trimming:'✂️', hoof_treatment:'🩺', shearing:'✂️',
   lambing:'🐣', weaning:'🍼', sickness:'🤒', injury:'🩹',
   weight_check:'⚖️', pregnancy_check:'🔍', egg_production:'🥚',
   moulting:'🪶', breeding:'❤️', sale:'💰', custom:'📝',
 }
 const EV_COLORS = {
-  vaccination:  '#1565c0', worming:'#6a1b9a', hoof_trimming:'#4e342e',
+  vaccination:  '#1565c0', worming:'#6a1b9a', hoof_trimming:'#4e342e', hoof_treatment:'#4e342e',
   shearing:     '#2e7d32', lambing:'#e65100', sickness:'#c62828',
   injury:       '#c62828', egg_production:'#f57f17', moulting:'#5d4037',
   pregnancy_check:'#ad1457', breeding:'#ad1457', weight_check:'#00695c',
@@ -145,6 +145,69 @@ function AnimalDetailPanel({ animal, events }) {
   )
 }
 
+// ─── Emulation context ────────────────────────────────────────────────────────
+// Stored in localStorage so it survives page reloads
+const EMULATION_KEY = 'fh_emulated_user'
+
+export function setEmulatedUser(user) {
+  if (user) localStorage.setItem(EMULATION_KEY, JSON.stringify(user))
+  else localStorage.removeItem(EMULATION_KEY)
+}
+export function getEmulatedUser() {
+  try { return JSON.parse(localStorage.getItem(EMULATION_KEY)) } catch { return null }
+}
+
+// ─── Emulation banner (shown at top of page when emulating) ───────────────────
+export function EmulationBanner() {
+  const eu = getEmulatedUser()
+  if (!eu) return null
+
+  const switchMode = (writeMode) => {
+    setEmulatedUser({ ...eu, writeMode })
+    window.location.reload()
+  }
+  const exit = () => {
+    setEmulatedUser(null)
+    window.location.href = '/admin'
+  }
+
+  return (
+    <div style={{ position:'fixed', top:0, left:0, right:0, zIndex:9999,
+      background: eu.writeMode ? '#b71c1c' : '#1a237e',
+      color:'#fff', padding:'8px 16px', display:'flex', alignItems:'center',
+      gap:12, fontSize:13, fontFamily:"'Lato',sans-serif", boxShadow:'0 2px 8px rgba(0,0,0,0.3)' }}>
+      <span style={{ fontSize:16 }}>{eu.writeMode ? '✏️' : '👁'}</span>
+      <span style={{ fontWeight:700 }}>{eu.writeMode ? 'EDITING AS' : 'VIEWING AS'}:</span>
+      <span style={{ opacity:0.9 }}>{eu.email}</span>
+      <span style={{ fontSize:11, background:'rgba(255,255,255,0.2)', padding:'2px 8px', borderRadius:6, marginLeft:4 }}>
+        {eu.writeMode ? 'Write mode — changes affect their real data' : 'Read-only'}
+      </span>
+      <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
+        {!eu.writeMode
+          ? <button onClick={()=>switchMode(true)}
+              style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.3)',
+                color:'#fff', borderRadius:6, padding:'4px 12px', cursor:'pointer', fontSize:12,
+                fontFamily:"'Lato',sans-serif", fontWeight:600 }}>
+              Switch to Write Mode
+            </button>
+          : <button onClick={()=>switchMode(false)}
+              style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.3)',
+                color:'#fff', borderRadius:6, padding:'4px 12px', cursor:'pointer', fontSize:12,
+                fontFamily:"'Lato',sans-serif", fontWeight:600 }}>
+              Switch to Read-Only
+            </button>
+        }
+        <button onClick={exit}
+          style={{ background:'rgba(255,255,255,0.25)', border:'1px solid rgba(255,255,255,0.4)',
+            color:'#fff', borderRadius:6, padding:'4px 12px', cursor:'pointer', fontSize:12,
+            fontFamily:"'Lato',sans-serif", fontWeight:700 }}>
+          ✕ Exit Emulation
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Expandable user row ───────────────────────────────────────────────────────
 function UserRow({ u, allEvents }) {
   const [open,        setOpen]        = useState(false)
@@ -199,6 +262,22 @@ function UserRow({ u, allEvents }) {
 
         {/* Expand arrow */}
         <span style={{ color:'#c8b89a', fontSize:16, transition:'transform 0.2s', transform:open?'rotate(90deg)':'none', flexShrink:0 }}>›</span>
+
+        {/* Emulation buttons */}
+        <div style={{ display:'flex', gap:6, flexShrink:0 }} onClick={e=>e.stopPropagation()}>
+          <button onClick={()=>{ setEmulatedUser({ uid:u.id, email:u.email, writeMode:false }); window.location.href='/' }}
+            style={{ background:'#e3f2fd', border:'1px solid #90caf9', color:'#1565c0',
+              borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11,
+              fontFamily:"'Lato',sans-serif", fontWeight:700, whiteSpace:'nowrap' }}>
+            👁 View as
+          </button>
+          <button onClick={()=>{ setEmulatedUser({ uid:u.id, email:u.email, writeMode:true }); window.location.href='/' }}
+            style={{ background:'#fce4ec', border:'1px solid #f48fb1', color:'#ad1457',
+              borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11,
+              fontFamily:"'Lato',sans-serif", fontWeight:700, whiteSpace:'nowrap' }}>
+            ✏️ Edit as
+          </button>
+        </div>
       </div>
 
       {/* Expanded — animal list */}

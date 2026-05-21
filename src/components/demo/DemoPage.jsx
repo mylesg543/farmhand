@@ -42,26 +42,32 @@ function buildSteps(species) {
   return [
     {
       screen:'hero_profiles',
+      label:'Animal Profiles',
       tip:`Every ${animal} on your farm — photo, status, breed, age — in one place. No more trying to remember which one had the bad leg last spring.`,
     },
     {
       screen:'hero_events',
+      label:'Health Timeline',
       tip:`Every health event logged with a date, notes, and a photo. Vaccinations, ${isSheep?'lambing, shearing':'egg production, moulting'} — all searchable. Your whole history, never lost.`,
     },
     {
       screen:'hero_lineage',
+      label:'Bloodlines',
       tip:`${isSheep?'Before breeding season, check here. FarmHand shows who\'s related to who across 4 generations — and flags shared ancestors automatically. This used to cost thousands in herd management software.':'Track your rooster\'s bloodlines across hatches. 4 generations, built automatically as you record sires and hens.'}`,
     },
     {
       screen:'hero_pnl',
+      label:'Profit & Loss',
       tip:`Every dollar in and out — ${isSheep?'wool sales, lamb sales, feed bills':'egg sales, feed costs'} — tracked as you go. See exactly what your farm makes. No spreadsheet needed.`,
     },
     {
       screen:'hero_dashboard',
+      label:'Dashboard',
       tip:`Income vs expenses at a glance. See your trends by month, by animal type, by customer. Know what's working before it's too late to act on it.`,
     },
     {
       screen:'hero_bulkadd',
+      label:'Quick Setup',
       tip:`Getting started? Add your whole ${flock} in one go — name, breed, date of birth. Most farms are set up in under 10 minutes. Ready to try it on your real farm?`,
       isLast: true,
     },
@@ -123,8 +129,8 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
     <>
       {/* Tooltip card */}
       <div style={{ position:'fixed', bottom:isMobile?82:28, left:'50%', transform:'translateX(-50%)',
-        width:isMobile?'calc(100% - 24px)':'440px', maxWidth:'95vw', background:'#2c2416',
-        borderRadius:12, padding:'16px 18px', boxShadow:'0 8px 32px rgba(0,0,0,0.4)',
+        width:isMobile?'calc(100% - 24px)':'460px', maxWidth:'95vw', background:'#2c2416',
+        borderRadius:14, padding:'16px 18px', boxShadow:'0 8px 32px rgba(0,0,0,0.4)',
         zIndex:1000, border:`1px solid ${pulse?'rgba(200,160,96,0.6)':'rgba(255,255,255,0.08)'}`,
         transition:'border-color 0.3s',
         animation: pulse ? 'tipPulse 1.5s ease-in-out infinite' : 'none',
@@ -142,49 +148,80 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
             0%,100% { transform: scale(1); }
             50%      { transform: scale(1.06); }
           }
+          @keyframes heroFadeIn {
+            from { opacity:0; transform:translateY(14px); }
+            to   { opacity:1; transform:translateY(0); }
+          }
         `}</style>
 
-        <div style={{ display:'flex', gap:3, marginBottom:12 }}>
-          {Array.from({length:total},(_,i)=>(
-            <div key={i} style={{ height:2, borderRadius:1, flex:1,
-              background:i<=stepIdx?'#c8a060':'rgba(255,255,255,0.1)' }}/>
-          ))}
+        {/* Progress dots + counter */}
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+          <div style={{ display:'flex', gap:3, flex:1 }}>
+            {Array.from({length:total},(_,i)=>(
+              <div key={i} style={{ height:3, borderRadius:2, flex:1,
+                background:i<=stepIdx?'#c8a060':'rgba(255,255,255,0.1)',
+                transition:'background 0.3s' }}/>
+            ))}
+          </div>
+          <span style={{ fontSize:10, color:'rgba(200,160,96,0.6)', fontWeight:700,
+            letterSpacing:'0.05em', whiteSpace:'nowrap' }}>
+            {stepIdx+1} / {total}
+          </span>
         </div>
 
-        <p style={{ fontSize:14, color:'#f0e6cc', margin:'0 0 8px', lineHeight:1.6 }}>{text}</p>
-
-        {/* "Some features are interactive" hint — hide on small mobile */}
-        {!isLast && !isMobile && (
-          <p style={{ fontSize:11, color:'rgba(255,255,255,0.3)', margin:'0 0 12px', fontStyle:'italic' }}>
-            Feel free to explore — tap Next when you're ready to continue.
+        {/* Feature name */}
+        {step.label && (
+          <p style={{ fontSize:11, fontWeight:700, color:'#c8a060', textTransform:'uppercase',
+            letterSpacing:'0.09em', margin:'0 0 7px' }}>
+            {step.label}
           </p>
         )}
 
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <button onClick={onSkip} style={{ background:'none', border:'none',
-            color:'rgba(255,255,255,0.3)', cursor:'pointer', fontSize:12,
-            fontFamily:"'Lato',sans-serif", padding:0 }}>
-            Skip tour
-          </button>
-          <div style={{ flex:1 }}/>
-          {idle >= 5 && !isLast && (
+        <p style={{ fontSize:14, color:'#f0e6cc', margin:'0 0 10px', lineHeight:1.6 }}>{text}</p>
+
+        {isLast ? (
+          /* Last step — full-width green CTA */
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             <button onClick={handleNext}
-              style={{ background:'transparent', border:'2px solid #c8a060',
-                color:'#c8a060', borderRadius:8, padding:'9px 16px', fontSize:13,
-                fontWeight:700, cursor:'pointer', fontFamily:"'Lato',sans-serif",
-                animation:'nextPulse 1.2s ease-in-out infinite' }}>
-              Ready? →
+              style={{ width:'100%', padding:'14px', borderRadius:10, border:'none',
+                cursor:'pointer', fontFamily:"'Lato',sans-serif", fontSize:16, fontWeight:700,
+                background:'#4caf50', color:'#fff',
+                boxShadow:'0 4px 16px rgba(76,175,80,0.4)',
+                animation: pulse ? 'nextPulse 1.5s ease-in-out infinite' : 'none' }}>
+              🌾 Get Started Free
             </button>
-          )}
-          <button onClick={handleNext}
-            style={{ ...S.btn,
-              background:isLast?'#4caf50':'#c8a060',
-              color:isLast?'#fff':'#2c2416', fontWeight:700, padding:'9px 22px', fontSize:14,
-              animation: pulse ? 'nextPulse 1.5s ease-in-out infinite' : 'none',
-            }}>
-            {isLast?'🌾 Get Started Free':'Next →'}
-          </button>
-        </div>
+            <button onClick={onSkip} style={{ background:'none', border:'none',
+              color:'rgba(255,255,255,0.25)', cursor:'pointer', fontSize:11,
+              fontFamily:"'Lato',sans-serif", padding:0, textAlign:'center', width:'100%' }}>
+              Skip — I'll create my account later
+            </button>
+          </div>
+        ) : (
+          /* Mid-tour — skip left, Next right */
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <button onClick={onSkip} style={{ background:'none', border:'none',
+              color:'rgba(255,255,255,0.3)', cursor:'pointer', fontSize:12,
+              fontFamily:"'Lato',sans-serif", padding:0 }}>
+              Skip tour
+            </button>
+            <div style={{ flex:1 }}/>
+            {idle >= 5 && (
+              <button onClick={handleNext}
+                style={{ background:'transparent', border:'2px solid #c8a060',
+                  color:'#c8a060', borderRadius:8, padding:'9px 16px', fontSize:13,
+                  fontWeight:700, cursor:'pointer', fontFamily:"'Lato',sans-serif",
+                  animation:'nextPulse 1.2s ease-in-out infinite' }}>
+                Ready? →
+              </button>
+            )}
+            <button onClick={handleNext}
+              style={{ ...S.btn, background:'#c8a060', color:'#2c2416', fontWeight:700,
+                padding:'9px 22px', fontSize:14,
+                animation: pulse ? 'nextPulse 1.5s ease-in-out infinite' : 'none' }}>
+              Next →
+            </button>
+          </div>
+        )}
       </div>
     </>
   )
@@ -1741,51 +1778,81 @@ function HeroBulkAdd({ name, species, isMobile }) {
 }
 
 function Personalise({ species, setSpecies, onStart, isMobile }) {
+  const features = [
+    { icon:'📋', label:'Animal Profiles' },
+    { icon:'📅', label:'Health Timeline' },
+    { icon:'🌳', label:'Bloodlines' },
+    { icon:'💰', label:'P&L Tracker' },
+    { icon:'📊', label:'Dashboard' },
+    { icon:'⚡', label:'Bulk Setup' },
+  ]
+
   return (
     <div style={{ minHeight:'80vh', display:'flex', alignItems:'center',
       justifyContent:'center', padding:isMobile?'24px 16px':'40px 24px' }}>
-      <div style={{ maxWidth:400, width:'100%' }}>
-        <div style={{ textAlign:'center', marginBottom:28 }}>
-          <div style={{ fontSize:52, marginBottom:10 }}>🌾</div>
+      <div style={{ maxWidth:420, width:'100%' }}>
+        <div style={{ textAlign:'center', marginBottom:22 }}>
+          <div style={{ fontSize:48, marginBottom:8 }}>🌾</div>
           <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:32,
-            fontWeight:700, color:'#f0e6cc', margin:'0 0 10px', lineHeight:1.2 }}>
+            fontWeight:700, color:'#f0e6cc', margin:'0 0 8px', lineHeight:1.2 }}>
             What do you raise?
           </h1>
-          <p style={{ fontSize:isMobile?14:15, color:'#c8b89a', margin:0, lineHeight:1.6 }}>
-            Pick what's on your farm and we'll show you what FarmHand can do.
+          <p style={{ fontSize:isMobile?13:14, color:'#c8b89a', margin:0, lineHeight:1.6 }}>
+            Pick what's on your farm — we'll show you exactly what FarmHand can do for you.
           </p>
         </div>
+
         <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:16,
-          padding:isMobile?24:32, border:'1px solid rgba(255,255,255,0.1)' }}>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:20 }}>
+          padding:isMobile?20:28, border:'1px solid rgba(255,255,255,0.1)' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:18 }}>
             {[['sheep','🐑','Sheep','Merino · Suffolk · Dorset'],
               ['chickens','🐔','Chickens','Layers · Broilers · Mixed']].map(([k,e,l,sub])=>(
               <button key={k} onClick={()=>setSpecies(k)}
-                style={{ padding:isMobile?'16px 10px':'20px 14px', borderRadius:12,
+                style={{ padding:isMobile?'14px 10px':'18px 14px', borderRadius:12,
                   border:`2px solid ${species===k?'#c8a060':'rgba(255,255,255,0.15)'}`,
                   background:species===k?'rgba(200,160,96,0.15)':'rgba(255,255,255,0.05)',
                   cursor:'pointer', fontFamily:"'Lato',sans-serif",
                   display:'flex', flexDirection:'column', alignItems:'center',
-                  gap:6, transition:'all 0.15s' }}>
-                <span style={{ fontSize:36 }}>{e}</span>
-                <span style={{ fontSize:15, fontWeight:700,
+                  gap:5, transition:'all 0.15s' }}>
+                <span style={{ fontSize:34 }}>{e}</span>
+                <span style={{ fontSize:14, fontWeight:700,
                   color:species===k?'#f0e6cc':'#c8b89a' }}>{l}</span>
-                <span style={{ fontSize:11, color:'#6a5040' }}>{sub}</span>
+                <span style={{ fontSize:10, color:'#6a5040' }}>{sub}</span>
                 {species===k && (
-                  <span style={{ fontSize:10, color:'#c8a060', fontWeight:700, marginTop:2 }}>✓ Selected</span>
+                  <span style={{ fontSize:9, color:'#c8a060', fontWeight:700, marginTop:1 }}>✓ Selected</span>
                 )}
               </button>
             ))}
           </div>
           <button onClick={onStart}
-            style={{ width:'100%', padding:'15px', borderRadius:10, border:'none',
+            style={{ width:'100%', padding:'14px', borderRadius:10, border:'none',
               cursor:'pointer', fontFamily:"'Lato',sans-serif", fontSize:16, fontWeight:700,
-              background:'#c8a060', color:'#2c2416' }}>
+              background:'#c8a060', color:'#2c2416',
+              boxShadow:'0 4px 16px rgba(200,160,96,0.3)' }}>
             Show me the app →
           </button>
           <p style={{ fontSize:11, color:'rgba(255,255,255,0.2)', textAlign:'center', margin:'10px 0 0' }}>
             No sign-up required · 2 minute tour
           </p>
+        </div>
+
+        {/* Feature preview strip */}
+        <div style={{ marginTop:20 }}>
+          <p style={{ fontSize:10, color:'rgba(255,255,255,0.25)', textAlign:'center',
+            textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 10px', fontWeight:700 }}>
+            You'll see
+          </p>
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap', justifyContent:'center' }}>
+            {features.map(f=>(
+              <div key={f.label} style={{ display:'flex', alignItems:'center', gap:5,
+                padding:'5px 11px', borderRadius:20,
+                background:'rgba(255,255,255,0.05)',
+                border:'1px solid rgba(255,255,255,0.1)' }}>
+                <span style={{ fontSize:12 }}>{f.icon}</span>
+                <span style={{ fontSize:11, color:'#c8b89a', fontWeight:600 }}>{f.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -1835,7 +1902,10 @@ export function DemoPage() {
     <div style={{ minHeight:'100vh', background:'#f7f4ef', fontFamily:"'Lato',sans-serif",
       color:'#2c2416', paddingBottom:isMobile?180:150, display:'flex', flexDirection:'column' }}>
       <Nav screen={cur.screen} species={species} isMobile={isMobile} onExit={skip} name={name}/>
-      <div style={{ flex:1, maxWidth:1100, margin:'0 auto', width:'100%' }}>{screens[cur.screen]||screens.hero_profiles}</div>
+      <div key={`screen-${step}`} style={{ flex:1, maxWidth:1100, margin:'0 auto', width:'100%',
+        animation:'heroFadeIn 0.35s ease-out' }}>
+        {screens[cur.screen]||screens.hero_profiles}
+      </div>
       <Tip step={cur} stepIdx={step} total={steps.length} onNext={next} onSkip={skip} name={name} isMobile={isMobile}/>
     </div>
   )

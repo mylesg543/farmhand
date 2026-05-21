@@ -6,7 +6,8 @@ import { S, Badge, formatDate } from '../ui/shared'
 const EVENT_META = {
   vaccination:     { icon:'💉', label:'Vaccination',      color:'#1565c0', bg:'#e3f2fd', border:'#90caf9' },
   worming:         { icon:'💊', label:'Worming',           color:'#6a1b9a', bg:'#f3e5f5', border:'#ce93d8' },
-  hoof_trimming:   { icon:'🪛', label:'Hoof Trim',        color:'#4e342e', bg:'#efebe9', border:'#bcaaa4' },
+  hoof_trimming:   { icon:'✂️',  label:'Hoof Trim',        color:'#4e342e', bg:'#efebe9', border:'#bcaaa4' },
+  hoof_treatment:  { icon:'🩺', label:'Hoof Treatment',    color:'#4e342e', bg:'#efebe9', border:'#bcaaa4' },
   shearing:        { icon:'✂️',  label:'Shearing',         color:'#2e7d32', bg:'#e8f5e9', border:'#a5d6a7' },
   lambing:         { icon:'🐣', label:'Lambing',           color:'#e65100', bg:'#fff3e0', border:'#ffcc80' },
   weaning:         { icon:'🍼', label:'Weaning',           color:'#f57f17', bg:'#fff9e6', border:'#ffe082' },

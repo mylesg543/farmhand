@@ -195,7 +195,7 @@ export function AnimalDetailPage() {
                 <button onClick={()=>setShowGallery(true)}
                   style={{ ...S.btn, background:'rgba(255,255,255,0.1)', color:'#f0e6cc',
                     border:'1px solid rgba(255,255,255,0.2)', padding:'7px 14px', fontSize:13, whiteSpace:'nowrap' }}>
-                  🔍 Photo History
+                  🖼️ Photo History
                 </button>
                 <button onClick={()=>navigate(`/lineage?id=${id}&species=${animal.species||'sheep'}`)}
                   style={{ ...S.btn, background:'rgba(76,175,80,0.2)', color:'#a5d6a7',
@@ -233,7 +233,7 @@ export function AnimalDetailPage() {
                     background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)',
                     borderRadius:10, padding:'12px 6px', cursor:'pointer', color:'#f0e6cc',
                     fontFamily:"'Lato',sans-serif" }}>
-                  <span style={{ fontSize:22, lineHeight:1 }}>🔍</span>
+                  <span style={{ fontSize:22, lineHeight:1 }}>🖼️</span>
                   <span style={{ fontSize:11, fontWeight:600 }}>Photos</span>
                 </button>
                 <button onClick={()=>navigate(`/lineage?id=${id}&species=${animal.species||'sheep'}`)}
