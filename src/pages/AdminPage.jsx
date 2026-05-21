@@ -295,6 +295,18 @@ function UserRow({ u, allEvents }) {
                   const isOpen = openAnimal===a.id
                   const statusColors = { alive:'#4caf50', sold:'#9c27b0', deceased:'#9e9e9e', rented:'#f9a825' }
                   const evCount = allEvents.filter(e=>e.animal_id===a.id).length
+
+                  const handleAdminDelete = async (e) => {
+                    e.stopPropagation()
+                    if (!window.confirm(`Delete ${a.name} from ${u.email}'s account? This cannot be undone.`)) return
+                    const { error } = await supabase.from('fh_animals').delete().eq('id', a.id).eq('user_id', u.id)
+                    if (error) { alert('Delete failed: ' + error.message); return }
+                    // Remove from local state
+                    u.animals = u.animals.filter(x => x.id !== a.id)
+                    setOpenAnimal(null)
+                    window.location.reload()
+                  }
+
                   return (
                     <div key={a.id}>
                       {/* Animal row */}
@@ -320,6 +332,12 @@ function UserRow({ u, allEvents }) {
                             {a.breed||'Unknown'} · {a.sex} · {evCount} event{evCount!==1?'s':''}
                           </span>
                         </div>
+                        <button onClick={handleAdminDelete}
+                          style={{ background:'#fff3f3', border:'1px solid #ffcdd2', color:'#c62828',
+                            borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11,
+                            fontFamily:"'Lato',sans-serif", fontWeight:700, flexShrink:0 }}>
+                          🗑 Delete
+                        </button>
                         <span style={{ color:'#c8b89a', fontSize:14, transition:'transform 0.2s', transform:isOpen?'rotate(90deg)':'none' }}>›</span>
                       </div>
 
