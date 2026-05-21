@@ -51,20 +51,33 @@ export function useAnimals(species) {
     if (!canWrite) throw new Error('Read-only mode — switch to write mode to make changes')
     const { data, error } = await supabase.from('fh_animals')
       .insert({ ...payload, user_id: effectiveUid })
-      .select().single()
+      .select()
     if (error) throw error
-    setAnimals(prev => [...prev, data].sort((a,b) => a.name.localeCompare(b.name)))
-    return data
+    const row = Array.isArray(data) ? data[0] : data
+    setAnimals(prev => [...prev, row].sort((a,b) => a.name.localeCompare(b.name)))
+    return row
   }
 
   const updateAnimal = async (id, payload) => {
     if (!canWrite) throw new Error('Read-only mode — switch to write mode to make changes')
+    if (emulated) {
+      const { data, error } = await supabase.rpc('update_animal_admin', {
+        target_animal_id: id,
+        target_user_id: effectiveUid,
+        payload: payload,
+      })
+      if (error) throw error
+      const row = Array.isArray(data) ? data[0] : data
+      setAnimals(prev => prev.map(a => a.id === id ? row : a))
+      return row
+    }
     const { data, error } = await supabase.from('fh_animals')
       .update(payload).eq('id', id).eq('user_id', effectiveUid)
-      .select().single()
+      .select()
     if (error) throw error
-    setAnimals(prev => prev.map(a => a.id === id ? data : a))
-    return data
+    const row = Array.isArray(data) ? data[0] : data
+    setAnimals(prev => prev.map(a => a.id === id ? row : a))
+    return row
   }
 
   const deleteAnimal = async (id) => {
