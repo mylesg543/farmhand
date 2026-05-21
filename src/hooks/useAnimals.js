@@ -49,6 +49,16 @@ export function useAnimals(species) {
 
   const addAnimal = async (payload) => {
     if (!canWrite) throw new Error('Read-only mode — switch to write mode to make changes')
+    if (emulated) {
+      const { data, error } = await supabase.rpc('add_animal_admin', {
+        target_user_id: effectiveUid,
+        payload: payload,
+      })
+      if (error) throw error
+      const row = Array.isArray(data) ? data[0] : data
+      setAnimals(prev => [...prev, row].sort((a,b) => a.name.localeCompare(b.name)))
+      return row
+    }
     const { data, error } = await supabase.from('fh_animals')
       .insert({ ...payload, user_id: effectiveUid })
       .select()
