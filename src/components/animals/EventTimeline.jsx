@@ -51,7 +51,7 @@ function groupByMonth(events) {
 }
 
 // ─── Single event card ─────────────────────────────────────────────────────────
-function EventCard({ event, onAddPhoto, onDelete, isMobile }) {
+function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile }) {
   const [expanded,   setExpanded]   = useState(false)
   const [uploading,  setUploading]  = useState(false)
   const [photoErr,   setPhotoErr]   = useState(false)
@@ -64,6 +64,20 @@ function EventCard({ event, onAddPhoto, onDelete, isMobile }) {
   const mon         = new Date(event.event_date+'T00:00:00').toLocaleDateString('en-US',{month:'short'})
 
   const [uploadErrMsg, setUploadErrMsg] = useState('')
+  const [editing,      setEditing]      = useState(false)
+  const [editNotes,    setEditNotes]    = useState(event.notes || '')
+  const [editDate,     setEditDate]     = useState(event.event_date || '')
+  const [saving,       setSaving]       = useState(false)
+
+  const handleSaveEdit = async (e) => {
+    e.stopPropagation()
+    setSaving(true)
+    try {
+      await onUpdate(event.id, { notes: editNotes, event_date: editDate })
+      setEditing(false)
+    } catch (err) { alert('Save failed: ' + err.message) }
+    finally { setSaving(false) }
+  }
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0]
@@ -138,37 +152,68 @@ function EventCard({ event, onAddPhoto, onDelete, isMobile }) {
           {/* Expanded content */}
           {expanded && (
             <div style={{ marginTop:10 }}>
-              {event.notes && (
-                <p style={{ fontSize:13, color:'#4a3c28', margin:'0 0 10px', lineHeight:1.6 }}>{event.notes}</p>
-              )}
-
-              {/* Full photo when expanded */}
-              {hasPhoto && (
-                <div style={{ borderRadius:8, overflow:'hidden', marginBottom:10, maxWidth:300 }}>
-                  <img src={event.photo_url} alt={meta.label}
-                    style={{ width:'100%', height:'auto', display:'block' }}
-                    onError={()=>setPhotoErr(true)}/>
+              {editing ? (
+                /* ── Inline edit form ── */
+                <div onClick={e=>e.stopPropagation()}>
+                  <div style={{ marginBottom:8 }}>
+                    <label style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.05em', display:'block', marginBottom:4 }}>Date</label>
+                    <input type="date" value={editDate} onChange={e=>setEditDate(e.target.value)}
+                      style={{ ...S.input, fontSize:13, padding:'6px 10px' }}/>
+                  </div>
+                  <div style={{ marginBottom:10 }}>
+                    <label style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.05em', display:'block', marginBottom:4 }}>Notes</label>
+                    <textarea value={editNotes} onChange={e=>setEditNotes(e.target.value)}
+                      style={{ ...S.input, height:72, resize:'vertical', fontSize:13 }}
+                      placeholder="Add notes…"/>
+                  </div>
+                  <div style={{ display:'flex', gap:8 }}>
+                    <button onClick={handleSaveEdit} disabled={saving}
+                      style={{ ...S.btn, ...S.btnPrimary, padding:'6px 14px', fontSize:12, opacity:saving?0.6:1 }}>
+                      {saving ? 'Saving…' : '✓ Save'}
+                    </button>
+                    <button onClick={e=>{ e.stopPropagation(); setEditing(false) }}
+                      style={{ ...S.btn, ...S.btnSecondary, padding:'6px 12px', fontSize:12 }}>
+                      Cancel
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  {event.notes && (
+                    <p style={{ fontSize:13, color:'#4a3c28', margin:'0 0 10px', lineHeight:1.6 }}>{event.notes}</p>
+                  )}
+
+                  {/* Full photo when expanded */}
+                  {hasPhoto && (
+                    <div style={{ borderRadius:8, overflow:'hidden', marginBottom:10, maxWidth:300 }}>
+                      <img src={event.photo_url} alt={meta.label}
+                        style={{ width:'100%', height:'auto', display:'block' }}
+                        onError={()=>setPhotoErr(true)}/>
+                    </div>
+                  )}
+
+                  {/* Actions row */}
+                  <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginTop:6 }}>
+                    <label style={{ ...S.btn, ...S.btnSecondary, padding:'5px 10px', fontSize:11, cursor:'pointer',
+                      display:'inline-flex', alignItems:'center', gap:5, opacity:uploading?0.6:1 }}>
+                      {uploading ? 'Uploading…' : hasPhoto ? '📷 Change Photo' : '📷 Add Photo'}
+                      <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }}
+                        onChange={handlePhotoUpload} disabled={uploading}/>
+                    </label>
+                    <button onClick={e=>{ e.stopPropagation(); setEditing(true) }}
+                      style={{ ...S.btn, padding:'5px 10px', fontSize:11, background:'none',
+                        border:'1px solid #d0c4b0', color:'#5a3e1b', cursor:'pointer' }}>
+                      ✏️ Edit
+                    </button>
+                    <button onClick={(e)=>{ e.stopPropagation(); if(window.confirm('Delete this event?')) onDelete(event.id) }}
+                      style={{ ...S.btn, padding:'5px 10px', fontSize:11, background:'none',
+                        border:'1px solid #f5c6c6', color:'#c62828', cursor:'pointer' }}>
+                      Delete
+                    </button>
+                  </div>
+                  {uploadErrMsg && <p style={{ fontSize:11, color:'#c62828', margin:'6px 0 0' }}>{uploadErrMsg}</p>}
+                </>
               )}
-
-              {/* Actions row */}
-              <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginTop:6 }}>
-                {/* Add / change photo */}
-                <label style={{ ...S.btn, ...S.btnSecondary, padding:'5px 10px', fontSize:11, cursor:'pointer',
-                  display:'inline-flex', alignItems:'center', gap:5,
-                  opacity:uploading?0.6:1 }}>
-                  {uploading ? 'Uploading…' : hasPhoto ? '📷 Change Photo' : '📷 Add Photo'}
-                  <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }}
-                    onChange={handlePhotoUpload} disabled={uploading}/>
-                </label>
-
-                <button onClick={(e)=>{ e.stopPropagation(); if(window.confirm('Delete this event?')) onDelete(event.id) }}
-                  style={{ ...S.btn, padding:'5px 10px', fontSize:11, background:'none',
-                    border:'1px solid #f5c6c6', color:'#c62828', cursor:'pointer' }}>
-                  Delete
-                </button>
-              </div>
-              {uploadErrMsg && <p style={{ fontSize:11, color:'#c62828', margin:'6px 0 0' }}>{uploadErrMsg}</p>}
             </div>
           )}
         </div>
@@ -289,7 +334,7 @@ function LogEventForm({ onSave, onCancel, isMobile }) {
 }
 
 // ─── Main Timeline ─────────────────────────────────────────────────────────────
-export function EventTimeline({ events=[], loading=false, onAddEvent, onAddPhoto, onDelete, isMobile }) {
+export function EventTimeline({ events=[], loading=false, onAddEvent, onAddPhoto, onDelete, onUpdate, isMobile }) {
   const [showForm, setShowForm] = useState(false)
   // Debug: log raw event_date values so we can see what Supabase returns
 
@@ -369,6 +414,7 @@ export function EventTimeline({ events=[], loading=false, onAddEvent, onAddPhoto
                 event={ev}
                 onAddPhoto={onAddPhoto}
                 onDelete={onDelete}
+                onUpdate={onUpdate}
                 isMobile={isMobile}
               />
             ))}

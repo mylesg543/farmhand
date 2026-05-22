@@ -30,7 +30,8 @@ const EVENT_TYPES = [
 // ─── Mobile inline event panel ──────────────────────────────────────────────
 function MobileEventPanel({ animals, species, user, onDone, onCancel }) {
   const meta          = SPECIES_META[species] || SPECIES_META.sheep
-  const active        = animals.filter(a => a.status==='alive'||a.status==='rented')
+  const today2      = new Date().toISOString().split('T')[0]
+  const active      = animals.filter(a => a.status==='alive' || (a.status==='rented' && (!a.departure_date || a.departure_date >= today2)))
   const [picked,      setPicked]    = useState(new Set())
   const [eventType,   setEventType] = useState('')
   const [eventDate,   setEventDate] = useState(new Date().toISOString().split('T')[0])
@@ -174,13 +175,21 @@ export function AnimalList({ species = 'sheep' }) {
     ? `/chickens/bulk-event?ids=${ids}`
     : `/animals/bulk-event?ids=${ids}`
 
-  const activeAnimals   = animals.filter(a => a.status==='alive'||a.status==='rented')
-  const soldAnimals     = animals.filter(a => a.status==='sold')
-  const deceasedAnimals = animals.filter(a => a.status==='deceased')
+  const today = new Date().toISOString().split('T')[0]
+  const isActive = (a) => {
+    if (a.status === 'alive') return true
+    if (a.status === 'rented') return !a.departure_date || a.departure_date >= today
+    return false
+  }
+  const activeAnimals   = animals.filter(a => isActive(a))
+  const soldAnimals     = animals.filter(a => a.status === 'sold')
+  const deceasedAnimals = animals.filter(a => a.status === 'deceased')
+  const expiredRented   = animals.filter(a => a.status === 'rented' && a.departure_date && a.departure_date < today)
 
   const baseList = filter==='alive'    ? activeAnimals
     : filter==='sold'     ? soldAnimals
     : filter==='deceased' ? deceasedAnimals
+    : filter==='rented'   ? expiredRented
     : animals
 
   const filteredList = baseList.filter(a => {
@@ -209,8 +218,9 @@ export function AnimalList({ species = 'sheep' }) {
   const filterBtns = [
     { key:'alive',    label:`Active (${activeAnimals.length})` },
     { key:'all',      label:`All (${animals.length})` },
-    ...(soldAnimals.length     > 0 ? [{ key:'sold',     label:`Sold (${soldAnimals.length})` }]     : []),
-    ...(deceasedAnimals.length > 0 ? [{ key:'deceased', label:`Deceased (${deceasedAnimals.length})` }] : []),
+    ...(soldAnimals.length     > 0 ? [{ key:'sold',     label:`Sold (${soldAnimals.length})` }]           : []),
+    ...(deceasedAnimals.length > 0 ? [{ key:'deceased', label:`Deceased (${deceasedAnimals.length})` }]   : []),
+    ...(expiredRented.length   > 0 ? [{ key:'rented',   label:`Rented/Returned (${expiredRented.length})` }] : []),
   ]
 
   if (loading) return <div style={S.page}><p style={{ color:'#a08060', padding:40, textAlign:'center' }}>Loading…</p></div>
@@ -362,7 +372,7 @@ export function AnimalList({ species = 'sheep' }) {
           <div style={{ display:'flex', gap:isMobile?8:12, paddingBottom:16,
             overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
             {[...activeAnimals,...soldAnimals,...deceasedAnimals].map(a => {
-              const isInactive = a.status!=='alive'&&a.status!=='rented'
+              const isInactive = !isActive(a)
               return (
                 <div key={a.id} onClick={()=>!selecting&&navigate(`/animals/${a.id}`)}
                   style={{ display:'flex', flexDirection:'column', alignItems:'center',
