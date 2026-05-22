@@ -76,7 +76,14 @@ export function AnimalDetailPage() {
   const fileRef    = useRef()
   const { animal, loading, error } = useSingleAnimal(id)
   const { animals: allAnimals, deleteAnimal, updateAnimal } = useAnimals(animal?.species || 'sheep')
-  const { events, loading:evLoading, addEvent, addPhotoToEvent, deleteEvent, updateEvent } = useAnimalEvents(id)
+  const { events, loading:evLoading, addEvent: _addEvent, addPhotoToEvent, deleteEvent, updateEvent } = useAnimalEvents(id)
+
+  // Auto-update animal status when certain events are logged
+  const addEvent = async (payload) => {
+    await _addEvent(payload)
+    if (payload.event_type === 'sale')     await updateAnimal(id, { status: 'sold' })
+    if (payload.event_type === 'deceased') await updateAnimal(id, { status: 'deceased' })
+  }
   const { upload, uploading } = usePhotoUpload()
   const [showGallery,   setShowGallery]   = useState(false)
   const [captionPrompt, setCaptionPrompt] = useState(false)
