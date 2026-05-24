@@ -160,6 +160,14 @@ export function getEmulatedUser() {
 // ─── Emulation banner (shown at top of page when emulating) ───────────────────
 export function EmulationBanner() {
   const eu = getEmulatedUser()
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
   if (!eu) return null
 
   const switchMode = (writeMode) => {
@@ -173,28 +181,30 @@ export function EmulationBanner() {
 
   return (
     <div className="admin-emulation-banner" style={{ position:'fixed', top:0, left:0, right:0, zIndex:9999,
+      ...(isMobile ? { top:'auto', bottom:'calc(54px + env(safe-area-inset-bottom))', left:8, right:8, borderRadius:10 } : {}),
       background: eu.writeMode ? '#b71c1c' : '#1a237e',
-      color:'#fff', padding:'8px 16px', display:'flex', alignItems:'center',
-      gap:12, fontSize:13, fontFamily:"'Lato',sans-serif", boxShadow:'0 2px 8px rgba(0,0,0,0.3)' }}>
-      <span className="admin-emulation-icon" style={{ fontSize:16 }}>{eu.writeMode ? '✏️' : '👁'}</span>
-      <span className="admin-emulation-label" style={{ fontWeight:700 }}>{eu.writeMode ? 'EDITING AS' : 'VIEWING AS'}:</span>
-      <span className="admin-emulation-email" style={{ opacity:0.9 }}>{eu.email}</span>
-      <span className="admin-emulation-mode" style={{ fontSize:11, background:'rgba(255,255,255,0.2)', padding:'2px 8px', borderRadius:6, marginLeft:4 }}>
+      color:'#fff', padding:isMobile?'6px 8px':'8px 16px', display:'flex', alignItems:'center',
+      flexWrap:isMobile?'wrap':'nowrap', gap:isMobile?6:12, fontSize:isMobile?11:13, fontFamily:"'Lato',sans-serif",
+      boxShadow:isMobile?'0 4px 18px rgba(0,0,0,0.28)':'0 2px 8px rgba(0,0,0,0.3)' }}>
+      <span className="admin-emulation-icon" style={{ fontSize:isMobile?13:16 }}>{eu.writeMode ? '✏️' : '👁'}</span>
+      <span className="admin-emulation-label" style={{ fontWeight:700, fontSize:isMobile?10:13 }}>{eu.writeMode ? 'EDITING AS' : 'VIEWING AS'}:</span>
+      <span className="admin-emulation-email" style={{ opacity:0.9, flex:isMobile?'1 1 130px':'0 1 auto', minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{eu.email}</span>
+      <span className="admin-emulation-mode" style={{ display:isMobile?'none':'inline', fontSize:11, background:'rgba(255,255,255,0.2)', padding:'2px 8px', borderRadius:6, marginLeft:4 }}>
         {eu.writeMode ? 'Write mode — changes affect their real data' : 'Read-only'}
       </span>
-      <div className="admin-emulation-actions" style={{ marginLeft:'auto', display:'flex', gap:8 }}>
+      <div className="admin-emulation-actions" style={{ marginLeft:isMobile?0:'auto', display:isMobile?'grid':'flex', gridTemplateColumns:isMobile?'1fr auto':undefined, gap:isMobile?6:8, width:isMobile?'100%':'auto' }}>
         {!eu.writeMode
           ? <button onClick={()=>switchMode(true)}
               className="admin-emulation-btn"
               style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.3)',
-                color:'#fff', borderRadius:6, padding:'4px 12px', cursor:'pointer', fontSize:12,
+                color:'#fff', borderRadius:6, padding:isMobile?'5px 8px':'4px 12px', cursor:'pointer', fontSize:isMobile?11:12,
                 fontFamily:"'Lato',sans-serif", fontWeight:600 }}>
               Switch to Write Mode
             </button>
           : <button onClick={()=>switchMode(false)}
               className="admin-emulation-btn"
               style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.3)',
-                color:'#fff', borderRadius:6, padding:'4px 12px', cursor:'pointer', fontSize:12,
+                color:'#fff', borderRadius:6, padding:isMobile?'5px 8px':'4px 12px', cursor:'pointer', fontSize:isMobile?11:12,
                 fontFamily:"'Lato',sans-serif", fontWeight:600 }}>
               Switch to Read-Only
             </button>
@@ -202,8 +212,8 @@ export function EmulationBanner() {
         <button onClick={exit}
           className="admin-emulation-btn"
           style={{ background:'rgba(255,255,255,0.25)', border:'1px solid rgba(255,255,255,0.4)',
-            color:'#fff', borderRadius:6, padding:'4px 12px', cursor:'pointer', fontSize:12,
-            fontFamily:"'Lato',sans-serif", fontWeight:700 }}>
+            color:'#fff', borderRadius:6, padding:isMobile?'5px 8px':'4px 12px', cursor:'pointer', fontSize:isMobile?11:12,
+            fontFamily:"'Lato',sans-serif", fontWeight:700, whiteSpace:'nowrap' }}>
           ✕ Exit Emulation
         </button>
       </div>
