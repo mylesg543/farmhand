@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAnimals } from '../../hooks/useAnimals'
+import { useIsMobile } from '../../hooks/useIsMobile'
 import { S } from '../ui/shared'
 
 const SPECIES_META = {
@@ -17,6 +18,7 @@ const emptyRow = () => ({ name:'', sex:'', birth_date:'', tag_number:'', breed:'
 
 export function BulkAddPage({ species = 'sheep' }) {
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const meta     = SPECIES_META[species] || SPECIES_META.sheep
   const { addAnimal } = useAnimals(species)
 
@@ -94,23 +96,37 @@ export function BulkAddPage({ species = 'sheep' }) {
       {/* Spreadsheet table */}
       <div style={{ background: '#fff', border: '1px solid #e8e0d0', borderRadius: 12, overflow: 'hidden', marginBottom: 20 }}>
         {/* Header */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 130px 130px 130px 40px', background: '#f7f4ef', borderBottom: '2px solid #e8ddd0', padding: '10px 16px', gap: 8 }}>
-          {['Name *', 'Sex', 'Birth Date', 'Tag / ID', 'Breed', ''].map(h => (
-            <div key={h} style={{ fontSize: 11, fontWeight: 700, color: '#a08060', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
-          ))}
-        </div>
+        {!isMobile && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 130px 130px 130px 40px', background: '#f7f4ef', borderBottom: '2px solid #e8ddd0', padding: '10px 16px', gap: 8 }}>
+            {['Name *', 'Sex', 'Birth Date', 'Tag / ID', 'Breed', ''].map(h => (
+              <div key={h} style={{ fontSize: 11, fontWeight: 700, color: '#a08060', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
+            ))}
+          </div>
+        )}
 
         {/* Rows */}
         {rows.map((row, i) => (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 130px 130px 130px 130px 40px', padding: '8px 16px', gap: 8, borderBottom: '1px solid #f0ebe4', alignItems: 'center' }}>
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 130px 130px 130px 130px 40px', padding: isMobile ? '14px' : '8px 16px', gap: isMobile ? 10 : 8, borderBottom: '1px solid #f0ebe4', alignItems: 'center', background: isMobile ? '#fff' : 'transparent' }}>
+            {isMobile && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#a08060', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                  {meta.singular} {i + 1}
+                </p>
+                <button onClick={() => rows.length > 1 && removeRow(i)}
+                  disabled={rows.length <= 1}
+                  style={{ background: rows.length > 1 ? '#fff3f3' : '#f7f4ef', border: `1px solid ${rows.length > 1 ? '#f5c6c6' : '#e8e0d0'}`, color: rows.length > 1 ? '#c62828' : '#c8b89a', borderRadius: 8, cursor: rows.length > 1 ? 'pointer' : 'default', fontSize: 12, fontWeight: 700, padding: '7px 10px', fontFamily: "'Lato',sans-serif" }}>
+                  Remove
+                </button>
+              </div>
+            )}
             <input
-              style={{ padding: '7px 10px', border: `1px solid ${errors[`${i}_name`] ? '#e53935' : '#d0c4b0'}`, borderRadius: 7, fontSize: 14, fontFamily: "'Lato',sans-serif", outline: 'none', width: '100%', boxSizing: 'border-box' }}
+              style={{ padding: isMobile ? '10px 12px' : '7px 10px', border: `1px solid ${errors[`${i}_name`] ? '#e53935' : '#d0c4b0'}`, borderRadius: 7, fontSize: isMobile ? 16 : 14, fontFamily: "'Lato',sans-serif", outline: 'none', width: '100%', boxSizing: 'border-box' }}
               placeholder={`${meta.singular} name`}
               value={row.name}
               onChange={e => update(i, 'name', e.target.value)}
             />
             <select
-              style={{ padding: '7px 8px', border: '1px solid #d0c4b0', borderRadius: 7, fontSize: 13, fontFamily: "'Lato',sans-serif", background: '#fff', cursor: 'pointer', width: '100%', boxSizing: 'border-box' }}
+              style={{ padding: isMobile ? '10px 12px' : '7px 8px', border: '1px solid #d0c4b0', borderRadius: 7, fontSize: isMobile ? 16 : 13, fontFamily: "'Lato',sans-serif", background: '#fff', cursor: 'pointer', width: '100%', boxSizing: 'border-box' }}
               value={row.sex}
               onChange={e => update(i, 'sex', e.target.value)}
             >
@@ -119,24 +135,24 @@ export function BulkAddPage({ species = 'sheep' }) {
             </select>
             <input
               type="date"
-              style={{ padding: '7px 8px', border: '1px solid #d0c4b0', borderRadius: 7, fontSize: 13, fontFamily: "'Lato',sans-serif", width: '100%', boxSizing: 'border-box' }}
+              style={{ padding: isMobile ? '10px 12px' : '7px 8px', border: '1px solid #d0c4b0', borderRadius: 7, fontSize: isMobile ? 16 : 13, fontFamily: "'Lato',sans-serif", width: '100%', boxSizing: 'border-box' }}
               value={row.birth_date}
               onChange={e => update(i, 'birth_date', e.target.value)}
             />
             <input
-              style={{ padding: '7px 8px', border: '1px solid #d0c4b0', borderRadius: 7, fontSize: 13, fontFamily: "'Lato',sans-serif", width: '100%', boxSizing: 'border-box' }}
+              style={{ padding: isMobile ? '10px 12px' : '7px 8px', border: '1px solid #d0c4b0', borderRadius: 7, fontSize: isMobile ? 16 : 13, fontFamily: "'Lato',sans-serif", width: '100%', boxSizing: 'border-box' }}
               placeholder="optional"
               value={row.tag_number}
               onChange={e => update(i, 'tag_number', e.target.value)}
             />
             <input
-              style={{ padding: '7px 8px', border: '1px solid #d0c4b0', borderRadius: 7, fontSize: 13, fontFamily: "'Lato',sans-serif", width: '100%', boxSizing: 'border-box' }}
+              style={{ padding: isMobile ? '10px 12px' : '7px 8px', border: '1px solid #d0c4b0', borderRadius: 7, fontSize: isMobile ? 16 : 13, fontFamily: "'Lato',sans-serif", width: '100%', boxSizing: 'border-box' }}
               placeholder="optional"
               value={row.breed}
               onChange={e => update(i, 'breed', e.target.value)}
             />
             <button onClick={() => rows.length > 1 && removeRow(i)}
-              style={{ background: 'none', border: 'none', color: rows.length > 1 ? '#c62828' : '#d0c4b0', cursor: rows.length > 1 ? 'pointer' : 'default', fontSize: 18, lineHeight: 1, padding: 0 }}>
+              style={{ display: isMobile ? 'none' : 'block', background: 'none', border: 'none', color: rows.length > 1 ? '#c62828' : '#d0c4b0', cursor: rows.length > 1 ? 'pointer' : 'default', fontSize: 18, lineHeight: 1, padding: 0 }}>
               ×
             </button>
           </div>
