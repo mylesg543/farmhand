@@ -174,12 +174,6 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
           </p>
         )}
 
-        {idle >= 5 && !isLast && (
-          <p style={{ fontSize:11, color:'#c8a060', margin:'0 0 6px', fontWeight:700 }}>
-            Ready for the next step?
-          </p>
-        )}
-
         <p style={{ fontSize:14, color:'#f0e6cc', margin:'0 0 12px', lineHeight:1.6 }}>{text}</p>
 
         {isLast ? (
@@ -201,18 +195,44 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
           </div>
         ) : (
           /* Mid-tour — skip left, Next right */
-          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ position:'relative', display:'flex', alignItems:'center', gap:8, minHeight:40 }}>
             <button onClick={onSkip} style={{ background:'none', border:'none',
               color:'rgba(255,255,255,0.3)', cursor:'pointer', fontSize:12,
               fontFamily:"'Lato',sans-serif", padding:0 }}>
               Skip tour
             </button>
             <div style={{ flex:1 }}/>
+            <button
+              onClick={handleNext}
+              aria-label="Continue tour"
+              style={{
+                position:'absolute',
+                left:'50%',
+                top:'50%',
+                transform:`translate(-50%, -50%) ${idle >= 5 ? 'scale(1)' : 'scale(0.96)'}`,
+                opacity: idle >= 5 ? 1 : 0,
+                pointerEvents: idle >= 5 ? 'auto' : 'none',
+                background:'rgba(200,160,96,0.12)',
+                border:'1px solid rgba(200,160,96,0.45)',
+                color:'#c8a060',
+                borderRadius:999,
+                padding:'7px 12px',
+                fontSize:11,
+                fontWeight:700,
+                fontFamily:"'Lato',sans-serif",
+                whiteSpace:'nowrap',
+                boxShadow: idle >= 5 ? '0 0 0 1px rgba(200,160,96,0.08)' : 'none',
+                transition:'opacity 0.2s ease, transform 0.2s ease, border-color 0.2s ease, background 0.2s ease',
+                animation: idle >= 5 && pulse ? 'nextPulse 1.8s ease-in-out infinite' : 'none',
+              }}
+            >
+              Continue tour
+            </button>
             <button onClick={handleNext}
               style={{ ...S.btn, background:'#c8a060', color:'#2c2416', fontWeight:700,
                 padding:'9px 22px', fontSize:14,
                 animation: pulse ? 'nextPulse 1.8s ease-in-out infinite' : 'none' }}>
-              {idle >= 5 ? 'Continue tour →' : 'Next →'}
+              Next
             </button>
           </div>
         )}
@@ -1932,3 +1952,5 @@ export function DemoPage() {
     </div>
   )
 }
+
+
