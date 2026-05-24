@@ -172,25 +172,27 @@ export function EmulationBanner() {
   }
 
   return (
-    <div style={{ position:'fixed', top:0, left:0, right:0, zIndex:9999,
+    <div className="admin-emulation-banner" style={{ position:'fixed', top:0, left:0, right:0, zIndex:9999,
       background: eu.writeMode ? '#b71c1c' : '#1a237e',
       color:'#fff', padding:'8px 16px', display:'flex', alignItems:'center',
       gap:12, fontSize:13, fontFamily:"'Lato',sans-serif", boxShadow:'0 2px 8px rgba(0,0,0,0.3)' }}>
-      <span style={{ fontSize:16 }}>{eu.writeMode ? '✏️' : '👁'}</span>
-      <span style={{ fontWeight:700 }}>{eu.writeMode ? 'EDITING AS' : 'VIEWING AS'}:</span>
-      <span style={{ opacity:0.9 }}>{eu.email}</span>
-      <span style={{ fontSize:11, background:'rgba(255,255,255,0.2)', padding:'2px 8px', borderRadius:6, marginLeft:4 }}>
+      <span className="admin-emulation-icon" style={{ fontSize:16 }}>{eu.writeMode ? '✏️' : '👁'}</span>
+      <span className="admin-emulation-label" style={{ fontWeight:700 }}>{eu.writeMode ? 'EDITING AS' : 'VIEWING AS'}:</span>
+      <span className="admin-emulation-email" style={{ opacity:0.9 }}>{eu.email}</span>
+      <span className="admin-emulation-mode" style={{ fontSize:11, background:'rgba(255,255,255,0.2)', padding:'2px 8px', borderRadius:6, marginLeft:4 }}>
         {eu.writeMode ? 'Write mode — changes affect their real data' : 'Read-only'}
       </span>
-      <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
+      <div className="admin-emulation-actions" style={{ marginLeft:'auto', display:'flex', gap:8 }}>
         {!eu.writeMode
           ? <button onClick={()=>switchMode(true)}
+              className="admin-emulation-btn"
               style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.3)',
                 color:'#fff', borderRadius:6, padding:'4px 12px', cursor:'pointer', fontSize:12,
                 fontFamily:"'Lato',sans-serif", fontWeight:600 }}>
               Switch to Write Mode
             </button>
           : <button onClick={()=>switchMode(false)}
+              className="admin-emulation-btn"
               style={{ background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.3)',
                 color:'#fff', borderRadius:6, padding:'4px 12px', cursor:'pointer', fontSize:12,
                 fontFamily:"'Lato',sans-serif", fontWeight:600 }}>
@@ -198,6 +200,7 @@ export function EmulationBanner() {
             </button>
         }
         <button onClick={exit}
+          className="admin-emulation-btn"
           style={{ background:'rgba(255,255,255,0.25)', border:'1px solid rgba(255,255,255,0.4)',
             color:'#fff', borderRadius:6, padding:'4px 12px', cursor:'pointer', fontSize:12,
             fontFamily:"'Lato',sans-serif", fontWeight:700 }}>
@@ -221,14 +224,14 @@ function UserRow({ u, allEvents }) {
     : 'Active ✓'
 
   return (
-    <div style={{ ...S.card, overflow:'hidden' }}>
+    <div className="admin-user-card" style={{ ...S.card, overflow:'hidden' }}>
       {/* Header row — click to expand */}
-      <div onClick={()=>{ setOpen(v=>!v); setOpenAnimal(null) }}
+      <div className="admin-user-row" onClick={()=>{ setOpen(v=>!v); setOpenAnimal(null) }}
         style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 18px', cursor:'pointer',
           background: open ? '#fdfaf0' : '#fff', userSelect:'none', transition:'background 0.15s' }}>
 
         {/* User info */}
-        <div style={{ flex:1, minWidth:0 }}>
+        <div className="admin-user-info" style={{ flex:1, minWidth:0 }}>
           <p style={{ fontSize:14, fontWeight:600, color:'#2c2416', margin:'0 0 2px',
             overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
             {u.email || <span style={{ color:'#a08060', fontStyle:'italic' }}>No email</span>}
@@ -241,7 +244,7 @@ function UserRow({ u, allEvents }) {
         </div>
 
         {/* Stats */}
-        <div style={{ display:'flex', gap:20, alignItems:'center', flexShrink:0 }}>
+        <div className="admin-user-stats" style={{ display:'flex', gap:20, alignItems:'center', flexShrink:0 }}>
           <div style={{ textAlign:'center' }}>
             <p style={{ fontSize:16, fontWeight:700, color:'#2c2416', margin:'0 0 1px' }}>{u.animalCount}</p>
             <p style={{ fontSize:9, color:'#a08060', fontWeight:700, textTransform:'uppercase', margin:0 }}>Animals</p>
@@ -261,17 +264,19 @@ function UserRow({ u, allEvents }) {
         </div>
 
         {/* Expand arrow */}
-        <span style={{ color:'#c8b89a', fontSize:16, transition:'transform 0.2s', transform:open?'rotate(90deg)':'none', flexShrink:0 }}>›</span>
+        <span className="admin-user-arrow" style={{ color:'#c8b89a', fontSize:16, transition:'transform 0.2s', transform:open?'rotate(90deg)':'none', flexShrink:0 }}>›</span>
 
         {/* Emulation buttons */}
-        <div style={{ display:'flex', gap:6, flexShrink:0 }} onClick={e=>e.stopPropagation()}>
+        <div className="admin-user-actions" style={{ display:'flex', gap:6, flexShrink:0 }} onClick={e=>e.stopPropagation()}>
           <button onClick={()=>{ setEmulatedUser({ uid:u.id, email:u.email, writeMode:false }); window.location.href='/' }}
+            className="admin-user-action-btn"
             style={{ background:'#e3f2fd', border:'1px solid #90caf9', color:'#1565c0',
               borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11,
               fontFamily:"'Lato',sans-serif", fontWeight:700, whiteSpace:'nowrap' }}>
             👁 View as
           </button>
           <button onClick={()=>{ setEmulatedUser({ uid:u.id, email:u.email, writeMode:true }); window.location.href='/' }}
+            className="admin-user-action-btn"
             style={{ background:'#fce4ec', border:'1px solid #f48fb1', color:'#ad1457',
               borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11,
               fontFamily:"'Lato',sans-serif", fontWeight:700, whiteSpace:'nowrap' }}>
@@ -564,11 +569,40 @@ export function AdminPage() {
   ]
 
   return (
-    <div style={{ ...S.page, padding:'24px', background:'#f7f4ef', minHeight:'100vh' }}>
-      <style>{`@media(max-width:767px){.admin-grid-3{grid-template-columns:1fr 1fr!important;}.admin-grid-4{grid-template-columns:1fr 1fr!important;}}`}</style>
+    <div className="admin-page-root" style={{ ...S.page, padding:'24px', background:'#f7f4ef', minHeight:'100vh' }}>
+      <style>{`
+        @media(max-width:767px){
+          .admin-page-root{padding:12px!important;padding-bottom:92px!important;max-width:none!important;}
+          .admin-grid-3{grid-template-columns:1fr!important;}
+          .admin-grid-3 > *{grid-column:auto!important;}
+          .admin-grid-4{grid-template-columns:1fr 1fr!important;gap:8px!important;}
+          .admin-grid-2{grid-template-columns:1fr!important;gap:10px!important;}
+          .admin-header{align-items:flex-start!important;margin-bottom:14px!important;}
+          .admin-header-actions{width:100%!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;}
+          .admin-header-actions button{justify-content:center!important;padding:8px 10px!important;font-size:12px!important;}
+          .admin-tabs{width:calc(100vw - 24px)!important;max-width:100%!important;overflow-x:auto!important;flex-wrap:nowrap!important;margin-bottom:14px!important;-webkit-overflow-scrolling:touch;}
+          .admin-tabs button{flex:0 0 auto!important;white-space:nowrap!important;padding:7px 12px!important;font-size:12px!important;}
+          .admin-user-card{border-radius:10px!important;}
+          .admin-user-row{display:grid!important;grid-template-columns:1fr auto!important;gap:10px!important;padding:12px!important;align-items:start!important;}
+          .admin-user-info{grid-column:1 / -1!important;width:100%!important;}
+          .admin-user-info p{white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.25!important;}
+          .admin-user-stats{grid-column:1 / -1!important;display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:8px!important;width:100%!important;padding:8px 0!important;border-top:1px solid #f0ebe4!important;border-bottom:1px solid #f0ebe4!important;}
+          .admin-user-stats > span{justify-self:center!important;align-self:center!important;text-align:center!important;}
+          .admin-user-arrow{position:absolute!important;top:12px!important;right:12px!important;}
+          .admin-user-actions{grid-column:1 / -1!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;width:100%!important;}
+          .admin-user-action-btn{width:100%!important;justify-content:center!important;padding:9px 10px!important;font-size:12px!important;}
+          .admin-emulation-banner{top:auto!important;bottom:calc(54px + env(safe-area-inset-bottom))!important;left:8px!important;right:8px!important;border-radius:10px!important;padding:6px 8px!important;gap:6px!important;font-size:11px!important;box-shadow:0 4px 18px rgba(0,0,0,0.28)!important;flex-wrap:wrap!important;align-items:center!important;}
+          .admin-emulation-icon{font-size:13px!important;}
+          .admin-emulation-label{font-size:10px!important;}
+          .admin-emulation-email{flex:1 1 130px!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;}
+          .admin-emulation-mode{display:none!important;}
+          .admin-emulation-actions{margin-left:0!important;display:grid!important;grid-template-columns:1fr auto!important;gap:6px!important;width:100%!important;}
+          .admin-emulation-btn{padding:5px 8px!important;font-size:11px!important;white-space:nowrap!important;}
+        }
+      `}</style>
 
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:12 }}>
+      <div className="admin-header" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:12 }}>
         <div>
           <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:700, margin:'0 0 4px' }}>
             🌾 FarmHand Admin
@@ -577,7 +611,7 @@ export function AdminPage() {
             Platform overview · {data.users.length} registered users
           </p>
         </div>
-        <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+        <div className="admin-header-actions" style={{ display:'flex', gap:10, alignItems:'center' }}>
           <button onClick={loadAll} style={{ ...S.btn, ...S.btnSecondary, padding:'7px 14px', fontSize:13 }}>
             ↻ Refresh
           </button>
@@ -588,7 +622,7 @@ export function AdminPage() {
       </div>
 
       {/* Tab nav */}
-      <div style={{ display:'flex', background:'#f0e8d8', borderRadius:10, padding:3, gap:2, marginBottom:24, width:'fit-content', flexWrap:'wrap' }}>
+      <div className="admin-tabs" style={{ display:'flex', background:'#f0e8d8', borderRadius:10, padding:3, gap:2, marginBottom:24, width:'fit-content', flexWrap:'wrap' }}>
         {tabs.map(t => (
           <button key={t.key} onClick={()=>setTab(t.key)}
             style={{ ...S.btn, padding:'7px 16px', fontSize:13, borderRadius:8,
@@ -626,7 +660,7 @@ export function AdminPage() {
               </div>
 
               {/* Species + signups charts side by side */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
+              <div className="admin-grid-2" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
                 {/* Signups over time */}
                 <div style={{ ...S.card, padding:'18px 20px' }}>
                   <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:15, margin:'0 0 16px' }}>
