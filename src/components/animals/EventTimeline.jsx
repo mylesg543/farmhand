@@ -10,6 +10,7 @@ const EVENT_META = {
   hoof_treatment:  { icon:'🩺', label:'Hoof Treatment',    color:'#4e342e', bg:'#efebe9', border:'#bcaaa4' },
   shearing:        { icon:'✂️',  label:'Shearing',         color:'#2e7d32', bg:'#e8f5e9', border:'#a5d6a7' },
   lambing:         { icon:'🐣', label:'Lambing',           color:'#e65100', bg:'#fff3e0', border:'#ffcc80' },
+  tail_banding:    { icon:'⭕', label:'Tail Banding',      color:'#6d4c41', bg:'#efebe9', border:'#bcaaa4' },
   weaning:         { icon:'🍼', label:'Weaning',           color:'#f57f17', bg:'#fff9e6', border:'#ffe082' },
   sickness:        { icon:'🤒', label:'Illness',           color:'#c62828', bg:'#fff3f3', border:'#f5c6c6' },
   injury:          { icon:'🩹', label:'Injury',            color:'#c62828', bg:'#fff3f3', border:'#f5c6c6' },

@@ -20,6 +20,7 @@ const EVENT_TYPES = [
   { value: 'pregnancy_check',label: '🔍 Pregnancy Check' },
   { value: 'breeding',       label: '❤️ Breeding' },
   { value: 'lambing',        label: '🐣 Lambing' },
+  { value: 'tail_banding',   label: '⭕ Tail Banding' },
   { value: 'weaning',        label: '🍼 Weaning' },
   { value: 'egg_production', label: '🥚 Egg Production' },
   { value: 'injury',         label: '🩹 Injury' },

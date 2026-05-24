@@ -59,14 +59,14 @@ function ActivityBadge({ daysSince }) {
 
 // ─── Event type icons (same as EventTimeline) ─────────────────────────────────
 const EV_ICONS = {
-  vaccination:'💉', worming:'💊', hoof_trimming:'✂️', hoof_treatment:'🩺', shearing:'✂️',
+  vaccination:'💉', worming:'💊', hoof_trimming:'✂️', hoof_treatment:'🩺', shearing:'✂️', tail_banding:'⭕',
   lambing:'🐣', weaning:'🍼', sickness:'🤒', injury:'🩹',
   weight_check:'⚖️', pregnancy_check:'🔍', egg_production:'🥚',
   moulting:'🪶', breeding:'❤️', sale:'💰', custom:'📝',
 }
 const EV_COLORS = {
   vaccination:  '#1565c0', worming:'#6a1b9a', hoof_trimming:'#4e342e', hoof_treatment:'#4e342e',
-  shearing:     '#2e7d32', lambing:'#e65100', sickness:'#c62828',
+  shearing:     '#2e7d32', tail_banding:'#6d4c41', lambing:'#e65100', sickness:'#c62828',
   injury:       '#c62828', egg_production:'#f57f17', moulting:'#5d4037',
   pregnancy_check:'#ad1457', breeding:'#ad1457', weight_check:'#00695c',
   custom:       '#5a3e1b',

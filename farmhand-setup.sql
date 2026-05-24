@@ -23,7 +23,7 @@ exception when duplicate_object then null; end $$;
 do $$ begin
   create type fh_event_type as enum (
     'hoof_trimming', 'vaccination', 'sickness',
-    'lambing', 'sale', 'death', 'custom'
+    'lambing', 'tail_banding', 'sale', 'death', 'custom'
   );
 exception when duplicate_object then null; end $$;
 

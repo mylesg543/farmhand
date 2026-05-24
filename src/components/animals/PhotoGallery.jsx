@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 
 const EVENT_LABELS = {
   vaccination:'Vaccination', worming:'Worming', hoof_trimming:'Hoof Trim',
-  shearing:'Shearing', lambing:'Lambing', weaning:'Weaning', sickness:'Illness',
+  shearing:'Shearing', lambing:'Lambing', tail_banding:'⭕ Tail Banding', weaning:'Weaning', sickness:'Illness',
   injury:'Injury', weight_check:'Weight Check', pregnancy_check:'Pregnancy Check',
   egg_production:'Egg Production', moulting:'Moulting', breeding:'Breeding',
   sale:'Sale', photo_update:'New Photo', custom:'Note',
