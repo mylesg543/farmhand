@@ -15,17 +15,7 @@ import { DashboardPage } from './components/dashboard/DashboardPage'
 import { CustomersPage } from './components/customers/CustomersPage'
 import { LineagePage } from './components/lineage/LineagePage'
 import { DemoPage } from './components/demo/DemoPage'
-
-// ─── Responsive hook ────────────────────────────────────────────────────────
-function useIsMobile() {
-  const [mobile, setMobile] = useState(window.innerWidth < 768)
-  useEffect(() => {
-    const fn = () => setMobile(window.innerWidth < 768)
-    window.addEventListener('resize', fn)
-    return () => window.removeEventListener('resize', fn)
-  }, [])
-  return mobile
-}
+import { useIsMobile } from './hooks/useIsMobile'
 
 // ─── Data ───────────────────────────────────────────────────────────────────
 const ANIMALS = [
@@ -72,10 +62,10 @@ function MobileSheet({ title, children, onClose }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 800, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)' }} onClick={onClose} />
-      <div style={{ position: 'relative', background: '#fff', borderRadius: '20px 20px 0 0', padding: '0 0 40px', maxHeight: '80vh', overflowY: 'auto' }}>
+      <div style={{ position: 'relative', background: '#fff', borderRadius: '20px 20px 0 0', padding: '0 0 calc(40px + env(safe-area-inset-bottom))', maxHeight: '80vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 12px', borderBottom: '1px solid #f0ebe4' }}>
           <span style={{ fontSize: 15, fontWeight: 700, color: '#2c2416', fontFamily: "'Lato',sans-serif" }}>{title}</span>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, color: '#a08060', cursor: 'pointer', lineHeight: 1, padding: 0 }}>×</button>
+          <button onClick={onClose} aria-label="Close menu" style={{ background: 'none', border: 'none', fontSize: 22, color: '#a08060', cursor: 'pointer', lineHeight: 1, padding: 0, width: 44, height: 44, margin: '-10px -12px -10px 0' }}>×</button>
         </div>
         {children}
       </div>
@@ -216,7 +206,7 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
   const tabBtn = (active, emoji, label, onClick) => (
     <button onClick={onClick} style={{
       flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-      background: 'none', border: 'none', cursor: 'pointer', padding: '8px 4px',
+      background: 'none', border: 'none', cursor: 'pointer', padding: '8px 4px', minHeight: 54,
       fontFamily: "'Lato',sans-serif",
     }}>
       <span style={{ fontSize: 22 }}>{emoji}</span>
@@ -244,7 +234,7 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
   return (
     <>
       {toast && (
-        <div style={{ position: 'fixed', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 900, background: '#2c2416', color: '#f0e6cc', borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 600, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', whiteSpace: 'nowrap' }}>
+        <div style={{ position: 'fixed', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 900, background: '#2c2416', color: '#f0e6cc', borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 600, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', maxWidth: 'calc(100vw - 28px)', textAlign: 'center' }}>
           {toast}
         </div>
       )}
@@ -324,7 +314,8 @@ function Nav() {
 function FarmApp() {
   const isMobile = useIsMobile()
   return (
-    <div style={{ minHeight: '100vh', background: '#f7f4ef', fontFamily: "'Lato',sans-serif", color: '#2c2416', paddingBottom: isMobile ? 80 : 0 }}>
+    <div style={{ minHeight: '100vh', background: '#f7f4ef', fontFamily: "'Lato',sans-serif", color: '#2c2416', paddingBottom: isMobile ? 'calc(96px + env(safe-area-inset-bottom))' : 0 }}>
+      <style>{`@media (max-width:767px){input,select,textarea{font-size:16px!important;}button{touch-action:manipulation;}}`}</style>
       <EmulationBanner />
       <Nav />
       <Routes>

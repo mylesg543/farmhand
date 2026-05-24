@@ -1,15 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useFeedCosts } from '../../hooks/useFeedCosts'
 import { useIncome } from '../../hooks/useIncome'
 import { useAnimals } from '../../hooks/useAnimals'
 import { useCustomers } from '../../hooks/useCustomers'
+import { useIsMobile } from '../../hooks/useIsMobile'
 import { S, fmt } from '../ui/shared'
-
-function useIsMobile() {
-  const [m, setM] = useState(window.innerWidth < 768)
-  useEffect(() => { const fn = () => setM(window.innerWidth < 768); window.addEventListener('resize', fn); return () => window.removeEventListener('resize', fn) }, [])
-  return m
-}
 
 // ─── Bar Chart ─────────────────────────────────────────────────────────────────
 function BarChart({ months, incomeByMonth, costsByMonth }) {

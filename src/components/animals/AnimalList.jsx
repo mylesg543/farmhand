@@ -172,6 +172,7 @@ export function AnimalList({ species = 'sheep' }) {
 
   const newPath       = species==='chickens' ? '/chickens/new'  : '/animals/new'
   const bulkPath      = species==='chickens' ? '/chickens/bulk' : '/animals/bulk'
+  const detailPath    = (id) => species==='chickens' ? `/chickens/${id}` : `/animals/${id}`
   const bulkEventPath = (ids) => species==='chickens'
     ? `/chickens/bulk-event?ids=${ids}`
     : `/animals/bulk-event?ids=${ids}`
@@ -375,7 +376,7 @@ export function AnimalList({ species = 'sheep' }) {
             {[...activeAnimals,...soldAnimals,...deceasedAnimals].map(a => {
               const isInactive = !isActive(a)
               return (
-                <div key={a.id} onClick={()=>!selecting&&navigate(`/animals/${a.id}`)}
+                <div key={a.id} onClick={()=>!selecting&&navigate(detailPath(a.id))}
                   style={{ display:'flex', flexDirection:'column', alignItems:'center',
                     gap:3, flexShrink:0, cursor:'pointer', opacity:isInactive?0.45:1 }}>
                   <div style={{ position:'relative' }}>
@@ -503,7 +504,7 @@ export function AnimalList({ species = 'sheep' }) {
 
           return (
             <div key={a.id}
-              onClick={()=>selecting ? toggleSelect(a.id) : navigate(`/animals/${a.id}`)}
+              onClick={()=>selecting ? toggleSelect(a.id) : navigate(detailPath(a.id))}
               style={{ ...S.card, padding:isMobile?'10px 12px':'14px 18px', marginBottom:8,
                 display:'flex', gap:12, alignItems:'center', cursor:'pointer',
                 opacity:!isActive?0.65:1,
