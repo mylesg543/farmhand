@@ -208,20 +208,11 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
               Skip tour
             </button>
             <div style={{ flex:1 }}/>
-            {idle >= 5 && (
-              <button onClick={handleNext}
-                style={{ display:'none', background:'transparent', border:'2px solid #c8a060',
-                  color:'#c8a060', borderRadius:8, padding:'9px 16px', fontSize:13,
-                  fontWeight:700, cursor:'pointer', fontFamily:"'Lato',sans-serif",
-                  animation:'nextPulse 1.2s ease-in-out infinite' }}>
-                Ready? →
-              </button>
-            )}
             <button onClick={handleNext}
               style={{ ...S.btn, background:'#c8a060', color:'#2c2416', fontWeight:700,
                 padding:'9px 22px', fontSize:14,
                 animation: pulse ? 'nextPulse 1.8s ease-in-out infinite' : 'none' }}>
-              Next →
+              {idle >= 5 ? 'Continue tour →' : 'Next →'}
             </button>
           </div>
         )}
@@ -1898,7 +1889,7 @@ export function DemoPage() {
 
   useEffect(()=>{
     if(phase!=='tour') return
-    window.scrollTo({ top:0, behavior:'instant' })
+    window.scrollTo({ top:0, behavior:'auto' })
   },[step,phase])
 
   const screens={
