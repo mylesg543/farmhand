@@ -108,6 +108,7 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
   const [idle,  setIdle]    = useState(0)   // seconds since last Next tap
   const [pulse, setPulse]   = useState(false)
   const idleRef = useRef(null)
+  const ready = idle >= 5
 
   // Reset idle counter whenever step changes
   useEffect(()=>{
@@ -116,7 +117,7 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
     idleRef.current = setInterval(()=>{
       setIdle(prev=>{
         const next = prev + 1
-        if (next >= 3) setPulse(true)   // start pulsing at 3s
+        if (next >= 5) setPulse(true)   // start pulsing after the reminder delay
         return next
       })
     }, 1000)
@@ -202,38 +203,40 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
               Skip tour
             </button>
             <div style={{ flex:1 }}/>
-            <button
-              onClick={handleNext}
-              aria-label="Continue tour"
-              style={{
-                position:'absolute',
-                left:'50%',
-                top:'50%',
-                transform:`translate(-50%, -50%) ${idle >= 5 ? 'scale(1)' : 'scale(0.96)'}`,
-                opacity: idle >= 5 ? 1 : 0,
-                pointerEvents: idle >= 5 ? 'auto' : 'none',
-                background:'rgba(200,160,96,0.12)',
-                border:'1px solid rgba(200,160,96,0.45)',
-                color:'#c8a060',
+            <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+              <span style={{
+                display:'inline-flex',
+                alignItems:'center',
+                justifyContent:'center',
+                width:isMobile?58:74,
+                height:28,
                 borderRadius:999,
-                padding:'7px 12px',
-                fontSize:11,
+                background:ready?'rgba(200,160,96,0.12)':'transparent',
+                border:`1px solid ${ready?'rgba(200,160,96,0.28)':'transparent'}`,
+                color:ready?'#c8a060':'transparent',
+                fontSize:isMobile?10:11,
                 fontWeight:700,
                 fontFamily:"'Lato',sans-serif",
                 whiteSpace:'nowrap',
-                boxShadow: idle >= 5 ? '0 0 0 1px rgba(200,160,96,0.08)' : 'none',
-                transition:'opacity 0.2s ease, transform 0.2s ease, border-color 0.2s ease, background 0.2s ease',
-                animation: idle >= 5 && pulse ? 'nextPulse 1.8s ease-in-out infinite' : 'none',
-              }}
-            >
-              Continue tour
-            </button>
-            <button onClick={handleNext}
-              style={{ ...S.btn, background:'#c8a060', color:'#2c2416', fontWeight:700,
-                padding:'9px 22px', fontSize:14,
-                animation: pulse ? 'nextPulse 1.8s ease-in-out infinite' : 'none' }}>
-              Next
-            </button>
+                opacity:ready?1:0,
+                transform:`translateX(${ready?0:4}px)`,
+                transition:'opacity 0.2s ease, transform 0.2s ease, background 0.2s ease, border-color 0.2s ease',
+                pointerEvents:'none',
+              }}>
+                Ready?
+              </span>
+              <button onClick={handleNext}
+                aria-label={ready?'Continue tour':'Next tour step'}
+                style={{ ...S.btn,
+                  background:ready?'#d6ad68':'#c8a060',
+                  color:'#2c2416', fontWeight:700,
+                  padding:'9px 22px', fontSize:14,
+                  boxShadow:ready?'0 0 0 1px rgba(200,160,96,0.22), 0 6px 18px rgba(200,160,96,0.28)':'none',
+                  transition:'background 0.2s ease, box-shadow 0.2s ease',
+                  animation: pulse ? 'nextPulse 1.8s ease-in-out infinite' : 'none' }}>
+                Next
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -1366,31 +1369,39 @@ function HeroEvents({ name, species, isMobile }) {
             </p>
           </div>
         </div>
-      <div style={{ position:'relative', padding:isMobile?'14px 12px 8px':'16px 18px 10px' }}>
-        {/* Timeline line */}
-        <div style={{ position:'absolute', left:isMobile?30:38, top:0, bottom:0, width:2,
-          background:'linear-gradient(to bottom,#e8e0d0,#f7f4ef)', borderRadius:1 }}/>
-
+      <div style={{ padding:isMobile?'14px 12px 10px':'16px 18px 12px' }}>
         {events.map((ev,i)=>(
-          <div key={i} style={{ display:'flex', gap:0, marginBottom:i<events.length-1?8:0 }}>
+          <div key={i} style={{ display:'flex', gap:0, alignItems:'stretch',
+            marginBottom:i<events.length-1?isMobile?10:12:0 }}>
             {/* Date col */}
-            <div style={{ width:isMobile?24:32, flexShrink:0, paddingTop:6, textAlign:'right', paddingRight:8 }}>
+            <div style={{ width:isMobile?28:36, flexShrink:0, paddingTop:isMobile?8:10,
+              textAlign:'right', paddingRight:8 }}>
               <span style={{ fontSize:8, color:'#a08060', fontWeight:700, lineHeight:1.2,
                 display:'block', whiteSpace:'nowrap' }}>
                 {ev.date.split(' ').slice(0,2).join('\n')}
               </span>
             </div>
             {/* Icon */}
-            <div style={{ width:isMobile?40:48, flexShrink:0, display:'flex', justifyContent:'center', paddingTop:2, zIndex:1 }}>
+            <div style={{ width:isMobile?42:50, flexShrink:0, display:'flex',
+              justifyContent:'center', paddingTop:2, position:'relative' }}>
+              {i > 0 && <div style={{ position:'absolute', top:0,
+                left:'50%', transform:'translateX(-50%)', width:2, height:isMobile?14:16,
+                background:'#e8e0d0', borderRadius:1 }}/>}
+              {i < events.length-1 && <div style={{ position:'absolute', top:isMobile?38:46,
+                bottom:-1 * (isMobile?10:12), left:'50%', transform:'translateX(-50%)',
+                width:2, background:'#e8e0d0', borderRadius:1 }}/>}
               <div style={{ width:isMobile?36:44, height:isMobile?36:44, borderRadius:9,
                 background:ev.bg, border:`2px solid ${ev.color}33`, display:'flex',
                 alignItems:'center', justifyContent:'center', fontSize:isMobile?18:20,
-                boxShadow:ev.alert?`0 0 0 3px rgba(198,40,40,0.2)`:'none' }}>
+                boxShadow:ev.alert?`0 0 0 3px rgba(198,40,40,0.2)`:'none',
+                position:'relative', zIndex:1 }}>
                 {ev.icon}
               </div>
             </div>
             {/* Content */}
-            <div style={{ flex:1, paddingLeft:10, paddingBottom:8, paddingTop:4 }}>
+            <div style={{ flex:1, minWidth:0, paddingLeft:isMobile?8:10,
+              paddingBottom:isMobile?10:12, paddingTop:4,
+              borderBottom:i<events.length-1?'1px solid #f7f4ef':'none' }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3, flexWrap:'wrap' }}>
                 <span style={{ fontSize:isMobile?12:14, fontWeight:700, color:ev.color }}>{ev.type}</span>
                 {ev.alert && <span style={{ fontSize:9, fontWeight:700, padding:'1px 6px',
