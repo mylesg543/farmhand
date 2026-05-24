@@ -324,7 +324,7 @@ export function LineagePage() {
       {tree && selected && hasLineage && (
         <div style={{ ...S.card, padding:isMobile?14:28 }}>
           {/* Header */}
-          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20, paddingBottom:16, borderBottom:'1px solid #f0ebe4', flexWrap:'wrap', gap:10 }}>
+          <div style={{ display:'flex', alignItems:'center', marginBottom:20, paddingBottom:16, borderBottom:'1px solid #f0ebe4', flexWrap:'wrap', gap:10 }}>
             <div style={{ width:44, height:44, borderRadius:'50%', overflow:'hidden', border:'2px solid #c8a060', background:'#f0ebe4', flexShrink:0 }}>
               <AnimalIllustration animal={selected} size={44}/>
             </div>
