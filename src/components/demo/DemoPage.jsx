@@ -128,25 +128,22 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
   return (
     <>
       {/* Tooltip card */}
-      <div style={{ position:'fixed', bottom:isMobile?82:28, left:'50%', transform:'translateX(-50%)',
-        width:isMobile?'calc(100% - 24px)':'460px', maxWidth:'95vw', background:'#2c2416',
-        borderRadius:14, padding:'16px 18px', boxShadow:'0 8px 32px rgba(0,0,0,0.4)',
+      <div style={{ position:isMobile?'fixed':'sticky', bottom:isMobile?'calc(14px + env(safe-area-inset-bottom))':undefined,
+        top:isMobile?undefined:72, left:isMobile?'50%':undefined, transform:isMobile?'translateX(-50%)':undefined,
+        width:isMobile?'calc(100% - 24px)':'340px', maxWidth:'95vw', background:'#2c2416',
+        borderRadius:14, padding:isMobile?'14px 16px':'18px 18px', boxShadow:'0 8px 32px rgba(0,0,0,0.28)',
         zIndex:1000, border:`1px solid ${pulse?'rgba(200,160,96,0.6)':'rgba(255,255,255,0.08)'}`,
         transition:'border-color 0.3s',
-        animation: pulse ? 'tipPulse 1.5s ease-in-out infinite' : 'none',
+        animation: pulse ? 'tipPulse 1.8s ease-in-out infinite' : 'none',
       }}>
         <style>{`
           @keyframes tipPulse {
-            0%,100% { box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-            50%      { box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 4px rgba(200,160,96,0.35); }
-          }
-          @keyframes floatPulse {
-            0%,100% { transform: translateX(-50%) translateY(0);   opacity:1; }
-            50%      { transform: translateX(-50%) translateY(-4px); opacity:0.85; }
+            0%,100% { box-shadow: 0 8px 32px rgba(0,0,0,0.28); }
+            50%      { box-shadow: 0 8px 32px rgba(0,0,0,0.28), 0 0 0 4px rgba(200,160,96,0.24); }
           }
           @keyframes nextPulse {
             0%,100% { transform: scale(1); }
-            50%      { transform: scale(1.06); }
+            50%      { transform: scale(1.025); }
           }
           @keyframes heroFadeIn {
             from { opacity:0; transform:translateY(14px); }
@@ -177,7 +174,13 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
           </p>
         )}
 
-        <p style={{ fontSize:14, color:'#f0e6cc', margin:'0 0 10px', lineHeight:1.6 }}>{text}</p>
+        {idle >= 5 && !isLast && (
+          <p style={{ fontSize:11, color:'#c8a060', margin:'0 0 6px', fontWeight:700 }}>
+            Ready for the next step?
+          </p>
+        )}
+
+        <p style={{ fontSize:14, color:'#f0e6cc', margin:'0 0 12px', lineHeight:1.6 }}>{text}</p>
 
         {isLast ? (
           /* Last step — full-width green CTA */
@@ -187,7 +190,7 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
                 cursor:'pointer', fontFamily:"'Lato',sans-serif", fontSize:16, fontWeight:700,
                 background:'#4caf50', color:'#fff',
                 boxShadow:'0 4px 16px rgba(76,175,80,0.4)',
-                animation: pulse ? 'nextPulse 1.5s ease-in-out infinite' : 'none' }}>
+                animation: pulse ? 'nextPulse 1.8s ease-in-out infinite' : 'none' }}>
               🌾 Get Started Free
             </button>
             <button onClick={onSkip} style={{ background:'none', border:'none',
@@ -207,7 +210,7 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
             <div style={{ flex:1 }}/>
             {idle >= 5 && (
               <button onClick={handleNext}
-                style={{ background:'transparent', border:'2px solid #c8a060',
+                style={{ display:'none', background:'transparent', border:'2px solid #c8a060',
                   color:'#c8a060', borderRadius:8, padding:'9px 16px', fontSize:13,
                   fontWeight:700, cursor:'pointer', fontFamily:"'Lato',sans-serif",
                   animation:'nextPulse 1.2s ease-in-out infinite' }}>
@@ -217,7 +220,7 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
             <button onClick={handleNext}
               style={{ ...S.btn, background:'#c8a060', color:'#2c2416', fontWeight:700,
                 padding:'9px 22px', fontSize:14,
-                animation: pulse ? 'nextPulse 1.5s ease-in-out infinite' : 'none' }}>
+                animation: pulse ? 'nextPulse 1.8s ease-in-out infinite' : 'none' }}>
               Next →
             </button>
           </div>
@@ -1248,8 +1251,8 @@ function HeroProfiles({ name, species, isMobile }) {
   const statusColors = { alive:'#4caf50', sold:'#9c27b0', deceased:'#9e9e9e', rented:'#f9a825' }
 
   return (
-    <div style={{ minHeight:'calc(100vh - 40px)', display:'flex', flexDirection:'column', justifyContent:'center',
-      padding:isMobile?'12px 16px':'20px 40px', maxWidth:1100, margin:'0 auto' }}>
+    <div style={{ minHeight:'calc(100vh - 40px)', display:'flex', flexDirection:'column', justifyContent:'flex-start',
+      padding:isMobile?'18px 16px 170px':'34px 40px 48px', maxWidth:1100, margin:'0 auto' }}>
       <p style={{ fontSize:isMobile?11:12, fontWeight:700, color:'#c8a060', textTransform:'uppercase',
         letterSpacing:'0.1em', margin:'0 0 10px' }}>Animal Profiles</p>
       <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?26:38, fontWeight:700,
@@ -1311,6 +1314,7 @@ function HeroProfiles({ name, species, isMobile }) {
 // ─── HERO SCREEN 2: Health Timeline ───────────────────────────────────────────
 function HeroEvents({ name, species, isMobile }) {
   const isSheep = species==='sheep'
+  const animal = {...(isSheep ? DEMO_SHEEP[0] : DEMO_CHICKENS[0]), name}
   const events = isSheep ? [
     { type:'lambing',     date:'Apr 2, 2024',  notes:'Twins born — Rosie and Clover. Both healthy.', icon:'🐣', color:'#e65100', bg:'#fff3e0' },
     { type:'Illness',     date:'Sep 14, 2024', notes:'Limping on left front. Penicillin 3ml.', icon:'🤒', color:'#c62828', bg:'#fff3f3', alert:true },
@@ -1322,8 +1326,8 @@ function HeroEvents({ name, species, isMobile }) {
   ]
 
   return (
-    <div style={{ minHeight:'calc(100vh - 40px)', display:'flex', flexDirection:'column', justifyContent:'center',
-      padding:isMobile?'12px 16px':'20px 40px', maxWidth:1100, margin:'0 auto' }}>
+    <div style={{ minHeight:'calc(100vh - 40px)', display:'flex', flexDirection:'column', justifyContent:'flex-start',
+      padding:isMobile?'18px 16px 170px':'34px 40px 48px', maxWidth:1100, margin:'0 auto' }}>
       <p style={{ fontSize:isMobile?11:12, fontWeight:700, color:'#c8a060', textTransform:'uppercase',
         letterSpacing:'0.1em', margin:'0 0 10px' }}>Health Timeline</p>
       <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?26:38, fontWeight:700,
@@ -1334,7 +1338,24 @@ function HeroEvents({ name, species, isMobile }) {
         Every event dated, noted, and photographed. Your whole history in one place — searchable, forever.
       </p>
 
-      <div style={{ position:'relative' }}>
+      <div style={{ background:'#fff', border:'1px solid #e8e0d0', borderRadius:14,
+        boxShadow:'0 4px 24px rgba(44,36,22,0.08)', overflow:'hidden' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12, padding:isMobile?'12px 14px':'14px 18px',
+          background:'linear-gradient(160deg,#2c2416 0%,#4a3520 100%)' }}>
+          <Avatar animal={animal} size={isMobile?46:54}/>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+              <span style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?18:22,
+                fontWeight:700, color:'#f0e6cc' }}>{name}</span>
+              <span style={{ fontSize:9, fontWeight:700, padding:'2px 8px', borderRadius:10,
+                background:'#4caf50', color:'#fff', textTransform:'uppercase' }}>Alive</span>
+            </div>
+            <p style={{ fontSize:11, color:'#c8a878', margin:'2px 0 0' }}>
+              {isSheep?'Merino ewe':'Rhode Island Red hen'} · {events.length} health records
+            </p>
+          </div>
+        </div>
+      <div style={{ position:'relative', padding:isMobile?'14px 12px 8px':'16px 18px 10px' }}>
         {/* Timeline line */}
         <div style={{ position:'absolute', left:isMobile?30:38, top:0, bottom:0, width:2,
           background:'linear-gradient(to bottom,#e8e0d0,#f7f4ef)', borderRadius:1 }}/>
@@ -1370,6 +1391,7 @@ function HeroEvents({ name, species, isMobile }) {
             </div>
           </div>
         ))}
+      </div>
       </div>
     </div>
   )
@@ -1427,8 +1449,8 @@ function HeroLineage({ name, species, isMobile }) {
   ]
 
   return (
-    <div style={{ minHeight:'calc(100vh - 40px)', display:'flex', flexDirection:'column', justifyContent:'center',
-      padding:isMobile?'12px 16px':'20px 40px', maxWidth:1100, margin:'0 auto' }}>
+    <div style={{ minHeight:'calc(100vh - 40px)', display:'flex', flexDirection:'column', justifyContent:'flex-start',
+      padding:isMobile?'18px 16px 170px':'34px 40px 48px', maxWidth:1100, margin:'0 auto' }}>
       <p style={{ fontSize:isMobile?11:12, fontWeight:700, color:'#c8a060', textTransform:'uppercase',
         letterSpacing:'0.1em', margin:'0 0 10px' }}>Bloodlines</p>
       <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?26:38, fontWeight:700,
@@ -1522,8 +1544,8 @@ function HeroPnL({ name, species, isMobile }) {
   ]
 
   return (
-    <div style={{ minHeight:'calc(100vh - 40px)', display:'flex', flexDirection:'column', justifyContent:'center',
-      padding:isMobile?'12px 16px':'20px 40px', maxWidth:1100, margin:'0 auto' }}>
+    <div style={{ minHeight:'calc(100vh - 40px)', display:'flex', flexDirection:'column', justifyContent:'flex-start',
+      padding:isMobile?'18px 16px 170px':'34px 40px 48px', maxWidth:1100, margin:'0 auto' }}>
       <p style={{ fontSize:isMobile?11:12, fontWeight:700, color:'#c8a060', textTransform:'uppercase',
         letterSpacing:'0.1em', margin:'0 0 10px' }}>Profit & Loss</p>
       <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?26:38, fontWeight:700,
@@ -1627,7 +1649,7 @@ function HeroDashboard({ species, isMobile }) {
 
   return (
     <div style={{ minHeight:'calc(100vh - 42px)', display:'flex', flexDirection:'column',
-      justifyContent:'center', padding:isMobile?'12px 16px':'20px 40px',
+      justifyContent:'flex-start', padding:isMobile?'18px 16px 170px':'34px 40px 48px',
       maxWidth:1100, margin:'0 auto' }}>
       <p style={{ fontSize:isMobile?11:12, fontWeight:700, color:'#c8a060',
         textTransform:'uppercase', letterSpacing:'0.1em', margin:'0 0 6px' }}>Dashboard</p>
@@ -1730,8 +1752,8 @@ function HeroBulkAdd({ name, species, isMobile }) {
     background:'#fdfaf6', fontSize:isMobile?12:13, width:'100%', boxSizing:'border-box' }
 
   return (
-    <div style={{ minHeight:'calc(100vh - 40px)', display:'flex', flexDirection:'column', justifyContent:'center',
-      padding:isMobile?'12px 16px':'20px 40px', maxWidth:1100, margin:'0 auto' }}>
+    <div style={{ minHeight:'calc(100vh - 40px)', display:'flex', flexDirection:'column', justifyContent:'flex-start',
+      padding:isMobile?'18px 16px 170px':'34px 40px 48px', maxWidth:1100, margin:'0 auto' }}>
       <p style={{ fontSize:isMobile?11:12, fontWeight:700, color:'#c8a060', textTransform:'uppercase',
         letterSpacing:'0.1em', margin:'0 0 10px' }}>Getting Started</p>
       <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?26:38, fontWeight:700,
@@ -1795,10 +1817,10 @@ function Personalise({ species, setSpecies, onStart, isMobile }) {
           <div style={{ fontSize:48, marginBottom:8 }}>🌾</div>
           <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:32,
             fontWeight:700, color:'#f0e6cc', margin:'0 0 8px', lineHeight:1.2 }}>
-            What do you raise?
+            Farm records, health history, bloodlines, and profit in one place
           </h1>
           <p style={{ fontSize:isMobile?13:14, color:'#c8b89a', margin:0, lineHeight:1.6 }}>
-            Pick what's on your farm — we'll show you exactly what FarmHand can do for you.
+            Pick what's on your farm and take a guided 2-minute tour built around real daily decisions.
           </p>
         </div>
 
@@ -1900,13 +1922,22 @@ export function DemoPage() {
 
   return (
     <div style={{ minHeight:'100vh', background:'#f7f4ef', fontFamily:"'Lato',sans-serif",
-      color:'#2c2416', paddingBottom:isMobile?180:150, display:'flex', flexDirection:'column' }}>
+      color:'#2c2416', paddingBottom:isMobile?168:0, display:'flex', flexDirection:'column' }}>
       <Nav screen={cur.screen} species={species} isMobile={isMobile} onExit={skip} name={name}/>
-      <div key={`screen-${step}`} style={{ flex:1, maxWidth:1100, margin:'0 auto', width:'100%',
-        animation:'heroFadeIn 0.35s ease-out' }}>
-        {screens[cur.screen]||screens.hero_profiles}
+      <div style={{ display:isMobile?'block':'grid', gridTemplateColumns:isMobile?undefined:'minmax(0, 1fr) 372px',
+        gap:isMobile?0:20, maxWidth:1320, margin:'0 auto', width:'100%', flex:1,
+        padding:isMobile?0:'0 24px 32px' }}>
+        <div key={`screen-${step}`} style={{ minWidth:0, width:'100%',
+          animation:'heroFadeIn 0.35s ease-out' }}>
+          {screens[cur.screen]||screens.hero_profiles}
+        </div>
+        {!isMobile && (
+          <aside style={{ paddingTop:24 }}>
+            <Tip step={cur} stepIdx={step} total={steps.length} onNext={next} onSkip={skip} name={name} isMobile={isMobile}/>
+          </aside>
+        )}
       </div>
-      <Tip step={cur} stepIdx={step} total={steps.length} onNext={next} onSkip={skip} name={name} isMobile={isMobile}/>
+      {isMobile && <Tip step={cur} stepIdx={step} total={steps.length} onNext={next} onSkip={skip} name={name} isMobile={isMobile}/>}
     </div>
   )
 }
