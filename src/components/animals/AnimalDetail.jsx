@@ -16,7 +16,7 @@ function MiniLineage({ animal, allAnimals, navigate, isMobile }) {
 
   return (
     <div style={{ ...S.card, padding:isMobile?'14px 16px':'18px 22px', marginBottom:14 }}>
-      <div style={{ display:'flex', alignItems:'center', marginBottom:hasParents?14:0 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:hasParents?14:(isMobile?10:0) }}>
         <span style={{ fontSize:10, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em' }}>⑂ Lineage</span>
         <button onClick={()=>navigate(`/lineage?id=${animal.id}&species=${animal.species||'sheep'}`)}
           style={{ marginLeft:'auto', ...S.btn, background:'#f0ebe4', color:'#5a3e1b',
@@ -25,10 +25,10 @@ function MiniLineage({ animal, allAnimals, navigate, isMobile }) {
         </button>
       </div>
       {!hasParents ? (
-        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12, flexWrap:isMobile?'wrap':'nowrap' }}>
           <p style={{ fontSize:13, color:'#a08060', margin:0, flex:1 }}>No parents recorded yet.</p>
           <button onClick={()=>navigate(`/animals/${animal.id}/edit`)}
-            style={{ ...S.btn, ...S.btnSecondary, padding:'5px 12px', fontSize:12 }}>+ Add Parents</button>
+            style={{ ...S.btn, ...S.btnSecondary, padding:isMobile?'8px 12px':'5px 12px', fontSize:12, minHeight:isMobile?36:undefined }}>+ Add Parents</button>
         </div>
       ) : (
         <div style={{ display:'flex', gap:isMobile?12:20, alignItems:'center', flexWrap:'wrap' }}>
