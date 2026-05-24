@@ -75,7 +75,7 @@ export function AnimalDetailPage() {
   const isMobile   = useIsMobile()
   const fileRef    = useRef()
   const { animal, loading, error } = useSingleAnimal(id)
-  const { animals: allAnimals, deleteAnimal, updateAnimal } = useAnimals(animal?.species || 'sheep')
+  const { animals: allAnimals, addAnimal, deleteAnimal, updateAnimal } = useAnimals(animal?.species || 'sheep')
   const { events, loading:evLoading, addEvent: _addEvent, addPhotoToEvent, deleteEvent, updateEvent } = useAnimalEvents(id)
 
   // Auto-update animal status when certain events are logged
@@ -305,6 +305,9 @@ export function AnimalDetailPage() {
               events={events}
               loading={evLoading}
               onAddEvent={addEvent}
+              onCreateLamb={addAnimal}
+              animal={animal}
+              allAnimals={allAnimals}
               onAddPhoto={addPhotoToEvent}
               onDelete={deleteEvent}
               onUpdate={updateEvent}

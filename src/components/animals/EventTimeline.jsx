@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { usePhotoUpload } from '../../hooks/usePhotoUpload'
 import { S, Badge, formatDate } from '../ui/shared'
 
@@ -9,7 +9,7 @@ const EVENT_META = {
   hoof_trimming:   { icon:'✂️',  label:'Hoof Trim',        color:'#4e342e', bg:'#efebe9', border:'#bcaaa4' },
   hoof_treatment:  { icon:'🩺', label:'Hoof Treatment',    color:'#4e342e', bg:'#efebe9', border:'#bcaaa4' },
   shearing:        { icon:'✂️',  label:'Shearing',         color:'#2e7d32', bg:'#e8f5e9', border:'#a5d6a7' },
-  lambing:         { icon:'🐣', label:'Lambing',           color:'#e65100', bg:'#fff3e0', border:'#ffcc80' },
+  lambing:         { icon:'🐣', label:'Birth',             color:'#e65100', bg:'#fff3e0', border:'#ffcc80' },
   tail_banding:    { icon:'⭕', label:'Tail Banding',      color:'#6d4c41', bg:'#efebe9', border:'#bcaaa4' },
   weaning:         { icon:'🍼', label:'Weaning',           color:'#f57f17', bg:'#fff9e6', border:'#ffe082' },
   sickness:        { icon:'🤒', label:'Illness',           color:'#c62828', bg:'#fff3f3', border:'#f5c6c6' },
@@ -237,7 +237,9 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile }) {
 }
 
 // ─── Log Event Form ────────────────────────────────────────────────────────────
-function LogEventForm({ onSave, onCancel, isMobile }) {
+const newLambRows = (count) => Array.from({ length: count }, () => ({ name: '', sire_id: '' }))
+
+function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
   const { upload, uploading } = usePhotoUpload()
   const [form, setForm] = useState({
     event_type: 'vaccination',
@@ -247,8 +249,25 @@ function LogEventForm({ onSave, onCancel, isMobile }) {
   })
   const [saving,   setSaving]   = useState(false)
   const [preview,  setPreview]  = useState(null)
+  const [createLambs, setCreateLambs] = useState(false)
+  const [lambCount, setLambCount] = useState(1)
+  const [lambs, setLambs] = useState(newLambRows(1))
   const fileRef = useRef()
   const set = (k,v) => setForm(f=>({...f,[k]:v}))
+  const isBirthForSheep = animal?.species === 'sheep' && form.event_type === 'lambing'
+  const sireOptions = allAnimals.filter(a => a.species === 'sheep' && ['ram','male'].includes(a.sex) && a.id !== animal?.id)
+
+  useEffect(() => {
+    setLambs(prev => Array.from({ length: lambCount }, (_, i) => prev[i] || { name: '', sire_id: '' }))
+  }, [lambCount])
+
+  useEffect(() => {
+    if (!isBirthForSheep) setCreateLambs(false)
+  }, [isBirthForSheep])
+
+  const setLamb = (idx, key, value) => {
+    setLambs(prev => prev.map((row, i) => i === idx ? { ...row, [key]: value } : row))
+  }
 
   const handlePhoto = async (e) => {
     const file = e.target.files[0]
@@ -261,8 +280,23 @@ function LogEventForm({ onSave, onCancel, isMobile }) {
   }
 
   const handleSave = async () => {
+    if (isBirthForSheep && createLambs) {
+      const missingName = lambs.some(l => !l.name.trim())
+      if (missingName) {
+        alert('Name each lamb before saving, or turn off lamb record creation.')
+        return
+      }
+    }
     setSaving(true)
-    try { await onSave(form) }
+    try {
+      await onSave({
+        ...form,
+        lambsToCreate: isBirthForSheep && createLambs ? lambs.map(l => ({
+          name: l.name.trim(),
+          sire_id: l.sire_id || null,
+        })) : [],
+      })
+    }
     catch (err) { alert(err.message); setSaving(false) }
   }
 
@@ -301,6 +335,55 @@ function LogEventForm({ onSave, onCancel, isMobile }) {
           placeholder="Anything worth remembering…"/>
       </div>
 
+      {isBirthForSheep && (
+        <div style={{ background:'#fff9e6', border:'1px solid #ffe082', borderRadius:10, padding:isMobile?'12px':'14px 16px', marginBottom:14 }}>
+          <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', marginBottom:createLambs?12:0 }}>
+            <input type="checkbox" checked={createLambs} onChange={e=>setCreateLambs(e.target.checked)}/>
+            <span style={{ fontSize:13, fontWeight:700, color:'#5a3e1b' }}>Create lamb records from this birth?</span>
+          </label>
+
+          {createLambs && (
+            <>
+              <div style={{ marginBottom:12 }}>
+                <label style={S.label}>How many lambs?</label>
+                <select style={{ ...S.input, cursor:'pointer', maxWidth:140 }} value={lambCount}
+                  onChange={e=>setLambCount(Number(e.target.value))}>
+                  {[1,2,3,4].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {lambs.map((lamb, idx) => (
+                  <div key={idx} style={{ display:'grid', gridTemplateColumns:isMobile?'1fr':'1fr 1fr', gap:10 }}>
+                    <div>
+                      <label style={S.label}>Lamb {idx + 1} Name</label>
+                      <input style={S.input} value={lamb.name}
+                        onChange={e=>setLamb(idx, 'name', e.target.value)}
+                        placeholder={`Lamb ${idx + 1}`}/>
+                    </div>
+                    <div>
+                      <label style={S.label}>Father / Sire</label>
+                      <select style={{ ...S.input, cursor:'pointer' }} value={lamb.sire_id}
+                        onChange={e=>setLamb(idx, 'sire_id', e.target.value)}>
+                        <option value="">Unknown</option>
+                        {sireOptions.map(sire => (
+                          <option key={sire.id} value={sire.id}>
+                            {sire.name}{sire.tag_number && !sire.tag_number.startsWith('AUTO-') ? ` (${sire.tag_number})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontSize:11, color:'#a08060', margin:'10px 0 0' }}>
+                Mother will be set to {animal?.name}. Birth date will use this event date.
+              </p>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Photo attach */}
       <div style={{ marginBottom:14 }}>
         <label style={S.label}>Photo (optional)</label>
@@ -335,14 +418,33 @@ function LogEventForm({ onSave, onCancel, isMobile }) {
 }
 
 // ─── Main Timeline ─────────────────────────────────────────────────────────────
-export function EventTimeline({ events=[], loading=false, onAddEvent, onAddPhoto, onDelete, onUpdate, isMobile }) {
+export function EventTimeline({ events=[], loading=false, onAddEvent, onCreateLamb, onAddPhoto, onDelete, onUpdate, isMobile, animal, allAnimals=[] }) {
   const [showForm, setShowForm] = useState(false)
   // Debug: log raw event_date values so we can see what Supabase returns
 
   const groups = groupByMonth(events)
 
   const handleSave = async (form) => {
-    await onAddEvent(form)
+    const { lambsToCreate = [], ...eventPayload } = form
+    await onAddEvent(eventPayload)
+    if (animal?.species === 'sheep' && eventPayload.event_type === 'lambing' && lambsToCreate.length > 0) {
+      if (!onCreateLamb) throw new Error('Could not create lamb records from this birth.')
+      for (let i = 0; i < lambsToCreate.length; i += 1) {
+        const lamb = lambsToCreate[i]
+        await onCreateLamb({
+          name: lamb.name,
+          species: 'sheep',
+          sex: 'lamb',
+          birth_date: eventPayload.event_date || null,
+          status: 'alive',
+          sire_id: lamb.sire_id || null,
+          dam_id: animal.id,
+          tag_number: `AUTO-${Date.now()}-${i}`,
+          breed: animal.breed || null,
+          notes: `Created from birth event for ${animal.name}.`,
+        })
+      }
+    }
     setShowForm(false)
   }
 
@@ -371,6 +473,8 @@ export function EventTimeline({ events=[], loading=false, onAddEvent, onAddPhoto
           onSave={handleSave}
           onCancel={()=>setShowForm(false)}
           isMobile={isMobile}
+          animal={animal}
+          allAnimals={allAnimals}
         />
       )}
 

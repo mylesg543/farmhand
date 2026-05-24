@@ -112,7 +112,9 @@ function AnimalDetailPanel({ animal, events }) {
           {animalEvents.map((ev, i) => {
             const icon  = EV_ICONS[ev.event_type] || '📝'
             const color = EV_COLORS[ev.event_type] || '#5a3e1b'
-            const label = (ev.event_type||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())
+            const label = ev.event_type === 'lambing'
+              ? 'Birth'
+              : (ev.event_type||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())
             const isAlert = ev.event_type==='sickness'||ev.event_type==='injury'
             return (
               <div key={ev.id} style={{ display:'flex', gap:10, paddingBottom:12,

@@ -39,7 +39,7 @@ export const EVENT_TYPES_BY_SPECIES = {
     { value: 'hoof_trimming', label: 'Hoof Trimming' },
     { value: 'vaccination',   label: 'Vaccination'   },
     { value: 'sickness',      label: 'Sickness'      },
-    { value: 'lambing',       label: 'Lambing'       },
+    { value: 'lambing',       label: 'Birth'         },
     { value: 'tail_banding',  label: '⭕ Tail Banding' },
     { value: 'shearing',      label: 'Shearing'      },
     { value: 'worming',       label: 'Worming'       },
