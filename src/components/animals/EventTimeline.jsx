@@ -237,7 +237,7 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile }) {
 }
 
 // ─── Log Event Form ────────────────────────────────────────────────────────────
-const newLambRows = (count) => Array.from({ length: count }, () => ({ name: '', sire_id: '' }))
+const newLambRows = (count) => Array.from({ length: count }, () => ({ name: '', sire_id: '', notes: '' }))
 
 function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
   const { upload, uploading } = usePhotoUpload()
@@ -258,7 +258,7 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
   const sireOptions = allAnimals.filter(a => a.species === 'sheep' && ['ram','male'].includes(a.sex) && a.id !== animal?.id)
 
   useEffect(() => {
-    setLambs(prev => Array.from({ length: lambCount }, (_, i) => prev[i] || { name: '', sire_id: '' }))
+    setLambs(prev => Array.from({ length: lambCount }, (_, i) => prev[i] || { name: '', sire_id: '', notes: '' }))
   }, [lambCount])
 
   useEffect(() => {
@@ -294,6 +294,7 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
         lambsToCreate: isBirthForSheep && createLambs ? lambs.map(l => ({
           name: l.name.trim(),
           sire_id: l.sire_id || null,
+          notes: l.notes.trim(),
         })) : [],
       })
     }
@@ -373,6 +374,12 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
                         ))}
                       </select>
                     </div>
+                    <div style={{ gridColumn:isMobile?undefined:'1 / -1' }}>
+                      <label style={S.label}>Notes</label>
+                      <input style={S.input} value={lamb.notes}
+                        onChange={e=>setLamb(idx, 'notes', e.target.value)}
+                        placeholder="Condition, markings, bottle fed, etc."/>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -441,7 +448,7 @@ export function EventTimeline({ events=[], loading=false, onAddEvent, onCreateLa
           dam_id: animal.id,
           tag_number: `AUTO-${Date.now()}-${i}`,
           breed: animal.breed || null,
-          notes: `Created from birth event for ${animal.name}.`,
+          notes: lamb.notes || `Created from birth event for ${animal.name}.`,
         })
       }
     }
