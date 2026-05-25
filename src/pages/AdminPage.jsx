@@ -80,7 +80,7 @@ function AnimalDetailPanel({ animal, events }) {
   const st = { alive:'#4caf50', sold:'#9c27b0', deceased:'#9e9e9e', rented:'#f9a825' }
 
   return (
-    <div style={{ background:'#fdfaf6', borderRadius:10, border:'1px solid #e8e0d0', overflow:'hidden', marginTop:6 }}>
+    <div className="admin-animal-detail-panel" style={{ background:'#fdfaf6', borderRadius:10, border:'1px solid #e8e0d0', overflow:'hidden', marginTop:6 }}>
       {/* Animal header */}
       <div style={{ background:'linear-gradient(135deg,#2c2416,#4a3520)', padding:'14px 16px', display:'flex', alignItems:'center', gap:12 }}>
         <div style={{ width:44, height:44, borderRadius:'50%', overflow:'hidden', border:'2px solid rgba(255,255,255,0.25)', background:'rgba(255,255,255,0.1)', flexShrink:0 }}>
@@ -299,7 +299,7 @@ function UserRow({ u, allEvents }) {
 
       {/* Expanded — animal list */}
       {open && (
-        <div style={{ borderTop:'1px solid #f0ebe4', background:'#fafaf8', padding:'14px 18px' }}>
+        <div className="admin-user-expanded" style={{ borderTop:'1px solid #f0ebe4', background:'#fafaf8', padding:'14px 18px' }}>
           {u.animals.length === 0 ? (
             <p style={{ fontSize:13, color:'#a08060', margin:0, fontStyle:'italic' }}>This user hasn't added any animals yet.</p>
           ) : (
@@ -307,7 +307,7 @@ function UserRow({ u, allEvents }) {
               <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em', margin:'0 0 12px' }}>
                 Flock — {u.animals.length} animal{u.animals.length!==1?'s':''}
               </p>
-              <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              <div className="admin-user-animal-list" style={{ display:'flex', flexDirection:'column', gap:6 }}>
                 {u.animals.map(a => {
                   const isOpen = openAnimal===a.id
                   const statusColors = { alive:'#4caf50', sold:'#9c27b0', deceased:'#9e9e9e', rented:'#f9a825' }
@@ -584,7 +584,7 @@ export function AdminPage() {
     <div className="admin-page-root" style={{ ...S.page, padding:'24px', background:'#f7f4ef', minHeight:'100vh' }}>
       <style>{`
         @media(max-width:767px){
-          .admin-page-root{padding:12px!important;padding-bottom:92px!important;max-width:none!important;}
+          .admin-page-root{padding:12px!important;padding-bottom:calc(148px + env(safe-area-inset-bottom))!important;max-width:none!important;}
           .admin-grid-3{grid-template-columns:1fr!important;}
           .admin-grid-3 > *{grid-column:auto!important;}
           .admin-grid-4{grid-template-columns:1fr 1fr!important;gap:8px!important;}
@@ -603,6 +603,9 @@ export function AdminPage() {
           .admin-user-arrow{position:absolute!important;top:12px!important;right:12px!important;}
           .admin-user-actions{grid-column:1 / -1!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;width:100%!important;}
           .admin-user-action-btn{width:100%!important;justify-content:center!important;padding:9px 10px!important;font-size:12px!important;}
+          .admin-user-expanded{padding:12px!important;padding-bottom:calc(22px + env(safe-area-inset-bottom))!important;max-height:calc(100vh - 190px)!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;}
+          .admin-user-animal-list{padding-bottom:calc(88px + env(safe-area-inset-bottom))!important;}
+          .admin-animal-detail-panel{max-height:calc(100vh - 260px)!important;overflow-y:auto!important;}
           .admin-emulation-banner{top:auto!important;bottom:calc(54px + env(safe-area-inset-bottom))!important;left:8px!important;right:8px!important;border-radius:10px!important;padding:6px 8px!important;gap:6px!important;font-size:11px!important;box-shadow:0 4px 18px rgba(0,0,0,0.28)!important;flex-wrap:wrap!important;align-items:center!important;}
           .admin-emulation-icon{font-size:13px!important;}
           .admin-emulation-label{font-size:10px!important;}

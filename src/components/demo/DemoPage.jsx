@@ -146,6 +146,14 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
             0%,100% { transform: scale(1); }
             50%      { transform: scale(1.025); }
           }
+          @keyframes readyNudgeIn {
+            from { opacity:0; transform:translateY(4px) scale(0.96); }
+            to   { opacity:1; transform:translateY(0) scale(1); }
+          }
+          @keyframes readyNudgePulse {
+            0%,100% { box-shadow:0 0 0 0 rgba(226,176,95,0.28), 0 5px 14px rgba(226,176,95,0.18); }
+            50% { box-shadow:0 0 0 5px rgba(226,176,95,0.08), 0 7px 18px rgba(226,176,95,0.26); }
+          }
           @keyframes heroFadeIn {
             from { opacity:0; transform:translateY(14px); }
             to   { opacity:1; transform:translateY(0); }
@@ -204,27 +212,35 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
             </button>
             <div style={{ flex:1 }}/>
             <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
-              <span style={{
+              <button onClick={handleNext}
+                aria-label="Continue tour"
+                tabIndex={ready ? 0 : -1}
+                style={{
+                ...S.btn,
                 display:'inline-flex',
                 alignItems:'center',
                 justifyContent:'center',
-                width:isMobile?58:74,
-                height:28,
+                minWidth:isMobile?78:94,
+                height:34,
+                padding:isMobile?'7px 11px':'8px 13px',
                 borderRadius:999,
-                background:ready?'rgba(200,160,96,0.12)':'transparent',
-                border:`1px solid ${ready?'rgba(200,160,96,0.28)':'transparent'}`,
-                color:ready?'#c8a060':'transparent',
-                fontSize:isMobile?10:11,
+                background:ready?'#f0c16e':'transparent',
+                border:`1px solid ${ready?'rgba(240,193,110,0.75)':'transparent'}`,
+                color:ready?'#2c2416':'transparent',
+                fontSize:isMobile?11:12,
                 fontWeight:700,
                 fontFamily:"'Lato',sans-serif",
                 whiteSpace:'nowrap',
                 opacity:ready?1:0,
-                transform:`translateX(${ready?0:4}px)`,
-                transition:'opacity 0.2s ease, transform 0.2s ease, background 0.2s ease, border-color 0.2s ease',
-                pointerEvents:'none',
+                visibility:ready?'visible':'hidden',
+                transition:'opacity 0.2s ease, visibility 0.2s ease',
+                pointerEvents:ready?'auto':'none',
+                cursor:ready?'pointer':'default',
+                boxShadow:ready?'0 5px 14px rgba(226,176,95,0.18)':'none',
+                animation:ready?'readyNudgeIn 0.24s ease-out, readyNudgePulse 2s ease-in-out 0.24s infinite':'none',
               }}>
-                Ready?
-              </span>
+                Ready? Continue
+              </button>
               <button onClick={handleNext}
                 aria-label={ready?'Continue tour':'Next tour step'}
                 style={{ ...S.btn,

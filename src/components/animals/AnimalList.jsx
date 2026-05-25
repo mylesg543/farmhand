@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAnimals } from '../../hooks/useAnimals'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
-import { S, AnimalIllustration, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS } from '../ui/shared'
+import { S, AnimalIllustration, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS, NEWBORN_DAYS, isNewbornAnimal } from '../ui/shared'
 
 const SPECIES_META = {
   sheep:    { emoji:'🐑', singular:'Sheep',   plural:'Sheep',    label:'Flock' },
@@ -27,6 +27,23 @@ const EVENT_TYPES = [
   { value:'sale',           label:'💸 Sale' },
   { value:'custom',         label:'📝 Custom / Note' },
 ]
+
+const SORT_OPTIONS = [
+  { value:'name_asc', label:'Name A to Z' },
+  { value:'name_desc', label:'Name Z to A' },
+  { value:'birth_newest', label:'Birthdate newest first' },
+  { value:'birth_oldest', label:'Birthdate oldest first' },
+  { value:'recently_added', label:'Recently added' },
+  { value:'status', label:'Status' },
+]
+
+const dateValue = (value, fallback = 0) => {
+  if (!value) return fallback
+  const t = new Date(value).getTime()
+  return Number.isNaN(t) ? fallback : t
+}
+
+const compareName = (a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity:'base' })
 
 // ─── Mobile inline event panel ──────────────────────────────────────────────
 function MobileEventPanel({ animals, species, user, onDone, onCancel }) {
@@ -162,6 +179,7 @@ export function AnimalList({ species = 'sheep' }) {
   const meta      = SPECIES_META[species] || SPECIES_META.sheep
   const [filter,        setFilter]        = useState('alive')
   const [search,        setSearch]        = useState('')
+  const [sortBy,        setSortBy]        = useState('name_asc')
   const [selecting,     setSelecting]     = useState(false)
   const [selected,      setSelected]      = useState(new Set())
   const [showBulkMenu,  setShowBulkMenu]  = useState(false)
@@ -187,20 +205,33 @@ export function AnimalList({ species = 'sheep' }) {
   const soldAnimals     = animals.filter(a => a.status === 'sold')
   const deceasedAnimals = animals.filter(a => a.status === 'deceased')
   const expiredRented   = animals.filter(a => a.status === 'rented' && a.departure_date && a.departure_date < today)
+  const newbornAnimals  = animals.filter(a => isNewbornAnimal(a))
 
   const baseList = filter==='alive'    ? activeAnimals
     : filter==='sold'     ? soldAnimals
     : filter==='deceased' ? deceasedAnimals
     : filter==='rented'   ? expiredRented
+    : filter==='newborn'  ? newbornAnimals
     : animals
 
-  const filteredList = baseList.filter(a => {
-    if (!search) return true
-    const s = search.toLowerCase()
-    return (a.name||'').toLowerCase().includes(s)
-      || (a.tag_number||'').toLowerCase().includes(s)
-      || (a.breed||'').toLowerCase().includes(s)
-  })
+  const filteredList = useMemo(() => {
+    const s = search.trim().toLowerCase()
+    const searched = baseList.filter(a => {
+      if (!s) return true
+      return (a.name||'').toLowerCase().includes(s)
+        || (a.tag_number||'').toLowerCase().includes(s)
+        || (a.breed||'').toLowerCase().includes(s)
+    })
+
+    return [...searched].sort((a, b) => {
+      if (sortBy === 'name_desc') return compareName(b, a)
+      if (sortBy === 'birth_newest') return dateValue(b.birth_date, -Infinity) - dateValue(a.birth_date, -Infinity) || compareName(a, b)
+      if (sortBy === 'birth_oldest') return dateValue(a.birth_date, Infinity) - dateValue(b.birth_date, Infinity) || compareName(a, b)
+      if (sortBy === 'recently_added') return dateValue(b.created_at, -Infinity) - dateValue(a.created_at, -Infinity) || compareName(a, b)
+      if (sortBy === 'status') return (a.status || '').localeCompare(b.status || '', undefined, { sensitivity:'base' }) || compareName(a, b)
+      return compareName(a, b)
+    })
+  }, [baseList, search, sortBy])
 
   const toggleSelect = (id) => setSelected(prev => {
     const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n
@@ -220,6 +251,7 @@ export function AnimalList({ species = 'sheep' }) {
   const filterBtns = [
     { key:'alive',    label:`Active (${activeAnimals.length})` },
     { key:'all',      label:`All (${animals.length})` },
+    ...(newbornAnimals.length  > 0 ? [{ key:'newborn',  label:`Newborn (${newbornAnimals.length})` }]      : []),
     ...(soldAnimals.length     > 0 ? [{ key:'sold',     label:`Sold (${soldAnimals.length})` }]           : []),
     ...(deceasedAnimals.length > 0 ? [{ key:'deceased', label:`Deceased (${deceasedAnimals.length})` }]   : []),
     ...(expiredRented.length   > 0 ? [{ key:'rented',   label:`Rented/Returned (${expiredRented.length})` }] : []),
@@ -437,10 +469,10 @@ export function AnimalList({ species = 'sheep' }) {
           {filterBtns.map(btn=>(
             <button key={btn.key} onClick={()=>setFilter(btn.key)}
               style={{ ...S.btn, padding:isMobile?'5px 10px':'6px 14px', fontSize:isMobile?12:13,
-                background:filter===btn.key?'#5a3e1b':'#fff',
-                color:filter===btn.key?'#fff':'#7a6648',
-                border:filter===btn.key?'none':'1px solid #d0c4b0' }}>
-              {btn.label}
+                background:filter===btn.key?'#5a3e1b':btn.key==='newborn'?'#fff9e6':'#fff',
+                color:filter===btn.key?'#fff':btn.key==='newborn'?'#ad6500':'#7a6648',
+                border:filter===btn.key?'none':btn.key==='newborn'?'1px solid #f0c16e':'1px solid #d0c4b0' }}>
+              {btn.key==='newborn' ? '🐣 ' : ''}{btn.label}
             </button>
           ))}
           {selecting && (
@@ -452,10 +484,28 @@ export function AnimalList({ species = 'sheep' }) {
           )}
         </div>
 
-        {/* Search */}
-        <input style={{ ...S.input, marginBottom:12 }}
-          placeholder={`Search ${meta.plural.toLowerCase()}…`}
-          value={search} onChange={e=>setSearch(e.target.value)}/>
+        {/* Search and sort */}
+        <div style={{ display:'flex', gap:8, marginBottom:12, flexDirection:isMobile?'column':'row', alignItems:'stretch' }}>
+          <input style={{ ...S.input, flex:1 }}
+            placeholder={`Search ${meta.plural.toLowerCase()}…`}
+            value={search} onChange={e=>setSearch(e.target.value)}/>
+          <label style={{ display:'flex', alignItems:'center', gap:7, flexShrink:0,
+            background:'#fff', border:'1px solid #d0c4b0', borderRadius:8,
+            padding:isMobile?'7px 10px':'0 10px', minHeight:38 }}>
+            <span style={{ fontSize:11, fontWeight:700, color:'#7a6648', whiteSpace:'nowrap',
+              textTransform:'uppercase', letterSpacing:'0.04em' }}>
+              Sort by
+            </span>
+            <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
+              style={{ border:'none', background:'transparent', outline:'none',
+                fontFamily:"'Lato',sans-serif", fontSize:13, color:'#2c2416',
+                width:isMobile?'100%':190, cursor:'pointer' }}>
+              {SORT_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </label>
+        </div>
 
         {/* Empty state */}
         {animals.length===0 && (
@@ -501,6 +551,7 @@ export function AnimalList({ species = 'sheep' }) {
           const isSel    = selected.has(a.id)
           const age      = calcAge(a.birth_date)
           const sexLabel = SEX_LABELS[a.sex] || a.sex || ''
+          const isNewborn = isNewbornAnimal(a)
 
           return (
             <div key={a.id}
@@ -532,6 +583,13 @@ export function AnimalList({ species = 'sheep' }) {
                     fontSize:isMobile?14:16, margin:0 }}>{a.name}</p>
                   <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:10,
                     background:st.bg, color:st.text, textTransform:'uppercase' }}>{a.status}</span>
+                  {isNewborn && (
+                    <span title={`Birthdate within the last ${NEWBORN_DAYS} days`} style={{ fontSize:10, fontWeight:700,
+                      padding:'2px 8px', borderRadius:10, background:'#fff9e6', color:'#ad6500',
+                      border:'1px solid #f0c16e', textTransform:'uppercase' }}>
+                      🐣 Newborn
+                    </span>
+                  )}
                   {a.tag_number&&!a.tag_number.startsWith('AUTO-')&&(
                     <span style={{ fontSize:10, color:'#a08060', fontFamily:'monospace' }}>{a.tag_number}</span>
                   )}

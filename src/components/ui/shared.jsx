@@ -124,11 +124,27 @@ export function formatDate(d) {
 export function calcAge(b) {
   if (!b) return null
   const birth = new Date(b), now = new Date()
+  if (Number.isNaN(birth.getTime())) return null
+  const days = daysSinceBirth(birth, now)
+  if (days !== null && days >= 0 && days <= NEWBORN_DAYS) return 'Newborn'
   const total = (now.getFullYear() - birth.getFullYear()) * 12 + now.getMonth() - birth.getMonth()
-  if (total < 1) return 'Newborn'
   if (total < 12) return `${total}mo`
   const y = Math.floor(total / 12), mo = total % 12
   return mo > 0 ? `${y}y ${mo}mo` : `${y}y`
+}
+
+export const NEWBORN_DAYS = 90
+
+export function daysSinceBirth(birthDate, now = new Date()) {
+  if (!birthDate) return null
+  const birth = birthDate instanceof Date ? birthDate : new Date(birthDate)
+  if (Number.isNaN(birth.getTime())) return null
+  return Math.floor((now - birth) / (1000 * 60 * 60 * 24))
+}
+
+export function isNewbornAnimal(animal, now = new Date()) {
+  const days = daysSinceBirth(animal?.birth_date, now)
+  return days !== null && days >= 0 && days <= NEWBORN_DAYS
 }
 
 export function fmt(n) { return `$${Number(n).toFixed(2)}` }
