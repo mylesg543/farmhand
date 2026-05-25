@@ -27,13 +27,15 @@ function collectIds(node, depth=3, ids=new Set()) {
 }
 
 // ─── Animal chip for selector ──────────────────────────────────────────────────
-function WarningBadge({ compact=false }) {
+function WarningBadge({ compact=false, prominent=false }) {
+  const size = prominent ? 24 : compact ? 16 : 18
   return (
     <span title="Shared ancestor warning" aria-label="Shared ancestor warning"
       style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
-        width:compact?16:18, height:compact?16:18, borderRadius:'50%',
+        width:size, height:size, borderRadius:'50%',
         background:'#fff3e0', border:'1px solid #ffcc80', color:'#e65100',
-        fontSize:compact?10:12, fontWeight:800, lineHeight:1, flexShrink:0 }}>
+        fontSize:prominent?15:compact?10:12, fontWeight:800, lineHeight:1, flexShrink:0,
+        boxShadow:prominent?'0 1px 4px rgba(230,81,0,0.18)':'none' }}>
       ⚠
     </span>
   )
@@ -60,12 +62,11 @@ function AnimalChip({ a, selectedId, onSelect, hasWarning=false }) {
       <div style={{ minWidth:0 }}>
         <p style={{ display:'flex', alignItems:'center', gap:5, fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:13, margin:'0 0 1px', whiteSpace:'nowrap' }}>
           <span style={{ overflow:'hidden', textOverflow:'ellipsis' }}>{a.name}</span>
-          {hasWarning && <WarningBadge compact />}
         </p>
         <span style={{ fontSize:9, fontWeight:700, padding:'1px 5px', borderRadius:6, background:st.bg, color:st.text, textTransform:'uppercase' }}>{a.status}</span>
       </div>
       <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'flex-end', minWidth:18, justifySelf:'end' }}>
-        {hasWarning ? <WarningBadge compact /> : (
+        {hasWarning ? <WarningBadge prominent /> : (
           <span style={{ color:isSel?'#c8a060':'#d8ccb8', fontSize:14 }}>{isSel ? '✓' : '›'}</span>
         )}
       </span>
