@@ -4,29 +4,13 @@ import { useAnimals } from '../../hooks/useAnimals'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
-import { S, AnimalIllustration, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS, NEWBORN_DAYS, isNewbornAnimal } from '../ui/shared'
+import { S, AnimalIllustration, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS, NEWBORN_DAYS, isNewbornAnimal, getEventTypes, animalNewPath, animalBulkPath, animalDetailPath, animalBulkEventPath, speciesBasePath } from '../ui/shared'
 
 const SPECIES_META = {
   sheep:    { emoji:'🐑', singular:'Sheep',   plural:'Sheep',    label:'Flock' },
   chickens: { emoji:'🐔', singular:'Chicken', plural:'Chickens', label:'Chickens' },
+  horses:   { emoji:'🐴', singular:'Horse',   plural:'Horses',   label:'Horses' },
 }
-
-const EVENT_TYPES = [
-  { value:'vaccination',    label:'💉 Vaccination' },
-  { value:'worming',        label:'🪱 Worming' },
-  { value:'hoof_trimming',  label:'✂️ Hoof Trimming' },
-  { value:'shearing',       label:'✂️ Shearing' },
-  { value:'weight_check',   label:'⚖️ Weight Check' },
-  { value:'pregnancy_check',label:'🔍 Pregnancy Check' },
-  { value:'breeding',       label:'❤️ Breeding' },
-  { value:'lambing',        label:'🐣 Lambing' },
-  { value:'tail_banding',   label:'⭕ Tail Banding' },
-  { value:'weaning',        label:'🍼 Weaning' },
-  { value:'egg_production', label:'🥚 Egg Production' },
-  { value:'injury',         label:'🩹 Injury' },
-  { value:'sale',           label:'💸 Sale' },
-  { value:'custom',         label:'📝 Custom / Note' },
-]
 
 const SORT_OPTIONS = [
   { value:'name_asc', icon:'A↓', label:'Name A-Z' },
@@ -75,6 +59,7 @@ function MenuOptionCard({ icon, title, description, onClick }) {
 // ─── Mobile inline event panel ──────────────────────────────────────────────
 function MobileEventPanel({ animals, species, user, onDone, onCancel }) {
   const meta          = SPECIES_META[species] || SPECIES_META.sheep
+  const eventTypes    = getEventTypes(species)
   const today2      = new Date().toISOString().split('T')[0]
   const active      = animals.filter(a => a.status==='alive' || (a.status==='rented' && (!a.departure_date || a.departure_date >= today2)))
   const [picked,      setPicked]    = useState(new Set())
@@ -195,7 +180,7 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel }) {
       <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase',
         letterSpacing:'0.06em', margin:'12px 0 8px' }}>2. Event Type</p>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginBottom:12 }}>
-        {EVENT_TYPES.map(et => (
+        {eventTypes.map(et => (
           <button key={et.value} onClick={()=>setEventType(et.value)}
             style={{ ...S.btn, fontSize:12, padding:'7px 10px', textAlign:'left',
               background:eventType===et.value?'#5a3e1b':'#f7f4ef',
@@ -249,12 +234,10 @@ export function AnimalList({ species = 'sheep' }) {
   const addMenuRef  = useRef()
   const sortMenuRef = useRef()
 
-  const newPath       = species==='chickens' ? '/chickens/new'  : '/animals/new'
-  const bulkPath      = species==='chickens' ? '/chickens/bulk' : '/animals/bulk'
-  const detailPath    = (id) => species==='chickens' ? `/chickens/${id}` : `/animals/${id}`
-  const bulkEventPath = (ids) => species==='chickens'
-    ? `/chickens/bulk-event?ids=${ids}`
-    : `/animals/bulk-event?ids=${ids}`
+  const newPath       = animalNewPath(species)
+  const bulkPath      = animalBulkPath(species)
+  const detailPath    = (id) => animalDetailPath(species, id)
+  const bulkEventPath = (ids) => animalBulkEventPath(species, ids)
 
   const today = new Date().toISOString().split('T')[0]
   const isActive = (a) => {
@@ -406,7 +389,7 @@ export function AnimalList({ species = 'sheep' }) {
                         icon={meta.emoji}
                         title={`Single ${meta.singular.toLowerCase()}`}
                         description={`Use this when adding an event for one ${meta.singular.toLowerCase()}.`}
-                        onClick={()=>{ setShowBulkMenu(false); navigate(species==='chickens'?'/chickens':'/') }}
+                        onClick={()=>{ setShowBulkMenu(false); navigate(speciesBasePath(species)) }}
                       />
                       <MenuOptionCard
                         icon="☑"

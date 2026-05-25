@@ -77,6 +77,44 @@ export const DEMO_CHICKENS = [
   },
 ]
 
+export const DEMO_HORSES = [
+  {
+    id: 'h1', name: 'Willow', species:'horses', sex:'mare', tag_number:'HRS-001',
+    birth_date:'2018-05-12', status:'alive', breed:'Quarter Horse',
+    notes:'Calm lesson mare. Great for beginners and trail rides.',
+    photo_url:'https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=300&auto=format&fit=crop&q=60',
+    sire_id:'h2', dam_id:'h3',
+  },
+  {
+    id: 'h2', name: 'Ranger', species:'horses', sex:'stallion', tag_number:'HRS-002',
+    birth_date:'2015-04-08', status:'alive', breed:'American Paint',
+    notes:'Strong build, used for planned breeding only.',
+    photo_url:'https://images.unsplash.com/photo-1511193311914-0346f16efe90?w=300&auto=format&fit=crop&q=60',
+    sire_id:null, dam_id:null,
+  },
+  {
+    id: 'h3', name: 'Juniper', species:'horses', sex:'mare', tag_number:'HRS-003',
+    birth_date:'2014-06-20', status:'alive', breed:'Quarter Horse',
+    notes:'Reliable broodmare with easy temperament.',
+    photo_url:'https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?w=300&auto=format&fit=crop&q=60',
+    sire_id:null, dam_id:null,
+  },
+  {
+    id: 'h4', name: 'Copper', species:'horses', sex:'gelding', tag_number:'HRS-004',
+    birth_date:'2020-03-02', status:'alive', breed:'Morgan',
+    notes:'Responsive under saddle. In light training.',
+    photo_url:'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=300&auto=format&fit=crop&q=60',
+    sire_id:'h2', dam_id:'h3',
+  },
+  {
+    id: 'h5', name: 'Maple', species:'horses', sex:'foal', tag_number:'HRS-005',
+    birth_date:'2026-04-03', status:'alive', breed:'Quarter Horse',
+    notes:'Healthy spring foal. Watch growth and first farrier schedule.',
+    photo_url:'https://images.unsplash.com/photo-1598974357801-cbca100e65d3?w=300&auto=format&fit=crop&q=60',
+    sire_id:'h2', dam_id:'h1',
+  },
+]
+
 export const DEMO_EVENTS = [
   { id:'e1', animal_id:'s1', event_type:'vaccination',   event_date:'2024-03-10', notes:'Annual CD&T vaccination.' },
   { id:'e2', animal_id:'s1', event_type:'lambing',       event_date:'2024-04-02', notes:'Delivered twins — Rosie and Clover. Both healthy.' },
@@ -86,6 +124,10 @@ export const DEMO_EVENTS = [
   { id:'e6', animal_id:'s3', event_type:'worming',       event_date:'2024-06-01', notes:'Ivermectin dose, routine treatment.' },
   { id:'e7', animal_id:'c1', event_type:'egg_production',event_date:'2025-01-15', notes:'Averaging 6 eggs/week through winter.' },
   { id:'e8', animal_id:'c1', event_type:'vaccination',   event_date:'2024-11-10', notes:'Newcastle disease vaccine.' },
+  { id:'e9', animal_id:'h1', event_type:'farrier_visit', event_date:'2025-02-18', notes:'Routine farrier visit. Balanced front feet.' },
+  { id:'e10', animal_id:'h1', event_type:'dental_float', event_date:'2025-03-08', notes:'Dental float completed. Eating well after.' },
+  { id:'e11', animal_id:'h4', event_type:'training_session', event_date:'2025-03-22', notes:'Groundwork and trailer loading practice.' },
+  { id:'e12', animal_id:'h5', event_type:'vet_check', event_date:'2026-04-05', notes:'New foal exam. Strong nursing and clean joints.' },
 ]
 
 export const DEMO_COSTS = [
@@ -97,6 +139,9 @@ export const DEMO_COSTS = [
   { id:'cost6', species:'sheep',    category:'equipment', description:'New water trough',    amount: 85.00, date:'2025-01-15' },
   { id:'cost7', species:'chickens', category:'feed',      description:'Layer pellets 40kg',  amount: 52.00, date:'2025-04-01' },
   { id:'cost8', species:'sheep',    category:'medicine',  description:'Wormer ivermectin',   amount: 32.00, date:'2025-04-10' },
+  { id:'cost9', species:'horses',   category:'feed',      description:'Senior feed bags x4', amount:112.00, date:'2025-03-18' },
+  { id:'cost10', species:'horses',  category:'medicine',  description:'Coggins tests x3',    amount:135.00, date:'2025-04-06' },
+  { id:'cost11', species:'horses',  category:'equipment', description:'New lead ropes',      amount: 48.00, date:'2025-04-14' },
 ]
 
 export const DEMO_CUSTOMERS = [
@@ -114,6 +159,8 @@ export const DEMO_INCOME = [
   { id:'inc6', species:'sheep',    income_type:'sale_wool',   description:'Fleece sale x3', amount:95.00, date:'2025-03-20', customer_id:null,  quantity:null, unit:null,    customer:null },
   { id:'inc7', species:'chickens', income_type:'sale_eggs',   description:'2 dozen eggs',   amount:10.00, date:'2025-04-02', customer_id:'cu2', quantity:2,    unit:'dozen', customer:{ id:'cu2', name:'Mike Torres'    } },
   { id:'inc8', species:'chickens', income_type:'sale_eggs',   description:'1 dozen eggs',   amount: 5.00, date:'2025-04-09', customer_id:'cu1', quantity:1,    unit:'dozen', customer:{ id:'cu1', name:'Sarah Johnson' } },
+  { id:'inc9', species:'horses',   income_type:'other',       description:'Trail lesson',   amount:65.00, date:'2025-03-28', customer_id:null,  quantity:1,    unit:'lesson', customer:null },
+  { id:'inc10', species:'horses',  income_type:'other',       description:'Training session',amount:85.00, date:'2025-04-11', customer_id:null,  quantity:1,    unit:'session', customer:null },
 ]
 
 export const DEMO_PLANTS = [

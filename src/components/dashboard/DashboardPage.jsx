@@ -89,11 +89,12 @@ export function DashboardPage() {
   const { income }             = useIncome()
   const { animals: sheep }     = useAnimals('sheep')
   const { animals: chickens }  = useAnimals('chickens')
+  const { animals: horses }    = useAnimals('horses')
   const { customers }          = useCustomers()
   const isMobile = useIsMobile()
 
   const [view,         setView]        = useState('pnl')      // pnl | animals | customers
-  const [animalSp,     setAnimalSp]    = useState('sheep')    // sheep | chickens
+  const [animalSp,     setAnimalSp]    = useState('sheep')    // sheep | chickens | horses
   const [animalFilter, setAnimalFilter]= useState('active')   // active | all
   const [expanded,     setExpanded]    = useState(null)       // customer id
 
@@ -123,10 +124,12 @@ export function DashboardPage() {
   // Active only for the animals tab (alive + rented) — matches AnimalList default
   const activeSheep    = sheep.filter(a => a.status==='alive' || a.status==='rented')
   const activeChickens = chickens.filter(a => a.status==='alive' || a.status==='rented')
+  const activeHorses   = horses.filter(a => a.status==='alive' || a.status==='rented')
 
   // Which set to use based on filter toggle
   const displaySheep    = animalFilter==='active' ? activeSheep    : sheep
   const displayChickens = animalFilter==='active' ? activeChickens : chickens
+  const displayHorses   = animalFilter==='active' ? activeHorses   : horses
 
   const sheepBySex={};    displaySheep.forEach(a=>{ sheepBySex[a.sex]=(sheepBySex[a.sex]||0)+1 })
   const sheepByStatus={};  sheep.forEach(a=>{ sheepByStatus[a.status]=(sheepByStatus[a.status]||0)+1 })
@@ -134,6 +137,9 @@ export function DashboardPage() {
   const chickenBySex={};   displayChickens.forEach(c=>{ chickenBySex[c.sex]=(chickenBySex[c.sex]||0)+1 })
   const chickenByStatus={}; chickens.forEach(c=>{ chickenByStatus[c.status]=(chickenByStatus[c.status]||0)+1 })
   const chickenByBreed={}; displayChickens.forEach(c=>{ const b=c.breed||'Unknown'; chickenByBreed[b]=(chickenByBreed[b]||0)+1 })
+  const horseBySex={};     displayHorses.forEach(h=>{ horseBySex[h.sex]=(horseBySex[h.sex]||0)+1 })
+  const horseByStatus={};  horses.forEach(h=>{ horseByStatus[h.status]=(horseByStatus[h.status]||0)+1 })
+  const horseByBreed={};   displayHorses.forEach(h=>{ const b=h.breed||'Unknown'; horseByBreed[b]=(horseByBreed[b]||0)+1 })
 
   const sheepSexSegs    = Object.entries(sheepBySex).map(([k,v])=>({ label:k.charAt(0).toUpperCase()+k.slice(1), value:v, color:k==='ram'?'#5d4037':k==='ewe'?'#a1887f':'#d7ccc8', isCount:true }))
   const sheepStatusSegs = Object.entries(sheepByStatus).map(([k,v])=>({ label:k.charAt(0).toUpperCase()+k.slice(1), value:v, color:k==='alive'?'#4caf50':k==='sold'?'#9c27b0':k==='rented'?'#f9a825':'#9e9e9e', isCount:true }))
@@ -141,6 +147,9 @@ export function DashboardPage() {
   const chickenSexSegs  = Object.entries(chickenBySex).map(([k,v])=>({ label:k.charAt(0).toUpperCase()+k.slice(1), value:v, color:k==='hen'?'#f9a825':k==='rooster'?'#c62828':'#ffcc80', isCount:true }))
   const chickenStatusSegs = Object.entries(chickenByStatus).map(([k,v])=>({ label:k.charAt(0).toUpperCase()+k.slice(1), value:v, color:k==='alive'?'#4caf50':k==='sold'?'#9c27b0':k==='rented'?'#f9a825':'#9e9e9e', isCount:true }))
   const chickenBreedSegs= Object.entries(chickenByBreed).map(([k,v],i)=>({ label:k, value:v, color:['#f57f17','#e65100','#ff8f00','#ef6c00','#d84315'][i%5], isCount:true })).sort((a,b)=>b.value-a.value)
+  const horseSexSegs    = Object.entries(horseBySex).map(([k,v])=>({ label:k.charAt(0).toUpperCase()+k.slice(1), value:v, color:k==='mare'?'#8d6e63':k==='stallion'?'#4e342e':k==='gelding'?'#795548':'#bcaaa4', isCount:true }))
+  const horseStatusSegs = Object.entries(horseByStatus).map(([k,v])=>({ label:k.charAt(0).toUpperCase()+k.slice(1), value:v, color:k==='alive'?'#4caf50':k==='sold'?'#9c27b0':k==='rented'?'#f9a825':'#9e9e9e', isCount:true }))
+  const horseBreedSegs  = Object.entries(horseByBreed).map(([k,v],i)=>({ label:k, value:v, color:['#6d4c41','#8d6e63','#4e342e','#a1887f','#bcaaa4'][i%5], isCount:true })).sort((a,b)=>b.value-a.value)
 
   // ── Customer data ──────────────────────────────────────────────────────────────
   const custColors=['#5a3e1b','#795548','#a1887f','#8d6e63','#6d4c41','#4e342e','#3e2723','#bcaaa4']
@@ -218,11 +227,12 @@ export function DashboardPage() {
       {view==='animals' && (
         <>
           {/* Summary — active counts */}
-          <div className="dash-2col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
+          <div className="dash-2col" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:16 }}>
             {[
               {label:animalFilter==='active'?'Active Sheep':'All Sheep',       value:displaySheep.length,    total:sheep.length,    emoji:'🐑'},
               {label:animalFilter==='active'?'Active Chickens':'All Chickens', value:displayChickens.length, total:chickens.length, emoji:'🐔'},
-              {label:animalFilter==='active'?'Active Total':'All Animals',     value:displaySheep.length+displayChickens.length, total:sheep.length+chickens.length, emoji:'🐾'},
+              {label:animalFilter==='active'?'Active Horses':'All Horses',     value:displayHorses.length,   total:horses.length,   emoji:'🐴'},
+              {label:animalFilter==='active'?'Active Total':'All Animals',     value:displaySheep.length+displayChickens.length+displayHorses.length, total:sheep.length+chickens.length+horses.length, emoji:'🐾'},
             ].map(s=>(
               <div key={s.label} style={{ ...S.card, padding:'14px 12px', textAlign:'center', minHeight:isMobile?126:136, boxSizing:'border-box' }}>
                 <div style={{ fontSize:24, marginBottom:4 }}>{s.emoji}</div>
@@ -238,7 +248,7 @@ export function DashboardPage() {
           {/* Species + Active/All toggles */}
           <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
             <div style={{ display:'flex', background:'#f0e8d8', borderRadius:10, padding:3, gap:2 }}>
-              {[['sheep','🐑 Sheep'],['chickens','🐔 Chickens']].map(([k,l])=>(
+              {[['sheep','🐑 Sheep'],['chickens','🐔 Chickens'],['horses','🐴 Horses']].map(([k,l])=>(
                 <button key={k} onClick={()=>setAnimalSp(k)}
                   style={{ ...S.btn, padding:'6px 14px', fontSize:13, borderRadius:8,
                     background:animalSp===k?'#5a3e1b':'transparent',
@@ -289,6 +299,25 @@ export function DashboardPage() {
                     <p style={secTitle}>🐔 By Breed</p>
                     {Object.keys(chickenByBreed).length>1
                       ? <DonutChart segments={chickenBreedSegs} centerLabel="Breeds" centerValue={Object.keys(chickenByBreed).length}/>
+                      : <div style={{ minHeight:160, display:'flex', alignItems:'center', justifyContent:'center', color:'#a08060', fontSize:13, textAlign:'center' }}>
+                          Breed breakdown appears when more than one breed is shown.
+                        </div>
+                    }
+                  </div>
+                </div>
+          )}
+
+          {/* Horse charts */}
+          {animalSp==='horses' && (
+            displayHorses.length===0
+              ? <div style={{ ...S.card, padding:60, textAlign:'center' }}><div style={{ fontSize:48, marginBottom:12 }}>🐴</div><p style={{ color:'#a08060', fontSize:15 }}>No {animalFilter==='active'?'active ':''} horses to show.</p></div>
+              : <div className="dash-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, minHeight:isMobile?820:610 }}>
+                  <div style={chartCard}><p style={secTitle}>🐴 By Sex</p><DonutChart segments={horseSexSegs} centerLabel={animalFilter==='active'?'Active':'Total'} centerValue={displayHorses.length}/></div>
+                  <div style={chartCard}><p style={secTitle}>🐴 By Status</p><DonutChart segments={horseStatusSegs} centerLabel="All" centerValue={horses.length}/></div>
+                  <div style={{ ...chartCard, gridColumn:isMobile?undefined:'span 2' }}>
+                    <p style={secTitle}>🐴 By Breed</p>
+                    {Object.keys(horseByBreed).length>1
+                      ? <DonutChart segments={horseBreedSegs} centerLabel="Breeds" centerValue={Object.keys(horseByBreed).length}/>
                       : <div style={{ minHeight:160, display:'flex', alignItems:'center', justifyContent:'center', color:'#a08060', fontSize:13, textAlign:'center' }}>
                           Breed breakdown appears when more than one breed is shown.
                         </div>

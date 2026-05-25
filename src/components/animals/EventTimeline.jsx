@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { usePhotoUpload } from '../../hooks/usePhotoUpload'
-import { S, Badge, formatDate } from '../ui/shared'
+import { S, Badge, formatDate, getEventTypes } from '../ui/shared'
 
 // ─── Event type metadata ───────────────────────────────────────────────────────
 const EVENT_META = {
@@ -8,6 +8,13 @@ const EVENT_META = {
   worming:         { icon:'💊', label:'Worming',           color:'#6a1b9a', bg:'#f3e5f5', border:'#ce93d8' },
   hoof_trimming:   { icon:'✂️',  label:'Hoof Trim',        color:'#4e342e', bg:'#efebe9', border:'#bcaaa4' },
   hoof_treatment:  { icon:'🩺', label:'Hoof Treatment',    color:'#4e342e', bg:'#efebe9', border:'#bcaaa4' },
+  farrier_visit:   { icon:'🧲', label:'Farrier Visit',     color:'#4e342e', bg:'#efebe9', border:'#bcaaa4' },
+  shoeing:         { icon:'🧲', label:'Shoeing',           color:'#37474f', bg:'#eceff1', border:'#b0bec5' },
+  dental_float:    { icon:'🦷', label:'Dental Float',      color:'#00695c', bg:'#e0f2f1', border:'#80cbc4' },
+  coggins_test:    { icon:'🧪', label:'Coggins Test',      color:'#283593', bg:'#e8eaf6', border:'#9fa8da' },
+  training_session:{ icon:'🎯', label:'Training Session',  color:'#33691e', bg:'#f1f8e9', border:'#aed581' },
+  vet_check:       { icon:'🩺', label:'Vet Check',         color:'#0d47a1', bg:'#e3f2fd', border:'#90caf9' },
+  tack_fitting:    { icon:'🎒', label:'Tack Fitting',      color:'#8d6e00', bg:'#fff8e1', border:'#ffe082' },
   shearing:        { icon:'✂️',  label:'Shearing',         color:'#2e7d32', bg:'#e8f5e9', border:'#a5d6a7' },
   lambing:         { icon:'🐣', label:'Birth',             color:'#e65100', bg:'#fff3e0', border:'#ffcc80' },
   tail_banding:    { icon:'⭕', label:'Tail Banding',      color:'#6d4c41', bg:'#efebe9', border:'#bcaaa4' },
@@ -254,6 +261,7 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
   const [lambs, setLambs] = useState(newLambRows(1))
   const fileRef = useRef()
   const set = (k,v) => setForm(f=>({...f,[k]:v}))
+  const eventOptions = getEventTypes(animal?.species).map(et => [et.value, EVENT_META[et.value] || { icon:'📝', label:et.label }])
   const isBirthForSheep = animal?.species === 'sheep' && form.event_type === 'lambing'
   const sireOptions = allAnimals.filter(a => a.species === 'sheep' && ['ram','male'].includes(a.sex) && a.id !== animal?.id)
 
@@ -317,7 +325,7 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
           <label style={S.label}>What happened?</label>
           <select style={{ ...S.input, cursor:'pointer' }} value={form.event_type}
             onChange={e=>set('event_type', e.target.value)}>
-            {Object.entries(EVENT_META).map(([k,v])=>(
+            {eventOptions.map(([k,v])=>(
               <option key={k} value={k}>{v.icon} {v.label}</option>
             ))}
           </select>

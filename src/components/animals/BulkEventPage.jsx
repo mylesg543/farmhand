@@ -3,36 +3,20 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAnimals } from '../../hooks/useAnimals'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
-import { S } from '../ui/shared'
+import { S, getEventTypes, speciesBasePath } from '../ui/shared'
 
 const SPECIES_META = {
   sheep:    { emoji:'🐑', singular:'Sheep',   plural:'Sheep',    label:'Flock' },
   chickens: { emoji:'🐔', singular:'Chicken', plural:'Chickens', label:'Chickens' },
+  horses:   { emoji:'🐴', singular:'Horse',   plural:'Horses',   label:'Horses' },
 }
-
-const EVENT_TYPES = [
-  { value: 'vaccination',    label: '💉 Vaccination' },
-  { value: 'worming',        label: '🪱 Worming' },
-  { value: 'hoof_trimming',  label: '✂️ Hoof Trimming' },
-  { value: 'hoof_treatment', label: '🩹 Hoof Treatment' },
-  { value: 'shearing',       label: '✂️ Shearing' },
-  { value: 'weight_check',   label: '⚖️ Weight Check' },
-  { value: 'pregnancy_check',label: '🔍 Pregnancy Check' },
-  { value: 'breeding',       label: '❤️ Breeding' },
-  { value: 'lambing',        label: '🐣 Lambing' },
-  { value: 'tail_banding',   label: '⭕ Tail Banding' },
-  { value: 'weaning',        label: '🍼 Weaning' },
-  { value: 'egg_production', label: '🥚 Egg Production' },
-  { value: 'injury',         label: '🩹 Injury' },
-  { value: 'sale',           label: '💸 Sale' },
-  { value: 'custom',         label: '📝 Custom' },
-]
 
 export function BulkEventPage({ species = 'sheep' }) {
   const navigate    = useNavigate()
   const [params]    = useSearchParams()
   const ids         = (params.get('ids') || '').split(',').filter(Boolean)
   const meta        = SPECIES_META[species] || SPECIES_META.sheep
+  const eventTypes  = getEventTypes(species)
 
   const { animals }  = useAnimals(species)
   const { user }     = useAuth()
@@ -46,7 +30,7 @@ export function BulkEventPage({ species = 'sheep' }) {
   const [saving,    setSaving]    = useState(false)
   const [done,      setDone]      = useState(false)
 
-  const backPath = species === 'chickens' ? '/chickens' : '/'
+  const backPath = speciesBasePath(species)
 
   const handleSave = async () => {
     if (!eventType) { alert('Please select an event type.'); return }
@@ -123,7 +107,7 @@ export function BulkEventPage({ species = 'sheep' }) {
           Event Type *
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
-          {EVENT_TYPES.map(et => (
+          {eventTypes.map(et => (
             <button key={et.value} onClick={() => setEventType(et.value)}
               style={{ padding: '8px 12px', fontSize: 13, textAlign: 'left', borderRadius: 8, cursor: 'pointer',
                 background: eventType === et.value ? '#5a3e1b' : '#f7f4ef',

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { calcAge, formatDate, fmt, STATUS_STYLES, STATUS_DOT, Badge, S, EVENT_COLORS } from '../ui/shared'
-import { DEMO_SHEEP, DEMO_CHICKENS, DEMO_EVENTS, DEMO_COSTS, DEMO_INCOME, DEMO_CUSTOMERS } from './demoData'
+import { DEMO_SHEEP, DEMO_CHICKENS, DEMO_HORSES, DEMO_EVENTS, DEMO_COSTS, DEMO_INCOME, DEMO_CUSTOMERS } from './demoData'
 
 function SheepSVG({ sex='ewe', size=52 }) {
   const wool='#e8ddd0', face='#c8a87a', isRam=sex==='ram'
@@ -25,20 +25,38 @@ function Avatar({ animal, size=56 }) {
   const [err, setErr] = useState(false)
   if (!animal) return <div style={{ width:size,height:size,borderRadius:'50%',background:'#f0ebe4',display:'flex',alignItems:'center',justifyContent:'center' }}><SheepSVG size={size}/></div>
   const isChicken = animal.species==='chickens'
+  const isHorse = animal.species==='horses'
   return (
-    <div style={{ width:size,height:size,borderRadius:'50%',overflow:'hidden',background:isChicken?'#fff9e6':'#f0ebe4',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center' }}>
+    <div style={{ width:size,height:size,borderRadius:'50%',overflow:'hidden',background:isChicken?'#fff9e6':isHorse?'#f3ede7':'#f0ebe4',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center' }}>
       {animal.photo_url&&!err
         ?<img src={animal.photo_url} alt={animal.name} style={{ width:'100%',height:'100%',objectFit:'cover' }} onError={()=>setErr(true)}/>
-        :isChicken?<span style={{ fontSize:size*0.55 }}>🐔</span>:<SheepSVG sex={animal.sex} size={size*0.9}/>
+        :isChicken?<span style={{ fontSize:size*0.55 }}>🐔</span>:isHorse?<span style={{ fontSize:size*0.55 }}>🐴</span>:<SheepSVG sex={animal.sex} size={size*0.9}/>
       }
     </div>
   )
 }
 
+const DEMO_SPECIES = {
+  sheep: { emoji:'🐑', label:'Sheep', singular:'Sheep', group:'flock', animals:DEMO_SHEEP, defaultName:'Bella', sub:'Merino · Suffolk · Dorset' },
+  chickens: { emoji:'🐔', label:'Chickens', singular:'Chicken', group:'chickens', animals:DEMO_CHICKENS, defaultName:'Goldie', sub:'Layers · Broilers · Mixed' },
+  horses: { emoji:'🐴', label:'Horses', singular:'Horse', group:'herd', animals:DEMO_HORSES, defaultName:'Willow', sub:'Mares · Geldings · Foals' },
+}
+
+const demoMeta = (species) => DEMO_SPECIES[species] || DEMO_SPECIES.sheep
+const demoAnimals = (species) => demoMeta(species).animals
+
 function buildSteps(species) {
   const isSheep = species==='sheep'
-  const animal  = isSheep ? 'sheep' : 'chicken'
-  const flock   = isSheep ? 'flock' : 'chickens'
+  const isHorse = species==='horses'
+  const animal  = isSheep ? 'sheep' : isHorse ? 'horse' : 'chicken'
+  const flock   = isSheep ? 'flock' : isHorse ? 'herd' : 'chickens'
+  const eventExamples = isSheep ? 'lambing, shearing' : isHorse ? 'farrier visits, dental floats, training sessions' : 'egg production, moulting'
+  const lineageTip = isSheep
+    ? 'Before breeding season, check here. FarmHand shows who\'s related to who across 4 generations — and flags shared ancestors automatically. This used to cost thousands in herd management software.'
+    : isHorse
+      ? 'Track sire and dam lines across 4 generations. FarmHand keeps pedigrees clear and flags shared ancestors before you make breeding decisions.'
+      : 'Track your rooster\'s bloodlines across hatches. 4 generations, built automatically as you record sires and hens.'
+  const pnlExamples = isSheep ? 'wool sales, lamb sales, feed bills' : isHorse ? 'training income, farrier costs, feed bills' : 'egg sales, feed costs'
   return [
     {
       screen:'hero_profiles',
@@ -48,17 +66,17 @@ function buildSteps(species) {
     {
       screen:'hero_events',
       label:'Health Timeline',
-      tip:`Every health event logged with a date, notes, and a photo. Vaccinations, ${isSheep?'lambing, shearing':'egg production, moulting'} — all searchable. Your whole history, never lost.`,
+      tip:`Every health event logged with a date, notes, and a photo. Vaccinations, ${eventExamples} — all searchable. Your whole history, never lost.`,
     },
     {
       screen:'hero_lineage',
       label:'Bloodlines',
-      tip:`${isSheep?'Before breeding season, check here. FarmHand shows who\'s related to who across 4 generations — and flags shared ancestors automatically. This used to cost thousands in herd management software.':'Track your rooster\'s bloodlines across hatches. 4 generations, built automatically as you record sires and hens.'}`,
+      tip: lineageTip,
     },
     {
       screen:'hero_pnl',
       label:'Profit & Loss',
-      tip:`Every dollar in and out — ${isSheep?'wool sales, lamb sales, feed bills':'egg sales, feed costs'} — tracked as you go. See exactly what your farm makes. No spreadsheet needed.`,
+      tip:`Every dollar in and out — ${pnlExamples} — tracked as you go. See exactly what your farm makes. No spreadsheet needed.`,
     },
     {
       screen:'hero_dashboard',
@@ -75,9 +93,10 @@ function buildSteps(species) {
 }
 
 function Nav({ screen, species, isMobile, onExit, name }) {
+  const meta = demoMeta(species)
   const labels = {
-    hero_profiles: `${species==='sheep'?'🐑':'🐔'} ${species==='sheep'?'Sheep':'Chickens'}`,
-    hero_events:   `${species==='sheep'?'🐑':'🐔'} Health Timeline`,
+    hero_profiles: `${meta.emoji} ${meta.label}`,
+    hero_events:   `${meta.emoji} Health Timeline`,
     hero_lineage:  '🌳 Lineage',
     hero_pnl:      '💰 Profit & Loss',
     hero_dashboard:'📊 Dashboard',
@@ -298,7 +317,8 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
 }
 
 function FlockScreen({ name, species, highlight, isMobile }) {
-  const animals  = species==='sheep' ? DEMO_SHEEP : DEMO_CHICKENS
+  const meta = demoMeta(species)
+  const animals  = demoAnimals(species)
   const isSheep  = species==='sheep'
   const display  = animals.map((a,i) => i===0 ? {...a, name} : a)
   const active   = display.filter(a => a.status==='alive' || a.status==='rented')
@@ -314,7 +334,7 @@ function FlockScreen({ name, species, highlight, isMobile }) {
           <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:16 }}>
             <div style={{ display:'flex', alignItems:'center', gap:14 }}>
               <div>
-                <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:34, fontWeight:700, color:'#f0e6cc', margin:'0 0 3px' }}>{isSheep?'🐑':'🐔'} Your {isSheep?'Flock':'Chickens'}</h1>
+                <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:34, fontWeight:700, color:'#f0e6cc', margin:'0 0 3px' }}>{meta.emoji} Your {meta.label}</h1>
                 <p style={{ fontSize:12, color:'#a08060', margin:0 }}>{active.length} active{inactive.length>0?` · ${inactive.filter(a=>a.status==='sold').length} sold`:''}</p>
               </div>
               <div style={{ background:'rgba(200,160,96,0.2)', border:'1px solid rgba(200,160,96,0.4)', borderRadius:12, padding:isMobile?'8px 12px':'10px 16px', textAlign:'center', flexShrink:0 }}>
@@ -322,7 +342,7 @@ function FlockScreen({ name, species, highlight, isMobile }) {
                 <div style={{ fontSize:9, color:'#a08060', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', marginTop:2 }}>Active</div>
               </div>
             </div>
-            <button style={{ ...S.btn, background:'#c8a060', color:'#2c2416', fontWeight:700, padding:'9px 16px', fontSize:13, flexShrink:0 }}>+ Add {isSheep?'Sheep':'Chicken'}</button>
+            <button style={{ ...S.btn, background:'#c8a060', color:'#2c2416', fontWeight:700, padding:'9px 16px', fontSize:13, flexShrink:0 }}>+ Add {meta.singular}</button>
           </div>
           {/* Hero strip — active first, inactive greyed with red dot */}
           <div className="demo-animal-strip" style={{ display:'flex', gap:isMobile?10:14, paddingBottom:20, overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
@@ -353,7 +373,8 @@ function FlockScreen({ name, species, highlight, isMobile }) {
           const st = STATUS_STYLES[a.status]||STATUS_STYLES.alive
           const isActive = a.status==='alive'||a.status==='rented'
           const isYours  = i===0 && filter==='alive'
-          const sub = isSheep ? `${a.sex==='ewe'?'Ewe':a.sex==='ram'?'Ram':'Wether'} · ${a.breed} · ${calcAge(a.birth_date)}` : `${a.sex==='hen'?'Hen':a.sex==='rooster'?'Rooster':'Chick'} · ${a.breed} · ${calcAge(a.birth_date)}`
+          const sexLabel = { ewe:'Ewe', ram:'Ram', wether:'Wether', hen:'Hen', rooster:'Rooster', chick:'Chick', mare:'Mare', stallion:'Stallion', gelding:'Gelding', foal:'Foal' }[a.sex] || a.sex
+          const sub = `${sexLabel} · ${a.breed} · ${calcAge(a.birth_date)}`
           return (
             <div key={a.id} id={isYours?'your-animal':undefined}
               style={{ ...S.card, padding:isMobile?'10px 12px':'14px 18px', marginBottom:8, display:'flex', gap:12, alignItems:'center', cursor:'pointer',
@@ -1312,7 +1333,8 @@ function BulkAddScreen({ name, species, highlight, isMobile }) {
 // ─── HERO SCREEN 1: Animal Profiles ───────────────────────────────────────────
 function HeroProfiles({ name, species, isMobile }) {
   const isSheep = species==='sheep'
-  const animals = (isSheep ? DEMO_SHEEP : DEMO_CHICKENS)
+  const meta = demoMeta(species)
+  const animals = demoAnimals(species)
     .slice(0,isMobile?3:4)
     .map((a,i)=>i===0?{...a,name}:a)
   const statusColors = { alive:'#4caf50', sold:'#9c27b0', deceased:'#9e9e9e', rented:'#f9a825' }
@@ -1347,7 +1369,7 @@ function HeroProfiles({ name, species, isMobile }) {
                   {a.photo_url
                     ? <img src={a.photo_url} alt={a.name} style={{ width:'100%',height:'100%',objectFit:'cover' }}/>
                     : <div style={{ width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:isMobile?22:26 }}>
-                        {isSheep?'🐑':'🐔'}
+                        {meta.emoji}
                       </div>
                   }
                 </div>
@@ -1371,7 +1393,7 @@ function HeroProfiles({ name, species, isMobile }) {
         })}
         {/* "and more" hint */}
         <p style={{ fontSize:12, color:'#c8b89a', textAlign:'center', margin:'4px 0 0', fontStyle:'italic' }}>
-          + {(isSheep?DEMO_SHEEP:DEMO_CHICKENS).length - animals.length} more {isSheep?'sheep':'chickens'} in your flock
+          + {demoAnimals(species).length - animals.length} more {demoMeta(species).label.toLowerCase()} in your {demoMeta(species).group}
         </p>
       </div>
     </div>
@@ -1381,11 +1403,16 @@ function HeroProfiles({ name, species, isMobile }) {
 // ─── HERO SCREEN 2: Health Timeline ───────────────────────────────────────────
 function HeroEvents({ name, species, isMobile }) {
   const isSheep = species==='sheep'
-  const animal = {...(isSheep ? DEMO_SHEEP[0] : DEMO_CHICKENS[0]), name}
+  const isHorse = species==='horses'
+  const animal = {...demoAnimals(species)[0], name}
   const events = isSheep ? [
     { type:'lambing',     date:'Apr 2, 2024',  notes:'Twins born — Rosie and Clover. Both healthy.', icon:'🐣', color:'#e65100', bg:'#fff3e0' },
     { type:'Illness',     date:'Sep 14, 2024', notes:'Limping on left front. Penicillin 3ml.', icon:'🤒', color:'#c62828', bg:'#fff3f3', alert:true },
     { type:'Shearing',    date:'May 15, 2024', notes:'Fleece 4.2kg. Good staple length.', icon:'✂️', color:'#2e7d32', bg:'#e8f5e9' },
+  ] : isHorse ? [
+    { type:'Farrier Visit', date:'Feb 18, 2025', notes:'Routine farrier visit. Balanced front feet.', icon:'🧲', color:'#4e342e', bg:'#efebe9' },
+    { type:'Dental Float',  date:'Mar 8, 2025',  notes:'Dental float completed. Eating well after.', icon:'🦷', color:'#00695c', bg:'#e0f2f1' },
+    { type:'Vet Check',     date:'Apr 5, 2026',  notes:'New foal exam. Strong nursing and clean joints.', icon:'🩺', color:'#1565c0', bg:'#e3f2fd' },
   ] : [
     { type:'Egg Production', date:'Jan 15, 2025', notes:'Averaging 6 eggs/week. Consistent through winter.', icon:'🥚', color:'#f57f17', bg:'#fff9e6' },
     { type:'Illness',        date:'Aug 20, 2024', notes:'Lethargic, not eating. Heat stress — recovered in 2 days.', icon:'🤒', color:'#c62828', bg:'#fff3f3', alert:true },
@@ -1418,7 +1445,7 @@ function HeroEvents({ name, species, isMobile }) {
                 background:'#4caf50', color:'#fff', textTransform:'uppercase' }}>Alive</span>
             </div>
             <p style={{ fontSize:11, color:'#c8a878', margin:'2px 0 0' }}>
-              {isSheep?'Merino ewe':'Rhode Island Red hen'} · {events.length} health records
+              {isSheep?'Merino ewe':isHorse?'Quarter Horse mare':'Rhode Island Red hen'} · {events.length} health records
             </p>
           </div>
         </div>
@@ -1475,12 +1502,17 @@ function HeroEvents({ name, species, isMobile }) {
 // ─── HERO SCREEN 3: Bloodlines ─────────────────────────────────────────────────
 function HeroLineage({ name, species, isMobile }) {
   const isSheep = species==='sheep'
-  const em = isSheep ? { root:'🐑', male:'🐏', female:'🐑' } : { root:'🐔', male:'🐓', female:'🐔' }
+  const isHorse = species==='horses'
+  const em = isSheep ? { root:'🐑', male:'🐏', female:'🐑' } : isHorse ? { root:'🐴', male:'🐴', female:'🐴' } : { root:'🐔', male:'🐓', female:'🐔' }
   const sexBg = { male:'#5d4037', female:'#a1887f' }
   const tree = isSheep ? {
     root: { name, sex:'female', status:'alive' },
     parents: [{ name:'Duke', sex:'male', status:'alive' }, { name:'Iris', sex:'female', status:'alive' }],
     grandparents: [{ name:'Magnus', sex:'male', status:'deceased' }, { name:'Fern', sex:'female', status:'sold' }, { name:'Chester', sex:'male', status:'sold' }, { name:'Pearl', sex:'female', status:'deceased' }],
+  } : isHorse ? {
+    root: { name, sex:'female', status:'alive' },
+    parents: [{ name:'Ranger', sex:'male', status:'alive' }, { name:'Juniper', sex:'female', status:'alive' }],
+    grandparents: [{ name:'Dakota', sex:'male', status:'deceased' }, { name:'Sage', sex:'female', status:'sold' }, { name:'Atlas', sex:'male', status:'sold' }, { name:'Ruby', sex:'female', status:'deceased' }],
   } : {
     root: { name, sex:'female', status:'alive' },
     parents: [{ name:'Redford', sex:'male', status:'alive' }, { name:'Goldie', sex:'female', status:'alive' }],
@@ -1535,7 +1567,9 @@ function HeroLineage({ name, species, isMobile }) {
       <p style={{ fontSize:isMobile?14:17, color:'#7a6648', margin:'0 0 18px', lineHeight:1.5 }}>
         {isSheep
           ? 'Before breeding season — check here. FarmHand builds the family tree automatically and flags shared ancestors. No more accidental inbreeding.'
-          : 'Track your rooster\'s bloodlines across hatches. Built automatically as you record sires and hens. 4 generations, always up to date.'
+          : isHorse
+            ? 'Track sire and dam lines across generations. FarmHand keeps pedigrees clear and flags shared ancestors before breeding decisions.'
+            : 'Track your rooster\'s bloodlines across hatches. Built automatically as you record sires and hens. 4 generations, always up to date.'
         }
       </p>
 
@@ -1605,13 +1639,18 @@ function HeroLineage({ name, species, isMobile }) {
 // ─── HERO SCREEN 4: P&L ────────────────────────────────────────────────────────
 function HeroPnL({ name, species, isMobile }) {
   const isSheep = species==='sheep'
-  const totalIn  = isSheep ? 2840 : 1240
-  const totalOut = isSheep ? 1120 : 480
+  const isHorse = species==='horses'
+  const totalIn  = isSheep ? 2840 : isHorse ? 1560 : 1240
+  const totalOut = isSheep ? 1120 : isHorse ? 780 : 480
   const net      = totalIn - totalOut
   const entries  = isSheep ? [
     { desc:'Wool sale — spring clip', type:'Wool Sale', amount:680, income:true,  date:'May 12' },
     { desc:'Lamb sale × 3',           type:'Animal Sale', amount:900, income:true, date:'Apr 28' },
     { desc:'Hay bales × 40',          type:'Hay',       amount:480, income:false, date:'Apr 10' },
+  ] : isHorse ? [
+    { desc:'Training sessions × 8',    type:'Training', amount:680, income:true,  date:'May 10' },
+    { desc:'Trail lessons × 6',        type:'Lessons',  amount:390, income:true,  date:'Apr 29' },
+    { desc:'Farrier and shoeing',      type:'Farrier',  amount:260, income:false, date:'Apr 18' },
   ] : [
     { desc:'Egg sale — 12 dozen',  type:'Egg Sales', amount:60,  income:true,  date:'May 11' },
     { desc:'Egg sale — 8 dozen',   type:'Egg Sales', amount:40,  income:true,  date:'May 4'  },
@@ -1675,15 +1714,20 @@ function HeroPnL({ name, species, isMobile }) {
 // ─── HERO SCREEN 5: Dashboard ──────────────────────────────────────────────────
 function HeroDashboard({ species, isMobile }) {
   const isSheep = species==='sheep'
+  const isHorse = species==='horses'
 
   // Full year data
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
   const inc = isSheep
     ? [0,   200, 340, 280, 520, 460, 390, 480, 320, 560, 410, 380]
-    : [60,  80,  120, 100, 160, 140, 130, 150, 110, 170, 130, 120]
+    : isHorse
+      ? [120, 180, 260, 220, 360, 420, 390, 450, 340, 380, 300, 260]
+      : [60,  80,  120, 100, 160, 140, 130, 150, 110, 170, 130, 120]
   const exp = isSheep
     ? [220, 180, 260, 200, 310, 240, 280, 220, 190, 300, 250, 200]
-    : [80,  80,  100, 90,  120, 100, 95,  110, 85,  125, 100, 90 ]
+    : isHorse
+      ? [180, 210, 240, 260, 300, 280, 320, 260, 230, 290, 240, 220]
+      : [80,  80,  100, 90,  120, 100, 95,  110, 85,  125, 100, 90 ]
   const maxV = Math.max(...inc,...exp,1)
 
   // Bar chart dimensions — fixed height, scaled to fit 12 months
@@ -1700,6 +1744,10 @@ function HeroDashboard({ species, isMobile }) {
     ? [{ label:'Wool',  v:680, color:'#90caf9' },
        { label:'Lambs', v:900, color:'#5d4037' },
        { label:'Other', v:260, color:'#78909c' }]
+    : isHorse
+      ? [{ label:'Training', v:680, color:'#6d4c41' },
+         { label:'Lessons',  v:520, color:'#8d6e63' },
+         { label:'Other',    v:360, color:'#78909c' }]
     : [{ label:'Eggs',  v:960, color:'#f9a825' },
        { label:'Other', v:280, color:'#78909c' }]
   const total = donutSegs.reduce((s,sg)=>s+sg.v, 0)
@@ -1817,11 +1865,12 @@ function HeroDashboard({ species, isMobile }) {
 // ─── HERO SCREEN 6: Bulk Add ───────────────────────────────────────────────────
 function HeroBulkAdd({ name, species, isMobile }) {
   const isSheep = species==='sheep'
+  const isHorse = species==='horses'
   const rows = [
-    { name, sex:isSheep?'Ewe':'Hen', dob:isSheep?'03/15/2021':'06/01/2023', filled:true },
-    { name:'Rosie', sex:isSheep?'Ewe':'Hen', dob:isSheep?'04/02/2022':'05/15/2023', filled:true },
-    { name:'Duke', sex:isSheep?'Ram':'Rooster', dob:isSheep?'01/10/2020':'04/01/2023', filled:true },
-    { name:'', sex:isSheep?'Ewe':'Hen', dob:'', filled:false },
+    { name, sex:isSheep?'Ewe':isHorse?'Mare':'Hen', dob:isSheep?'03/15/2021':isHorse?'05/12/2018':'06/01/2023', filled:true },
+    { name:isSheep?'Rosie':isHorse?'Copper':'Goldie', sex:isSheep?'Ewe':isHorse?'Gelding':'Hen', dob:isSheep?'04/02/2022':isHorse?'03/02/2020':'05/15/2023', filled:true },
+    { name:isSheep?'Duke':isHorse?'Ranger':'Big Red', sex:isSheep?'Ram':isHorse?'Stallion':'Rooster', dob:isSheep?'01/10/2020':isHorse?'04/08/2015':'04/01/2023', filled:true },
+    { name:'', sex:isSheep?'Ewe':isHorse?'Mare':'Hen', dob:'', filled:false },
   ]
   const inp = { padding:'7px 10px', borderRadius:6, border:'1px solid #d0c4b0',
     background:'#fdfaf6', fontSize:isMobile?12:13, width:'100%', boxSizing:'border-box' }
@@ -1833,7 +1882,7 @@ function HeroBulkAdd({ name, species, isMobile }) {
         letterSpacing:'0.1em', margin:'0 0 10px' }}>Getting Started</p>
       <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?26:38, fontWeight:700,
         color:'#2c2416', margin:'0 0 8px', lineHeight:1.2 }}>
-        Your whole flock — set up in minutes
+        Your whole {isHorse?'herd':'flock'} — set up in minutes
       </h2>
       <p style={{ fontSize:isMobile?14:17, color:'#7a6648', margin:'0 0 14px', lineHeight:1.5 }}>
         Add every animal at once. Name is all you need. Most farms are up and running in under 10 minutes.
@@ -1901,9 +1950,10 @@ function Personalise({ species, setSpecies, onStart, isMobile }) {
 
         <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:16,
           padding:isMobile?20:28, border:'1px solid rgba(255,255,255,0.1)' }}>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:18 }}>
+          <div style={{ display:'grid', gridTemplateColumns:isMobile?'1fr':'1fr 1fr 1fr', gap:10, marginBottom:18 }}>
             {[['sheep','🐑','Sheep','Merino · Suffolk · Dorset'],
-              ['chickens','🐔','Chickens','Layers · Broilers · Mixed']].map(([k,e,l,sub])=>(
+              ['chickens','🐔','Chickens','Layers · Broilers · Mixed'],
+              ['horses','🐴','Horses','Mares · Geldings · Foals']].map(([k,e,l,sub])=>(
               <button key={k} onClick={()=>setSpecies(k)}
                 style={{ padding:isMobile?'14px 10px':'18px 14px', borderRadius:12,
                   border:`2px solid ${species===k?'#c8a060':'rgba(255,255,255,0.15)'}`,
@@ -1963,7 +2013,7 @@ export function DemoPage() {
   const [species,setSpecies] = useState('sheep')
   const [step,   setStep]    = useState(0)
   // Always use default name based on species — no user input needed
-  const name  = species==='sheep' ? 'Bella' : 'Goldie'
+  const name  = demoMeta(species).defaultName
   const steps = buildSteps(species), cur = steps[step]
   const next  = ()=>{ if(cur.isLast) navigate('/'); else setStep(i=>i+1) }
   const skip  = ()=>navigate('/')

@@ -4,7 +4,7 @@ import { useAnimals, useSingleAnimal } from '../../hooks/useAnimals'
 import { useAnimalEvents } from '../../hooks/useAnimalEvents'
 import { usePhotoUpload } from '../../hooks/usePhotoUpload'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { S, AnimalIllustration, STATUS_STYLES, STATUS_DOT, SEX_LABELS, formatDate, calcAge, Spinner, ErrorMsg } from '../ui/shared'
+import { S, AnimalIllustration, STATUS_STYLES, STATUS_DOT, SEX_LABELS, formatDate, calcAge, Spinner, ErrorMsg, ANIMAL_META, speciesBasePath, animalEditPath } from '../ui/shared'
 import { EventTimeline } from './EventTimeline'
 import { PhotoGallery } from './PhotoGallery'
 
@@ -27,7 +27,7 @@ function MiniLineage({ animal, allAnimals, navigate, isMobile }) {
       {!hasParents ? (
         <div style={{ display:'flex', alignItems:isMobile?'stretch':'center', gap:isMobile?10:12, flexWrap:isMobile?'wrap':'nowrap', flexDirection:isMobile?'column':'row' }}>
           <p style={{ fontSize:13, color:'#a08060', margin:0, flex:1 }}>No parents recorded yet.</p>
-          <button onClick={()=>navigate(`/animals/${animal.id}/edit`)}
+          <button onClick={()=>navigate(animalEditPath(animal.species, animal.id))}
             style={{ ...S.btn, ...S.btnSecondary, justifyContent:isMobile?'center':undefined, padding:isMobile?'8px 12px':'7px 12px', fontSize:12, minHeight:isMobile?38:34 }}>+ Add Parents</button>
         </div>
       ) : (
@@ -93,7 +93,7 @@ export function AnimalDetailPage() {
 
   const handleDelete = async () => {
     if (!window.confirm(`Delete ${animal.name}? This also deletes all their events.`)) return
-    try { await deleteAnimal(id); navigate(animal.species==='chickens'?'/chickens':'/') }
+    try { await deleteAnimal(id); navigate(speciesBasePath(animal.species)) }
     catch (err) { alert(err.message) }
   }
 
@@ -137,10 +137,9 @@ export function AnimalDetailPage() {
   if (loading) return <div style={S.page}><Spinner/></div>
   if (error||!animal) return <div style={S.page}><ErrorMsg message={error||'Animal not found.'}/></div>
 
-  const metaMap = { sheep:{ emoji:'🐑', label:'Sheep' }, chickens:{ emoji:'🐔', label:'Chickens' } }
-  const meta    = metaMap[animal.species] || { emoji:'🐾', label:'Animals' }
+  const meta    = ANIMAL_META[animal.species] || { emoji:'🐾', label:'Animals' }
   const st      = STATUS_STYLES[animal.status] || STATUS_STYLES.alive
-  const backPath= animal.species==='chickens' ? '/chickens' : '/'
+  const backPath= speciesBasePath(animal.species)
 
   return (
     <div>
@@ -209,7 +208,7 @@ export function AnimalDetailPage() {
                     border:'1px solid rgba(76,175,80,0.35)', padding:'7px 14px', fontSize:13, fontWeight:700, whiteSpace:'nowrap' }}>
                   ⑂ Lineage
                 </button>
-                <button onClick={()=>navigate(`/animals/${id}/edit`)}
+                <button onClick={()=>navigate(animalEditPath(animal.species, id))}
                   style={{ ...S.btn, background:'rgba(255,255,255,0.1)', color:'#f0e6cc',
                     border:'1px solid rgba(255,255,255,0.2)', padding:'7px 14px', fontSize:13, whiteSpace:'nowrap' }}>
                   ✏️ Edit
@@ -251,7 +250,7 @@ export function AnimalDetailPage() {
                   <span style={{ fontSize:22, lineHeight:1 }}>⑂</span>
                   <span style={{ fontSize:11, fontWeight:700 }}>Lineage</span>
                 </button>
-                <button onClick={()=>navigate(`/animals/${id}/edit`)}
+                <button onClick={()=>navigate(animalEditPath(animal.species, id))}
                   style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5,
                     background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)',
                     borderRadius:10, padding:'12px 6px', cursor:'pointer', color:'#f0e6cc',

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAnimals } from '../../hooks/useAnimals'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { S, AnimalIllustration, STATUS_STYLES, calcAge } from '../ui/shared'
+import { S, AnimalIllustration, STATUS_STYLES, calcAge, ANIMAL_META, animalEditPath, animalDetailPath } from '../ui/shared'
 
 // ─── Build ancestor tree ───────────────────────────────────────────────────────
 function buildTree(animalId, allAnimals, depth=4, visited=new Set()) {
@@ -272,8 +272,9 @@ export function LineagePage() {
     })
     .map(a => a.id))
 
-  const emoji  = species === 'sheep' ? '🐑' : '🐔'
-  const label  = species === 'sheep' ? 'sheep' : 'chickens'
+  const meta   = ANIMAL_META[species] || ANIMAL_META.sheep
+  const emoji  = meta.emoji
+  const label  = meta.label.toLowerCase()
 
   return (
     <div style={{ ...S.page, padding:isMobile?'14px 12px':'32px 24px' }}>
@@ -289,7 +290,7 @@ export function LineagePage() {
         </div>
         {/* Species toggle */}
         <div style={{ display:'flex', background:'#f0e8d8', borderRadius:10, padding:3, gap:2 }}>
-          {[['sheep','🐑 Sheep'],['chickens','🐔 Chickens']].map(([k,l])=>(
+          {[['sheep','🐑 Sheep'],['chickens','🐔 Chickens'],['horses','🐴 Horses']].map(([k,l])=>(
             <button key={k} onClick={()=>handleSpecies(k)}
               style={{ ...S.btn, padding:'6px 14px', fontSize:13, borderRadius:8,
                 background:species===k?'#5a3e1b':'transparent',
@@ -309,7 +310,9 @@ export function LineagePage() {
             <p style={{ fontSize:13, color:'#7a6648', margin:0, lineHeight:1.55 }}>
               {species==='sheep'
                 ? 'Before breeding season, check here to make sure your ram and ewe don\'t share a grandparent. Accidental inbreeding weakens fleece, reduces lamb survival, and builds genetic defects over generations.'
-                : 'Record the rooster (sire) for each batch of chicks and FarmHand builds the family tree automatically. Useful for tracking bloodlines across breeding flocks.'
+                : species==='horses'
+                  ? 'Track sire and dam lines, avoid risky close crosses, and keep pedigrees clear.'
+                  : 'Record the rooster (sire) for each batch of chicks and FarmHand builds the family tree automatically. Useful for tracking bloodlines across breeding flocks.'
               }
             </p>
           </div>
@@ -340,7 +343,7 @@ export function LineagePage() {
         <div style={{ ...S.card, padding:60, textAlign:'center' }}>
           <div style={{ fontSize:52, marginBottom:14 }}>{emoji}</div>
           <p style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:700, marginBottom:8 }}>
-            Select {species==='sheep'?'a sheep':'a chicken'} to see their family tree
+            Select {species==='sheep'?'a sheep':species==='horses'?'a horse':'a chicken'} to see their family tree
           </p>
           <p style={{ fontSize:14, color:'#a08060', maxWidth:360, margin:'0 auto' }}>
             Build the tree over time by recording sires and dams when animals are born.
@@ -353,7 +356,7 @@ export function LineagePage() {
           <div style={{ fontSize:40, marginBottom:12 }}>{emoji}</div>
           <p style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, marginBottom:8 }}>No lineage recorded for {selected?.name}</p>
           <p style={{ fontSize:14, color:'#a08060', marginBottom:20 }}>Edit this animal and select a Sire and Dam to start building their tree.</p>
-          <button onClick={()=>navigate(`/animals/${selectedId}/edit`)} style={{ ...S.btn, ...S.btnPrimary, padding:'10px 24px' }}>
+          <button onClick={()=>navigate(animalEditPath(species, selectedId))} style={{ ...S.btn, ...S.btnPrimary, padding:'10px 24px' }}>
             ✎ Edit {selected?.name} — Add Parents
           </button>
         </div>
@@ -373,7 +376,7 @@ export function LineagePage() {
                 {selected.breed||'Unknown breed'} · {calcAge(selected.birth_date)||'Unknown age'} · Tap an ancestor to view their tree
               </p>
             </div>
-            <button onClick={()=>navigate(`/animals/${selectedId}`)} style={{ ...S.btn, ...S.btnSecondary, padding:'7px 14px', fontSize:13, flexShrink:0 }}>
+            <button onClick={()=>navigate(animalDetailPath(species, selectedId))} style={{ ...S.btn, ...S.btnSecondary, padding:'7px 14px', fontSize:13, flexShrink:0 }}>
               View Profile →
             </button>
           </div>

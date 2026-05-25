@@ -87,7 +87,7 @@ function AnimalDetailPanel({ animal, events }) {
           {animal.photo_url
             ? <img src={animal.photo_url} alt={animal.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
             : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>
-                {animal.species==='chickens'?'🐔':'🐑'}
+                {animal.species==='chickens'?'🐔':animal.species==='horses'?'🐴':'🐑'}
               </div>
           }
         </div>
@@ -288,6 +288,7 @@ function UserRow({ u, allEvents }) {
           <div style={{ display:'flex', gap:5, flexWrap:'wrap', alignItems:'center' }}>
             {u.hasSheep    && <span style={{ fontSize:9, padding:'1px 5px', borderRadius:6, background:'#efebe9', color:'#5d4037', fontWeight:700 }}>🐑 Sheep</span>}
             {u.hasChickens && <span style={{ fontSize:9, padding:'1px 5px', borderRadius:6, background:'#fff9e6', color:'#f57f17', fontWeight:700 }}>🐔 Chickens</span>}
+            {u.hasHorses   && <span style={{ fontSize:9, padding:'1px 5px', borderRadius:6, background:'#f3ede7', color:'#6d4c41', fontWeight:700 }}>🐴 Horses</span>}
             <span style={{ fontSize:10, color:'#a08060' }}>joined {u.signedUpAt ? formatDate(u.signedUpAt.slice(0,10)) : '—'}</span>
           </div>
         </div>
@@ -373,7 +374,7 @@ function UserRow({ u, allEvents }) {
                           {a.photo_url
                             ? <img src={a.photo_url} alt={a.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
                             : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>
-                                {a.species==='chickens'?'🐔':'🐑'}
+                                {a.species==='chickens'?'🐔':a.species==='horses'?'🐴':'🐑'}
                               </div>
                           }
                         </div>
@@ -514,6 +515,7 @@ export function AdminPage() {
         incomeTotal:  u.income.reduce((s,i) => s + Number(i.amount), 0),
         hasSheep:     u.animals.some(a => a.species === 'sheep'),
         hasChickens:  u.animals.some(a => a.species === 'chickens'),
+        hasHorses:    u.animals.some(a => a.species === 'horses'),
         activeAnimals:u.animals.filter(a => a.status === 'alive' || a.status === 'rented').length,
       })).sort((a,b) => (b.lastActive||'') > (a.lastActive||'') ? 1 : -1)
 
@@ -549,6 +551,7 @@ export function AdminPage() {
       const speciesBreakdown = {
         sheep:    animalsData.filter(a => a.species==='sheep').length,
         chickens: animalsData.filter(a => a.species==='chickens').length,
+        horses:   animalsData.filter(a => a.species==='horses').length,
       }
 
       // Also add users who signed up but have zero farm data
@@ -563,7 +566,7 @@ export function AdminPage() {
               ? Math.floor((now - new Date(authUser.last_sign_in_at)) / 86400000)
               : null,
             animalCount:0, eventCount:0, incomeTotal:0, activeAnimals:0,
-            hasSheep:false, hasChickens:false,
+            hasSheep:false, hasChickens:false, hasHorses:false,
           })
         }
       })
@@ -729,7 +732,8 @@ export function AdminPage() {
                   {[
                     { label:'🐑 Sheep farms',    count: data.users.filter(u=>u.hasSheep).length,    color:'#5d4037', total:data.users.length },
                     { label:'🐔 Chicken farms',  count: data.users.filter(u=>u.hasChickens).length, color:'#f9a825', total:data.users.length },
-                    { label:'🐑🐔 Both',          count: data.users.filter(u=>u.hasSheep&&u.hasChickens).length, color:'#2e7d32', total:data.users.length },
+                    { label:'🐴 Horse farms',    count: data.users.filter(u=>u.hasHorses).length,   color:'#6d4c41', total:data.users.length },
+                    { label:'Mixed species',     count: data.users.filter(u=>[u.hasSheep,u.hasChickens,u.hasHorses].filter(Boolean).length>1).length, color:'#2e7d32', total:data.users.length },
                   ].map(s => (
                     <div key={s.label} style={{ marginBottom:12 }}>
                       <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
@@ -746,6 +750,7 @@ export function AdminPage() {
                     {[
                       { label:'🐑 Sheep',    count:data.speciesBreakdown.sheep    || 0, color:'#5d4037' },
                       { label:'🐔 Chickens', count:data.speciesBreakdown.chickens || 0, color:'#f9a825' },
+                      { label:'🐴 Horses',   count:data.speciesBreakdown.horses   || 0, color:'#6d4c41' },
                     ].map(s => (
                       <div key={s.label} style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
                         <span style={{ fontSize:13, color:'#4a3c28' }}>{s.label}</span>
@@ -823,7 +828,7 @@ export function AdminPage() {
                             {u.email || (u.id||'unknown').slice(0,22)+'…'}
                           </p>
                           <p style={{ fontSize:11, color:'#a08060', margin:0 }}>
-                            {u.animalCount} animals · {u.hasSheep?'🐑':''}  {u.hasChickens?'🐔':''}
+                            {u.animalCount} animals · {u.hasSheep?'🐑':''}  {u.hasChickens?'🐔':''} {u.hasHorses?'🐴':''}
                           </p>
                         </div>
                         <div style={{ textAlign:'right' }}>

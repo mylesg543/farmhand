@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAnimals, useSingleAnimal } from '../../hooks/useAnimals'
 import { usePhotoUpload } from '../../hooks/usePhotoUpload'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { S, Field, Spinner, ErrorMsg, AnimalIllustration, ANIMAL_META, SEX_OPTIONS, CHICKEN_BREEDS } from '../ui/shared'
+import { S, Field, Spinner, ErrorMsg, AnimalIllustration, ANIMAL_META, SEX_OPTIONS, CHICKEN_BREEDS, speciesBasePath, animalDetailPath } from '../ui/shared'
 
 function AnimalFormInner({ existing, species, onSave }) {
   const isMobile  = useIsMobile()
@@ -11,7 +11,8 @@ function AnimalFormInner({ existing, species, onSave }) {
   const { upload, uploading }   = usePhotoUpload()
   const meta       = ANIMAL_META[species] || ANIMAL_META.sheep
   const isChicken  = species === 'chickens'
-  const defaultSex = isChicken ? 'hen' : 'ewe'
+  const isHorse    = species === 'horses'
+  const defaultSex = isChicken ? 'hen' : isHorse ? 'mare' : 'ewe'
   const sexOptions = SEX_OPTIONS[species] || SEX_OPTIONS.sheep
 
   const [form, setForm] = useState({
@@ -38,8 +39,8 @@ function AnimalFormInner({ existing, species, onSave }) {
   const isRented = form.status === 'rented'
 
   // Include rented/borrowed rams in sire options
-  const maleOptions   = allAnimals.filter(a => ['ram','rooster','bull','boar','buck'].includes(a.sex) && a.id !== existing?.id)
-  const femaleOptions = allAnimals.filter(a => ['ewe','hen','cow','sow','doe'].includes(a.sex)         && a.id !== existing?.id)
+  const maleOptions   = allAnimals.filter(a => ['ram','rooster','stallion','bull','boar','buck'].includes(a.sex) && a.id !== existing?.id)
+  const femaleOptions = allAnimals.filter(a => ['ewe','hen','mare','cow','sow','doe'].includes(a.sex)            && a.id !== existing?.id)
 
   const validate = () => {
     const e = {}
@@ -111,12 +112,12 @@ function AnimalFormInner({ existing, species, onSave }) {
 
             <Field label="Name *" error={errors.name}>
               <input style={S.input} value={form.name} onChange={e => set('name', e.target.value)}
-                placeholder={isChicken ? 'e.g. Big Red, Lady' : 'e.g. Bella'} autoFocus/>
+                placeholder={isChicken ? 'e.g. Big Red, Lady' : isHorse ? 'e.g. Willow, Ranger' : 'e.g. Bella'} autoFocus/>
             </Field>
 
             <Field label="Tag / ID Number (optional)">
               <input style={S.input} value={form.tag_number} onChange={e => set('tag_number', e.target.value)}
-                placeholder={isChicken ? 'e.g. CHK-001 (optional)' : 'e.g. TAG-001 (optional)'}/>
+                placeholder={isChicken ? 'e.g. CHK-001 (optional)' : isHorse ? 'e.g. HRS-001 (optional)' : 'e.g. TAG-001 (optional)'}/>
             </Field>
 
             <Field label="Sex">
@@ -135,11 +136,11 @@ function AnimalFormInner({ existing, species, onSave }) {
             ) : (
               <Field label="Breed (optional)">
                 <input style={S.input} value={form.breed} onChange={e => set('breed', e.target.value)}
-                  placeholder="e.g. Merino, Dorper, Suffolk…"/>
+                  placeholder={isHorse ? 'e.g. Quarter Horse, Thoroughbred, Paint...' : 'e.g. Merino, Dorper, Suffolk…'}/>
               </Field>
             )}
 
-            <Field label="Date of Birth / Hatch Date">
+            <Field label={isChicken ? 'Hatch Date' : 'Date of Birth'}>
               <input type="date" style={S.input} value={form.birth_date} onChange={e => set('birth_date', e.target.value)}/>
             </Field>
 
@@ -156,7 +157,7 @@ function AnimalFormInner({ existing, species, onSave }) {
             {isRented && (
               <div style={{ background: '#fff9e6', border: '1px solid #ffe082', borderRadius: 10, padding: '14px 16px', marginBottom: 4 }}>
                 <p style={{ fontSize: 11, fontWeight: 700, color: '#f57f17', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 12px' }}>
-                  🐑 Rented Animal Dates
+                  {meta.emoji} Rented Animal Dates
                 </p>
                 <Field label="Arrival Date">
                   <input type="date" style={S.input} value={form.arrival_date} onChange={e => set('arrival_date', e.target.value)}/>
@@ -247,7 +248,7 @@ export function AddAnimalPage({ species }) {
   const { addAnimal } = useAnimals(species)
   const handleSave = async (payload) => {
     await addAnimal(payload)
-    navigate(species === 'chickens' ? '/chickens' : '/')
+    navigate(speciesBasePath(species))
   }
   return <AnimalFormInner species={species} onSave={handleSave}/>
 }
@@ -260,7 +261,7 @@ export function EditAnimalPage() {
   const { updateAnimal } = useAnimals(animal?.species || 'sheep')
   const handleSave = async (payload) => {
     await updateAnimal(id, payload)
-    navigate(`/animals/${id}`)
+    navigate(animalDetailPath(animal?.species || payload.species, id))
   }
   if (loading) return <div style={S.page}><Spinner/></div>
   if (error || !animal) return <div style={S.page}><ErrorMsg message={error || 'Not found'}/></div>

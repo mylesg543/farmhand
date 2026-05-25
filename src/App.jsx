@@ -21,6 +21,7 @@ import { useIsMobile } from './hooks/useIsMobile'
 const ANIMALS = [
   { key: 'sheep',    label: 'Sheep',    emoji: '🐑', path: '/',         active: true  },
   { key: 'chickens', label: 'Chickens', emoji: '🐔', path: '/chickens', active: true  },
+  { key: 'horses',   label: 'Horses',   emoji: '🐴', path: '/horses',   active: true  },
   { key: 'cows',     label: 'Cows',     emoji: '🐄', path: null,        active: false },
   { key: 'pigs',     label: 'Pigs',     emoji: '🐖', path: null,        active: false },
   { key: 'goats',    label: 'Goats',    emoji: '🐐', path: null,        active: false },
@@ -78,7 +79,7 @@ function DesktopNav({ user, isAdmin, navigate, location, signOut }) {
   const [toast, setToast] = useState(null)
   const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
-  const isAnimals = location.pathname === '/' || location.pathname.startsWith('/animals') || location.pathname === '/chickens' || location.pathname.startsWith('/chickens')
+  const isAnimals = location.pathname === '/' || location.pathname.startsWith('/animals') || location.pathname === '/chickens' || location.pathname.startsWith('/chickens') || location.pathname === '/horses' || location.pathname.startsWith('/horses')
   const isPlants  = location.pathname.startsWith('/plants')
   const isPnL     = location.pathname.startsWith('/pnl')
   const isDash    = location.pathname.startsWith('/dashboard')
@@ -197,7 +198,7 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
   const [toast, setToast] = useState(null)
   const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 3000) }
 
-  const isAnimals = location.pathname === '/' || location.pathname.startsWith('/animals') || location.pathname.startsWith('/chickens')
+  const isAnimals = location.pathname === '/' || location.pathname.startsWith('/animals') || location.pathname.startsWith('/chickens') || location.pathname.startsWith('/horses')
   const isPlants  = location.pathname.startsWith('/plants')
   const isPnL     = location.pathname.startsWith('/pnl')
   const isDash    = location.pathname.startsWith('/dashboard')
@@ -332,6 +333,12 @@ function FarmApp() {
         <Route path="/chickens/bulk-event"     element={<BulkEventPage species="chickens" />} />
         <Route path="/chickens/:id"            element={<AnimalDetailPage />} />
         <Route path="/chickens/:id/edit"       element={<EditAnimalPage />} />
+        <Route path="/horses"                  element={<AnimalListPage species="horses" />} />
+        <Route path="/horses/new"              element={<AddAnimalPage species="horses" />} />
+        <Route path="/horses/bulk"             element={<BulkAddPage species="horses" />} />
+        <Route path="/horses/bulk-event"       element={<BulkEventPage species="horses" />} />
+        <Route path="/horses/:id"              element={<AnimalDetailPage />} />
+        <Route path="/horses/:id/edit"         element={<EditAnimalPage />} />
         <Route path="/plants"                  element={<PlantsPage />} />
         <Route path="/pnl"                     element={<PnLPage />} />
         <Route path="/dashboard"               element={<DashboardPage />} />

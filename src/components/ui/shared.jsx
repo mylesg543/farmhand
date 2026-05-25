@@ -2,6 +2,7 @@
 export const ANIMAL_META = {
   sheep:    { label: 'Sheep',    singular: 'Sheep',   emoji: '🐑', color: '#795548', light: '#efebe9' },
   chickens: { label: 'Chickens', singular: 'Chicken', emoji: '🐔', color: '#f57f17', light: '#fff9e6' },
+  horses:   { label: 'Horses',   singular: 'Horse',   emoji: '🐴', color: '#6d4c41', light: '#f3ede7' },
   cows:     { label: 'Cows',     singular: 'Cow',     emoji: '🐄', color: '#37474f', light: '#eceff1' },
   pigs:     { label: 'Pigs',     singular: 'Pig',     emoji: '🐖', color: '#c2185b', light: '#fce4ec' },
   goats:    { label: 'Goats',    singular: 'Goat',    emoji: '🐐', color: '#558b2f', light: '#f1f8e9' },
@@ -15,6 +16,10 @@ export const SEX_OPTIONS = {
   chickens: [{ value: 'hen',     label: 'Hen (Female)'           },
              { value: 'rooster', label: 'Rooster (Male)'         },
              { value: 'chick',   label: 'Chick (Unsexed)'        }],
+  horses:   [{ value: 'mare',    label: 'Mare (Female)'          },
+             { value: 'stallion',label: 'Stallion (Male)'        },
+             { value: 'gelding', label: 'Gelding (Castrated)'    },
+             { value: 'foal',    label: 'Foal'                   }],
   cows:     [{ value: 'cow',     label: 'Cow (Female)'           },
              { value: 'bull',    label: 'Bull (Male)'            },
              { value: 'steer',   label: 'Steer (Castrated)'      }],
@@ -58,6 +63,22 @@ export const EVENT_TYPES_BY_SPECIES = {
     { value: 'death',         label: 'Death'         },
     { value: 'custom',        label: 'Custom Event'  },
   ],
+  horses: [
+    { value: 'farrier_visit',    label: 'Farrier Visit'    },
+    { value: 'hoof_trimming',    label: 'Hoof Trim'        },
+    { value: 'shoeing',          label: 'Shoeing'          },
+    { value: 'dental_float',     label: 'Dental Float'     },
+    { value: 'coggins_test',     label: 'Coggins Test'     },
+    { value: 'worming',          label: 'Deworming'        },
+    { value: 'vaccination',      label: 'Vaccination'      },
+    { value: 'training_session', label: 'Training Session' },
+    { value: 'vet_check',        label: 'Vet Check'        },
+    { value: 'injury',           label: 'Injury Check'     },
+    { value: 'tack_fitting',     label: 'Tack Fitting'     },
+    { value: 'sale',             label: 'Sale'             },
+    { value: 'death',            label: 'Death'            },
+    { value: 'custom',           label: 'Custom Event'     },
+  ],
   default: [
     { value: 'vaccination',   label: 'Vaccination'   },
     { value: 'sickness',      label: 'Sickness'      },
@@ -85,6 +106,13 @@ export const EVENT_COLORS = {
   egg_production: { bg: '#fff9c4', text: '#f57f17', border: '#fff176' },
   moulting:       { bg: '#fbe9e7', text: '#bf360c', border: '#ffab91' },
   hatching:       { bg: '#fce4ec', text: '#880e4f', border: '#f48fb1' },
+  farrier_visit:  { bg: '#efebe9', text: '#4e342e', border: '#bcaaa4' },
+  shoeing:        { bg: '#eceff1', text: '#37474f', border: '#b0bec5' },
+  dental_float:   { bg: '#e0f2f1', text: '#00695c', border: '#80cbc4' },
+  coggins_test:   { bg: '#e8eaf6', text: '#283593', border: '#9fa8da' },
+  training_session: { bg: '#f1f8e9', text: '#33691e', border: '#aed581' },
+  vet_check:      { bg: '#e3f2fd', text: '#0d47a1', border: '#90caf9' },
+  tack_fitting:   { bg: '#fff8e1', text: '#8d6e00', border: '#ffe082' },
   sale:           { bg: '#f3e5f5', text: '#4a148c', border: '#ce93d8' },
   death:          { bg: '#fafafa', text: '#424242', border: '#bdbdbd' },
   custom:         { bg: '#e0f7fa', text: '#006064', border: '#80deea' },
@@ -105,6 +133,7 @@ export const STATUS_DOT = {
 export const SEX_LABELS = {
   ram: 'Ram', ewe: 'Ewe', wether: 'Wether',
   hen: 'Hen', rooster: 'Rooster', chick: 'Chick',
+  mare: 'Mare', stallion: 'Stallion', gelding: 'Gelding', foal: 'Foal',
   cow: 'Cow', bull: 'Bull', steer: 'Steer',
   sow: 'Sow', boar: 'Boar', barrow: 'Barrow',
   doe: 'Doe', buck: 'Buck',
@@ -148,6 +177,42 @@ export function isNewbornAnimal(animal, now = new Date()) {
 }
 
 export function fmt(n) { return `$${Number(n).toFixed(2)}` }
+
+export function speciesBasePath(species) {
+  if (species === 'chickens') return '/chickens'
+  if (species === 'horses') return '/horses'
+  return '/'
+}
+
+export function animalNewPath(species) {
+  if (species === 'chickens') return '/chickens/new'
+  if (species === 'horses') return '/horses/new'
+  return '/animals/new'
+}
+
+export function animalBulkPath(species) {
+  if (species === 'chickens') return '/chickens/bulk'
+  if (species === 'horses') return '/horses/bulk'
+  return '/animals/bulk'
+}
+
+export function animalBulkEventPath(species, ids) {
+  if (species === 'chickens') return `/chickens/bulk-event?ids=${ids}`
+  if (species === 'horses') return `/horses/bulk-event?ids=${ids}`
+  return `/animals/bulk-event?ids=${ids}`
+}
+
+export function animalDetailPath(species, id) {
+  if (species === 'chickens') return `/chickens/${id}`
+  if (species === 'horses') return `/horses/${id}`
+  return `/animals/${id}`
+}
+
+export function animalEditPath(species, id) {
+  if (species === 'chickens') return `/chickens/${id}/edit`
+  if (species === 'horses') return `/horses/${id}/edit`
+  return `/animals/${id}/edit`
+}
 
 // ─── Shared Styles ────────────────────────────────────────────────────────────
 export const S = {
@@ -291,10 +356,37 @@ function SheepSVG({ animal, size }) {
 }
 
 // Dispatcher — picks the right illustration per species
+function HorseSVG({ animal, size }) {
+  const coatColors = ['#8d6e63', '#6d4c41', '#4e342e', '#a1887f', '#5d4037', '#795548']
+  const maneColors = ['#3e2723', '#2c2416', '#6d4c41', '#1f1710']
+  const idx = animal.tag_number ? animal.tag_number.charCodeAt(animal.tag_number.length - 1) % coatColors.length : 0
+  const coat = coatColors[idx]
+  const mane = maneColors[idx % maneColors.length]
+  return (
+    <svg viewBox="0 0 72 72" width={size} height={size} xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="38" cy="43" rx="22" ry="12" fill={coat}/>
+      <path d="M22 41 Q20 28 30 20 Q38 15 45 23 Q36 26 32 36 L31 46 Z" fill={coat}/>
+      <path d="M28 20 Q32 15 39 14 Q35 22 35 33 Q30 29 28 20Z" fill={mane}/>
+      <path d="M34 18 L31 8 L39 17 Z" fill={coat}/>
+      <path d="M45 23 L49 13 L51 26 Z" fill={coat}/>
+      <path d="M57 40 Q65 35 66 28" stroke={mane} strokeWidth="4" strokeLinecap="round" fill="none"/>
+      <rect x="25" y="51" width="5" height="14" rx="2" fill={coat}/>
+      <rect x="36" y="52" width="5" height="13" rx="2" fill={coat}/>
+      <rect x="48" y="51" width="5" height="14" rx="2" fill={coat}/>
+      <path d="M21 47 Q17 53 17 64" stroke={coat} strokeWidth="5" strokeLinecap="round" fill="none"/>
+      <circle cx="31" cy="27" r="2.2" fill="#1f1710"/>
+      <circle cx="31.7" cy="26.2" r="0.7" fill="#fff"/>
+      <ellipse cx="25" cy="35" rx="2" ry="1.2" fill="#2c2416" opacity="0.5"/>
+      <path d="M22 40 Q26 43 31 41" stroke="#2c2416" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.35"/>
+    </svg>
+  )
+}
+
 export function AnimalIllustration({ animal, size = 52 }) {
   if (animal.photo_url) {
     return <img src={animal.photo_url} alt={animal.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
   }
   if (animal.species === 'chickens') return <ChickenSVG animal={animal} size={size} />
+  if (animal.species === 'horses') return <HorseSVG animal={animal} size={size} />
   return <SheepSVG animal={animal} size={size} />
 }

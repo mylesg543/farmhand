@@ -2,16 +2,12 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAnimals } from '../../hooks/useAnimals'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { S } from '../ui/shared'
+import { S, SEX_OPTIONS, speciesBasePath } from '../ui/shared'
 
 const SPECIES_META = {
   sheep:    { emoji:'🐑', singular:'Sheep',   plural:'Sheep',    label:'Flock' },
   chickens: { emoji:'🐔', singular:'Chicken', plural:'Chickens', label:'Chickens' },
-}
-
-const SEX_OPTIONS = {
-  sheep:    [{ value:'ewe',  label:'Ewe (Female)' },{ value:'ram',  label:'Ram (Male)' },{ value:'wether', label:'Wether (Castrated)' },{ value:'lamb', label:'Lamb' }],
-  chickens: [{ value:'hen',  label:'Hen (Female)' },{ value:'rooster', label:'Rooster (Male)' },{ value:'chick', label:'Chick' }],
+  horses:   { emoji:'🐴', singular:'Horse',   plural:'Horses',   label:'Horses' },
 }
 
 const emptyRow = () => ({ name:'', sex:'', birth_date:'', tag_number:'', breed:'' })
@@ -26,7 +22,7 @@ export function BulkAddPage({ species = 'sheep' }) {
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState({})
 
-  const backPath = species === 'chickens' ? '/chickens' : '/'
+  const backPath = speciesBasePath(species)
   const sexOpts  = SEX_OPTIONS[species] || SEX_OPTIONS.sheep
 
   const update = (i, field, value) => {

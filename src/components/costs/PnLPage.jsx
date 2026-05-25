@@ -27,6 +27,8 @@ const EXPENSE_CATS = [
 ]
 const DOZEN_OPTIONS = [0.5, 1, 2, 3, 4, 5, 6]
 const EGG_PRICE     = 5
+const SUPPORTED_SPECIES = ['sheep', 'chickens', 'horses']
+const SUPPORTED_ANIMALS = SUPPORTED_SPECIES.map(key => [key, ANIMAL_META[key]]).filter(([, meta]) => meta)
 
 // ─── Income Form ───────────────────────────────────────────────────────────────
 function IncomeForm({ customers, onSave, onCancel }) {
@@ -91,8 +93,9 @@ function IncomeForm({ customers, onSave, onCancel }) {
         <div>
           <label style={S.label}>Animal Type</label>
           <select style={{ ...S.input, cursor:'pointer' }} value={form.species} onChange={e=>set('species',e.target.value)}>
-            <option value="sheep">🐑 Sheep</option>
-            <option value="chickens">🐔 Chickens</option>
+            {SUPPORTED_ANIMALS.map(([key, meta]) => (
+              <option key={key} value={key}>{meta.emoji} {meta.label}</option>
+            ))}
           </select>
         </div>
         <div>
@@ -213,8 +216,9 @@ function ExpenseForm({ onSave, onCancel }) {
         <div>
           <label style={S.label}>Animal Type</label>
           <select style={{ ...S.input, cursor:'pointer' }} value={form.species} onChange={e=>set('species',e.target.value)}>
-            <option value="sheep">🐑 Sheep</option>
-            <option value="chickens">🐔 Chickens</option>
+            {SUPPORTED_ANIMALS.map(([key, meta]) => (
+              <option key={key} value={key}>{meta.emoji} {meta.label}</option>
+            ))}
             <option value="general">🌾 General</option>
           </select>
         </div>
@@ -297,11 +301,16 @@ export function PnLPage() {
       {showExp && <ExpenseForm                        onSave={handleAddExpense} onCancel={()=>setShowExp(false)}/>}
 
       {/* Species filter tiles */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
+      <div style={{ display:'grid', gridTemplateColumns:isMobile?'repeat(2,1fr)':'repeat(4,1fr)', gap:10, marginBottom:16 }}>
         {[
           { key:'all',      emoji:'🌾', label:'All Animals',  inc:income.reduce((s,i)=>s+Number(i.amount),0), out:costs.reduce((s,c)=>s+Number(c.amount),0) },
-          { key:'sheep',    emoji:'🐑', label:'Sheep',        inc:income.filter(i=>i.species==='sheep').reduce((s,i)=>s+Number(i.amount),0),    out:costs.filter(c=>c.species==='sheep').reduce((s,c)=>s+Number(c.amount),0) },
-          { key:'chickens', emoji:'🐔', label:'Chickens',     inc:income.filter(i=>i.species==='chickens').reduce((s,i)=>s+Number(i.amount),0), out:costs.filter(c=>c.species==='chickens').reduce((s,c)=>s+Number(c.amount),0) },
+          ...SUPPORTED_ANIMALS.map(([key, meta]) => ({
+            key,
+            emoji: meta.emoji,
+            label: meta.label,
+            inc: income.filter(i=>i.species===key).reduce((s,i)=>s+Number(i.amount),0),
+            out: costs.filter(c=>c.species===key).reduce((s,c)=>s+Number(c.amount),0),
+          })),
         ].map(sp=>{
           const spNet   = sp.inc - sp.out
           const isActive= speciesFilter===sp.key
