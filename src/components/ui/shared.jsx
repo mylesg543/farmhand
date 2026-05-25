@@ -133,7 +133,7 @@ export function calcAge(b) {
   return mo > 0 ? `${y}y ${mo}mo` : `${y}y`
 }
 
-export const NEWBORN_DAYS = 90
+export const NEWBORN_DAYS = 60
 
 export function daysSinceBirth(birthDate, now = new Date()) {
   if (!birthDate) return null

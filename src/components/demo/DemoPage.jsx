@@ -151,12 +151,34 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
             to   { opacity:1; transform:translateY(0) scale(1); }
           }
           @keyframes readyNudgePulse {
-            0%,100% { box-shadow:0 0 0 0 rgba(226,176,95,0.28), 0 5px 14px rgba(226,176,95,0.18); }
-            50% { box-shadow:0 0 0 5px rgba(226,176,95,0.08), 0 7px 18px rgba(226,176,95,0.26); }
+            0%,100% { box-shadow:0 0 0 0 rgba(226,176,95,0.4), 0 6px 16px rgba(226,176,95,0.24); }
+            50% { box-shadow:0 0 0 7px rgba(226,176,95,0.14), 0 9px 22px rgba(226,176,95,0.34); }
+          }
+          @keyframes readyCuePulse {
+            0%,100% { opacity:0.72; transform:translateX(0); }
+            50% { opacity:1; transform:translateX(4px); }
           }
           @keyframes heroFadeIn {
             from { opacity:0; transform:translateY(14px); }
             to   { opacity:1; transform:translateY(0); }
+          }
+          @media (min-width: 768px) {
+            .demo-animal-strip {
+              scrollbar-width: thin;
+              scrollbar-color: rgba(240,230,204,0.34) rgba(255,255,255,0.07);
+            }
+            .demo-animal-strip::-webkit-scrollbar { height: 6px; }
+            .demo-animal-strip::-webkit-scrollbar-track {
+              background: rgba(255,255,255,0.07);
+              border-radius: 999px;
+            }
+            .demo-animal-strip::-webkit-scrollbar-thumb {
+              background: rgba(240,230,204,0.34);
+              border-radius: 999px;
+            }
+            .demo-animal-strip::-webkit-scrollbar-thumb:hover {
+              background: rgba(240,230,204,0.48);
+            }
           }
         `}</style>
 
@@ -212,6 +234,21 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
             </button>
             <div style={{ flex:1 }}/>
             <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+              <span aria-hidden="true" style={{
+                width:18,
+                display:'inline-flex',
+                alignItems:'center',
+                justifyContent:'center',
+                color:'#f0c16e',
+                fontSize:18,
+                fontWeight:700,
+                opacity:ready?1:0,
+                visibility:ready?'visible':'hidden',
+                transition:'opacity 0.2s ease, visibility 0.2s ease',
+                animation:ready?'readyCuePulse 1.1s ease-in-out infinite':'none',
+              }}>
+                →
+              </span>
               <button onClick={handleNext}
                 aria-label="Continue tour"
                 tabIndex={ready ? 0 : -1}
@@ -220,14 +257,14 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
                 display:'inline-flex',
                 alignItems:'center',
                 justifyContent:'center',
-                minWidth:isMobile?78:94,
-                height:34,
-                padding:isMobile?'7px 11px':'8px 13px',
-                borderRadius:999,
+                minWidth:isMobile?114:126,
+                height:36,
+                padding:'9px 16px',
+                borderRadius:8,
                 background:ready?'#f0c16e':'transparent',
                 border:`1px solid ${ready?'rgba(240,193,110,0.75)':'transparent'}`,
                 color:ready?'#2c2416':'transparent',
-                fontSize:isMobile?11:12,
+                fontSize:14,
                 fontWeight:700,
                 fontFamily:"'Lato',sans-serif",
                 whiteSpace:'nowrap',
@@ -246,7 +283,7 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
                 style={{ ...S.btn,
                   background:ready?'#d6ad68':'#c8a060',
                   color:'#2c2416', fontWeight:700,
-                  padding:'9px 22px', fontSize:14,
+                  height:36, padding:'9px 22px', fontSize:14, borderRadius:8,
                   boxShadow:ready?'0 0 0 1px rgba(200,160,96,0.22), 0 6px 18px rgba(200,160,96,0.28)':'none',
                   transition:'background 0.2s ease, box-shadow 0.2s ease',
                   animation: pulse ? 'nextPulse 1.8s ease-in-out infinite' : 'none' }}>
@@ -288,7 +325,7 @@ function FlockScreen({ name, species, highlight, isMobile }) {
             <button style={{ ...S.btn, background:'#c8a060', color:'#2c2416', fontWeight:700, padding:'9px 16px', fontSize:13, flexShrink:0 }}>+ Add {isSheep?'Sheep':'Chicken'}</button>
           </div>
           {/* Hero strip — active first, inactive greyed with red dot */}
-          <div style={{ display:'flex', gap:isMobile?10:14, paddingBottom:20, overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
+          <div className="demo-animal-strip" style={{ display:'flex', gap:isMobile?10:14, paddingBottom:20, overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
             {hero.map(a => {
               const isInactive = a.status!=='alive' && a.status!=='rented'
               return (

@@ -45,6 +45,33 @@ const dateValue = (value, fallback = 0) => {
 
 const compareName = (a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity:'base' })
 
+function MenuOptionCard({ icon, title, description, onClick }) {
+  return (
+    <button onClick={onClick}
+      className="animal-menu-option-card"
+      style={{ width:'100%', display:'grid', gridTemplateColumns:'42px 1fr', gap:12,
+        alignItems:'center', textAlign:'left', border:'1px solid rgba(255,255,255,0.09)',
+        background:'rgba(255,255,255,0.06)', color:'#f0e6cc', borderRadius:9,
+        padding:'11px 12px', cursor:'pointer', fontFamily:"'Lato',sans-serif",
+        transition:'background 0.16s ease, border-color 0.16s ease, transform 0.16s ease',
+        marginBottom:6 }}>
+      <span style={{ width:42, height:42, borderRadius:9, background:'rgba(200,160,96,0.14)',
+        border:'1px solid rgba(200,160,96,0.22)', display:'flex', alignItems:'center',
+        justifyContent:'center', fontSize:23, lineHeight:1 }}>
+        {icon}
+      </span>
+      <span style={{ minWidth:0 }}>
+        <span style={{ display:'block', fontSize:13, fontWeight:800, color:'#f0e6cc', marginBottom:3 }}>
+          {title}
+        </span>
+        <span style={{ display:'block', fontSize:11, lineHeight:1.35, color:'#b49a74', fontWeight:400 }}>
+          {description}
+        </span>
+      </span>
+    </button>
+  )
+}
+
 // ─── Mobile inline event panel ──────────────────────────────────────────────
 function MobileEventPanel({ animals, species, user, onDone, onCancel }) {
   const meta          = SPECIES_META[species] || SPECIES_META.sheep
@@ -262,6 +289,35 @@ export function AnimalList({ species = 'sheep' }) {
 
   return (
     <div>
+      <style>{`
+        .animal-menu-option-card:hover,
+        .animal-menu-option-card:focus-visible {
+          background: rgba(200,160,96,0.14) !important;
+          border-color: rgba(200,160,96,0.36) !important;
+          transform: translateY(-1px);
+          outline: none;
+        }
+        @media (min-width: 768px) {
+          .animal-avatar-strip {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(240,230,204,0.34) rgba(255,255,255,0.07);
+          }
+          .animal-avatar-strip::-webkit-scrollbar {
+            height: 6px;
+          }
+          .animal-avatar-strip::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.07);
+            border-radius: 999px;
+          }
+          .animal-avatar-strip::-webkit-scrollbar-thumb {
+            background: rgba(240,230,204,0.34);
+            border-radius: 999px;
+          }
+          .animal-avatar-strip::-webkit-scrollbar-thumb:hover {
+            background: rgba(240,230,204,0.48);
+          }
+        }
+      `}</style>
       {/* ── Hero header ─────────────────────────────────────────────────── */}
       <div style={{ background:'linear-gradient(160deg,#2c2416 0%,#4a3520 40%,#6b4f2e 100%)', width:'100%' }}>
         <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'16px 14px 0':'24px 24px 0' }}>
@@ -300,31 +356,23 @@ export function AnimalList({ species = 'sheep' }) {
                   </button>
                   {showBulkMenu && (
                     <div style={{ position:'absolute', top:'calc(100% + 6px)', right:0,
-                      background:'#2c2416', borderRadius:10, padding:8, minWidth:260,
+                      background:'#2c2416', borderRadius:10, padding:8, minWidth:320,
                       boxShadow:'0 8px 32px rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.1)',
                       zIndex:100 }}>
                       <p style={{ fontSize:10, color:'#6a5040', fontWeight:700, textTransform:'uppercase',
                         letterSpacing:'0.06em', margin:'4px 8px 8px', padding:0 }}>Log an event for…</p>
-                      {/* Single first */}
-                      <button onClick={()=>{ setShowBulkMenu(false); navigate(species==='chickens'?'/chickens':'/') }}
-                        style={{ ...S.btn, width:'100%', justifyContent:'flex-start',
-                          background:'rgba(255,255,255,0.06)', color:'#f0e6cc', border:'none',
-                          padding:'9px 12px', fontSize:13, marginBottom:4, borderRadius:7 }}>
-                        <div>
-                          <div style={{ fontWeight:700, marginBottom:1 }}>＋ Single {meta.singular}</div>
-                          <div style={{ fontSize:11, color:'#a08060' }}>Tap a {meta.singular.toLowerCase()} from the list, then log an event on their profile</div>
-                        </div>
-                      </button>
-                      {/* Multiple second */}
-                      <button onClick={()=>{ setShowBulkMenu(false); setSelecting(true) }}
-                        style={{ ...S.btn, width:'100%', justifyContent:'flex-start',
-                          background:'rgba(255,255,255,0.06)', color:'#f0e6cc', border:'none',
-                          padding:'9px 12px', fontSize:13, borderRadius:7 }}>
-                        <div>
-                          <div style={{ fontWeight:700, marginBottom:1 }}>☑ Multiple {meta.plural}</div>
-                          <div style={{ fontSize:11, color:'#a08060' }}>Select animals — same event type logged for all</div>
-                        </div>
-                      </button>
+                      <MenuOptionCard
+                        icon={meta.emoji}
+                        title={`Single ${meta.singular.toLowerCase()}`}
+                        description={`Use this when adding an event for one ${meta.singular.toLowerCase()}.`}
+                        onClick={()=>{ setShowBulkMenu(false); navigate(species==='chickens'?'/chickens':'/') }}
+                      />
+                      <MenuOptionCard
+                        icon="☑"
+                        title={`Multiple ${meta.plural.toLowerCase()}`}
+                        description="Apply the same event to more than one animal."
+                        onClick={()=>{ setShowBulkMenu(false); setSelecting(true) }}
+                      />
                     </div>
                   )}
                 </div>
@@ -337,29 +385,23 @@ export function AnimalList({ species = 'sheep' }) {
                   </button>
                   {showAddMenu && (
                     <div style={{ position:'absolute', top:'calc(100% + 6px)', right:0,
-                      background:'#2c2416', borderRadius:10, padding:8, minWidth:240,
+                      background:'#2c2416', borderRadius:10, padding:8, minWidth:320,
                       boxShadow:'0 8px 32px rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.1)',
                       zIndex:100 }}>
                       <p style={{ fontSize:10, color:'#6a5040', fontWeight:700, textTransform:'uppercase',
                         letterSpacing:'0.06em', margin:'4px 8px 8px', padding:0 }}>Add {meta.plural}…</p>
-                      <button onClick={()=>{ setShowAddMenu(false); navigate(newPath) }}
-                        style={{ ...S.btn, width:'100%', justifyContent:'flex-start',
-                          background:'rgba(255,255,255,0.06)', color:'#f0e6cc', border:'none',
-                          padding:'9px 12px', fontSize:13, marginBottom:4, borderRadius:7 }}>
-                        <div>
-                          <div style={{ fontWeight:700, marginBottom:1 }}>＋ Single {meta.singular}</div>
-                          <div style={{ fontSize:11, color:'#a08060' }}>Add one {meta.singular.toLowerCase()} with a full profile</div>
-                        </div>
-                      </button>
-                      <button onClick={()=>{ setShowAddMenu(false); navigate(bulkPath) }}
-                        style={{ ...S.btn, width:'100%', justifyContent:'flex-start',
-                          background:'rgba(255,255,255,0.06)', color:'#f0e6cc', border:'none',
-                          padding:'9px 12px', fontSize:13, borderRadius:7 }}>
-                        <div>
-                          <div style={{ fontWeight:700, marginBottom:1 }}>⚡ Bulk Add {meta.plural}</div>
-                          <div style={{ fontSize:11, color:'#a08060' }}>Add multiple {meta.plural.toLowerCase()} at once via spreadsheet</div>
-                        </div>
-                      </button>
+                      <MenuOptionCard
+                        icon="＋"
+                        title={`Single ${meta.singular.toLowerCase()}`}
+                        description="Add one animal with detailed individual information."
+                        onClick={()=>{ setShowAddMenu(false); navigate(newPath) }}
+                      />
+                      <MenuOptionCard
+                        icon="⚡"
+                        title={`Bulk add ${meta.plural.toLowerCase()}`}
+                        description="Add multiple animals quickly when you have a group to enter."
+                        onClick={()=>{ setShowAddMenu(false); navigate(bulkPath) }}
+                      />
                     </div>
                   )}
                 </div>
@@ -403,7 +445,7 @@ export function AnimalList({ species = 'sheep' }) {
           </div>
 
           {/* Avatar strip */}
-          <div style={{ display:'flex', gap:isMobile?8:12, paddingBottom:16,
+          <div className="animal-avatar-strip" style={{ display:'flex', gap:isMobile?8:12, paddingBottom:16,
             overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
             {[...activeAnimals,...soldAnimals,...deceasedAnimals].map(a => {
               const isInactive = !isActive(a)
