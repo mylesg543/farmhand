@@ -29,12 +29,12 @@ const EVENT_TYPES = [
 ]
 
 const SORT_OPTIONS = [
-  { value:'name_asc', label:'Name A-Z' },
-  { value:'name_desc', label:'Name Z-A' },
-  { value:'birth_newest', label:'Birthdate newest' },
-  { value:'birth_oldest', label:'Birthdate oldest' },
-  { value:'recently_added', label:'Recently added' },
-  { value:'status', label:'Status' },
+  { value:'name_asc', icon:'A↓', label:'Name A-Z' },
+  { value:'name_desc', icon:'Z↓', label:'Name Z-A' },
+  { value:'birth_newest', icon:'Cal', label:'Birthdate newest' },
+  { value:'birth_oldest', icon:'Cal', label:'Birthdate oldest' },
+  { value:'recently_added', icon:'Now', label:'Recently added' },
+  { value:'status', icon:'Dot', label:'Status' },
 ]
 
 const dateValue = (value, fallback = 0) => {
@@ -243,9 +243,11 @@ export function AnimalList({ species = 'sheep' }) {
   const [selected,      setSelected]      = useState(new Set())
   const [showBulkMenu,  setShowBulkMenu]  = useState(false)
   const [showAddMenu,   setShowAddMenu]   = useState(false)
+  const [showSortMenu,  setShowSortMenu]  = useState(false)
   const [showEventPanel,setShowEventPanel]= useState(false)
   const bulkMenuRef = useRef()
   const addMenuRef  = useRef()
+  const sortMenuRef = useRef()
 
   const newPath       = species==='chickens' ? '/chickens/new'  : '/animals/new'
   const bulkPath      = species==='chickens' ? '/chickens/bulk' : '/animals/bulk'
@@ -302,6 +304,7 @@ export function AnimalList({ species = 'sheep' }) {
     const fn = (e) => {
       if (bulkMenuRef.current && !bulkMenuRef.current.contains(e.target)) setShowBulkMenu(false)
       if (addMenuRef.current  && !addMenuRef.current.contains(e.target))  setShowAddMenu(false)
+      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target)) setShowSortMenu(false)
     }
     document.addEventListener('mousedown', fn)
     return () => document.removeEventListener('mousedown', fn)
@@ -315,6 +318,7 @@ export function AnimalList({ species = 'sheep' }) {
     ...(deceasedAnimals.length > 0 ? [{ key:'deceased', label:`Deceased (${deceasedAnimals.length})` }]   : []),
     ...(expiredRented.length   > 0 ? [{ key:'rented',   label:`Rented/Returned (${expiredRented.length})` }] : []),
   ]
+  const currentSort = SORT_OPTIONS.find(opt => opt.value === sortBy) || SORT_OPTIONS[0]
 
   if (loading) return <div style={S.page}><p style={{ color:'#a08060', padding:40, textAlign:'center' }}>Loading…</p></div>
   if (error)   return <div style={S.page}><p style={{ color:'#c62828', padding:40, textAlign:'center' }}>{error}</p></div>
@@ -327,6 +331,11 @@ export function AnimalList({ species = 'sheep' }) {
           background: rgba(200,160,96,0.14) !important;
           border-color: rgba(200,160,96,0.36) !important;
           transform: translateY(-1px);
+          outline: none;
+        }
+        .animal-sort-option:hover,
+        .animal-sort-option:focus-visible {
+          background: #f7f4ef !important;
           outline: none;
         }
         @media (min-width: 768px) {
@@ -563,7 +572,7 @@ export function AnimalList({ species = 'sheep' }) {
           <input style={{ ...S.input, flex:1 }}
             placeholder={`Search ${meta.plural.toLowerCase()}…`}
             value={search} onChange={e=>setSearch(e.target.value)}/>
-          <label style={{ display:isMobile?'grid':'flex', gridTemplateColumns:isMobile?'86px minmax(0, 1fr)':undefined,
+          <div ref={sortMenuRef} style={{ position:'relative', display:isMobile?'grid':'flex', gridTemplateColumns:isMobile?'86px minmax(0, 1fr)':undefined,
             alignItems:'center', gap:isMobile?10:12, flexShrink:0,
             background:'#fff', border:'1px solid #d8ccb8', borderRadius:8,
             padding:isMobile?'8px 10px':'0 8px 0 12px', minHeight:38,
@@ -575,17 +584,57 @@ export function AnimalList({ species = 'sheep' }) {
               <span aria-hidden="true" style={{ fontSize:13, color:'#a08060', lineHeight:1 }}>↕</span>
               Sort by
             </span>
-            <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
-              aria-label="Sort animals"
-              style={{ border:'1px solid #efe7d8', borderRadius:7, background:'#fdfaf6', outline:'none',
-                fontFamily:"'Lato',sans-serif", fontSize:13, color:'#2c2416',
-                width:isMobile?'100%':220, minWidth:0, cursor:'pointer', padding:'7px 30px 7px 10px',
-                minHeight:30 }}>
-              {SORT_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </label>
+            <button type="button" onClick={()=>setShowSortMenu(v=>!v)}
+              aria-haspopup="listbox"
+              aria-expanded={showSortMenu}
+              style={{ display:'grid', gridTemplateColumns:'34px minmax(0, 1fr) auto',
+                alignItems:'center', gap:8, border:'1px solid #efe7d8', borderRadius:7,
+                background:'#fdfaf6', color:'#2c2416', fontFamily:"'Lato',sans-serif",
+                fontSize:13, width:isMobile?'100%':220, minWidth:0, cursor:'pointer',
+                padding:'5px 9px', minHeight:32, textAlign:'left' }}>
+              <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                width:28, height:22, borderRadius:6, background:'#f0e8d8', color:'#5a3e1b',
+                fontSize:10, fontWeight:900, letterSpacing:'0.01em' }}>
+                {currentSort.icon}
+              </span>
+              <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight:700 }}>
+                {currentSort.label}
+              </span>
+              <span style={{ color:'#a08060', fontSize:10 }}>{showSortMenu?'▲':'▼'}</span>
+            </button>
+            {showSortMenu && (
+              <div role="listbox" aria-label="Sort animals"
+                style={{ position:'absolute', top:'calc(100% + 6px)', right:0, zIndex:80,
+                  width:isMobile?'100%':220, background:'#fff', border:'1px solid #d8ccb8',
+                  borderRadius:9, boxShadow:'0 8px 28px rgba(44,36,22,0.16)', padding:5 }}>
+                {SORT_OPTIONS.map(opt => {
+                  const selectedOpt = sortBy === opt.value
+                  return (
+                    <button key={opt.value} type="button" role="option" aria-selected={selectedOpt}
+                      className="animal-sort-option"
+                      onClick={()=>{ setSortBy(opt.value); setShowSortMenu(false) }}
+                      style={{ display:'grid', gridTemplateColumns:'34px minmax(0, 1fr) 18px',
+                        alignItems:'center', gap:8, width:'100%', border:'none', borderRadius:7,
+                        background:selectedOpt?'#fdfaf0':'transparent', color:'#2c2416',
+                        padding:'8px 9px', cursor:'pointer', fontFamily:"'Lato',sans-serif",
+                        textAlign:'left' }}>
+                      <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                        width:28, height:22, borderRadius:6, background:selectedOpt?'#5a3e1b':'#f0e8d8',
+                        color:selectedOpt?'#fff':'#5a3e1b', fontSize:10, fontWeight:900,
+                        letterSpacing:'0.01em' }}>
+                        {opt.icon}
+                      </span>
+                      <span style={{ fontSize:13, fontWeight:selectedOpt?800:600, overflow:'hidden',
+                        textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {opt.label}
+                      </span>
+                      <span style={{ color:selectedOpt?'#c8a060':'transparent', fontSize:13, fontWeight:900 }}>✓</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Empty state */}
