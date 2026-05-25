@@ -1,6 +1,27 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
+function autoTagNumber() {
+  const suffix = Math.random().toString(36).slice(2, 8).toUpperCase()
+  return `AUTO-${Date.now()}-${suffix}`
+}
+
+function normalizeAnimalCreatePayload(values, species) {
+  return {
+    ...values,
+    species,
+    name: String(values.name || '').trim(),
+    tag_number: String(values.tag_number || '').trim() || autoTagNumber(),
+    sex: values.sex || null,
+    birth_date: values.birth_date || null,
+    breed: values.breed || null,
+    sire_id: values.sire_id || null,
+    dam_id: values.dam_id || null,
+    notes: values.notes || null,
+    photo_url: values.photo_url || null,
+  }
+}
+
 export function useAnimals(species = 'sheep') {
   const [animals, setAnimals] = useState([])
   const [loading, setLoading] = useState(true)
@@ -22,9 +43,10 @@ export function useAnimals(species = 'sheep') {
 
   const addAnimal = async (values) => {
     const { data: { user } } = await supabase.auth.getUser()
+    const payload = normalizeAnimalCreatePayload(values, species)
     const { data, error } = await supabase
       .from('fh_animals')
-      .insert([{ ...values, species, user_id: user?.id }])
+      .insert([{ ...payload, user_id: user?.id }])
       .select().single()
     if (error) throw error
     setAnimals(prev => [data, ...prev])

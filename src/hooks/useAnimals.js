@@ -7,6 +7,27 @@ export function getEmulated() {
   try { return JSON.parse(localStorage.getItem(EMULATION_KEY)) } catch { return null }
 }
 
+function autoTagNumber() {
+  const suffix = Math.random().toString(36).slice(2, 8).toUpperCase()
+  return `AUTO-${Date.now()}-${suffix}`
+}
+
+function normalizeAnimalCreatePayload(payload, species) {
+  return {
+    ...payload,
+    species: payload.species || species,
+    tag_number: String(payload.tag_number || '').trim() || autoTagNumber(),
+    name: String(payload.name || '').trim(),
+    sex: payload.sex || null,
+    birth_date: payload.birth_date || null,
+    breed: payload.breed || null,
+    sire_id: payload.sire_id || null,
+    dam_id: payload.dam_id || null,
+    notes: payload.notes || null,
+    photo_url: payload.photo_url || null,
+  }
+}
+
 export function useAnimals(species) {
   const { user } = useAuth()
   const [animals, setAnimals] = useState([])
@@ -49,10 +70,11 @@ export function useAnimals(species) {
 
   const addAnimal = async (payload) => {
     if (!canWrite) throw new Error('Read-only mode — switch to write mode to make changes')
+    const normalizedPayload = normalizeAnimalCreatePayload(payload, species)
     if (emulated) {
       const { data, error } = await supabase.rpc('add_animal_admin', {
         target_user_id: effectiveUid,
-        payload: payload,
+        payload: normalizedPayload,
       })
       if (error) throw error
       const row = Array.isArray(data) ? data[0] : data
@@ -60,7 +82,7 @@ export function useAnimals(species) {
       return row
     }
     const { data, error } = await supabase.from('fh_animals')
-      .insert({ ...payload, user_id: effectiveUid })
+      .insert({ ...normalizedPayload, user_id: effectiveUid })
       .select()
     if (error) throw error
     const row = Array.isArray(data) ? data[0] : data

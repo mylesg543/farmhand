@@ -11,6 +11,7 @@ const SPECIES_META = {
 }
 
 const emptyRow = () => ({ name:'', sex:'', birth_date:'', tag_number:'', breed:'' })
+const rowHasAnyValue = (row) => Object.values(row).some(value => String(value || '').trim())
 
 export function BulkAddPage({ species = 'sheep' }) {
   const navigate = useNavigate()
@@ -36,7 +37,7 @@ export function BulkAddPage({ species = 'sheep' }) {
   const validate = () => {
     const errs = {}
     rows.forEach((r, i) => {
-      if (!r.name.trim()) errs[`${i}_name`] = true
+      if (rowHasAnyValue(r) && !r.name.trim()) errs[`${i}_name`] = true
     })
     return errs
   }
@@ -57,7 +58,7 @@ export function BulkAddPage({ species = 'sheep' }) {
             species,
             sex: r.sex || null,
             birth_date: r.birth_date || null,
-            tag_number: r.tag_number.trim() || null,
+            tag_number: r.tag_number.trim(),
             breed: r.breed.trim() || null,
             status: 'alive',
           })
