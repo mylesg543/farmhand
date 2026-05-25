@@ -46,7 +46,7 @@ function AnimalChip({ a, selectedId, onSelect, hasWarning=false }) {
   const isSel = a.id===selectedId
   const st    = STATUS_STYLES[a.status]||STATUS_STYLES.alive
   return (
-    <button onClick={()=>onSelect(isSel?null:a.id)}
+    <button onClick={()=>onSelect(a.id)}
       style={{ display:'grid', gridTemplateColumns:'34px minmax(0, 1fr) auto', alignItems:'center', gap:9,
         width:'100%', minHeight:60, padding:'10px 11px', borderRadius:10, cursor:'pointer',
         border:isSel?'2px solid #c8a060':'1px solid #e8e0d0',
