@@ -433,11 +433,15 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
 }
 
 // ─── Main Timeline ─────────────────────────────────────────────────────────────
-export function EventTimeline({ events=[], loading=false, onAddEvent, onCreateLamb, onAddPhoto, onDelete, onUpdate, isMobile, animal, allAnimals=[] }) {
+export function EventTimeline({ events=[], loading=false, onAddEvent, onCreateLamb, onAddPhoto, onDelete, onUpdate, isMobile, animal, allAnimals=[], openSignal=0 }) {
   const [showForm, setShowForm] = useState(false)
   // Debug: log raw event_date values so we can see what Supabase returns
 
   const groups = groupByMonth(events)
+
+  useEffect(() => {
+    if (openSignal) setShowForm(true)
+  }, [openSignal])
 
   const handleSave = async (form) => {
     const { lambsToCreate = [], ...eventPayload } = form

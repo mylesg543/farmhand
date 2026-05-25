@@ -315,8 +315,8 @@ function Nav() {
 function FarmApp() {
   const isMobile = useIsMobile()
   return (
-    <div style={{ minHeight: '100vh', background: '#f7f4ef', fontFamily: "'Lato',sans-serif", color: '#2c2416', paddingBottom: isMobile ? 'calc(96px + env(safe-area-inset-bottom))' : 0 }}>
-      <style>{`@media (max-width:767px){input,select,textarea{font-size:16px!important;}button{touch-action:manipulation;}}`}</style>
+    <div style={{ minHeight: '100vh', background: '#f7f4ef', fontFamily: "'Lato',sans-serif", color: '#2c2416', paddingBottom: isMobile ? 'var(--fh-mobile-page-bottom)' : 0 }}>
+      <style>{`:root{--fh-mobile-nav-height:64px;--fh-mobile-float-bottom:calc(86px + env(safe-area-inset-bottom));--fh-mobile-page-bottom:calc(112px + env(safe-area-inset-bottom));}@media (max-width:767px){input,select,textarea{font-size:16px!important;}button{touch-action:manipulation;}}`}</style>
       <EmulationBanner />
       <Nav />
       <Routes>

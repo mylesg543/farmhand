@@ -4,7 +4,7 @@ import { useAnimals, useSingleAnimal } from '../../hooks/useAnimals'
 import { useAnimalEvents } from '../../hooks/useAnimalEvents'
 import { usePhotoUpload } from '../../hooks/usePhotoUpload'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { S, AnimalIllustration, STATUS_STYLES, STATUS_DOT, SEX_LABELS, formatDate, calcAge, Spinner, ErrorMsg, ANIMAL_META, speciesBasePath, animalEditPath } from '../ui/shared'
+import { S, AnimalIllustration, STATUS_DOT, SEX_LABELS, formatDate, calcAge, Spinner, ErrorMsg, ANIMAL_META, speciesBasePath, animalEditPath } from '../ui/shared'
 import { EventTimeline } from './EventTimeline'
 import { PhotoGallery } from './PhotoGallery'
 
@@ -74,6 +74,7 @@ export function AnimalDetailPage() {
   const navigate   = useNavigate()
   const isMobile   = useIsMobile()
   const fileRef    = useRef()
+  const eventSectionRef = useRef()
   const { animal, loading, error } = useSingleAnimal(id)
   const { animals: allAnimals, addAnimal, deleteAnimal, updateAnimal } = useAnimals(animal?.species || 'sheep')
   const { events, loading:evLoading, addEvent: _addEvent, addPhotoToEvent, deleteEvent, updateEvent } = useAnimalEvents(id)
@@ -90,6 +91,7 @@ export function AnimalDetailPage() {
   const [pendingPhoto,  setPendingPhoto]  = useState(null)  // { url, file }
   const [caption,       setCaption]       = useState('')
   const [savingPhoto,   setSavingPhoto]   = useState(false)
+  const [logEventSignal, setLogEventSignal] = useState(0)
 
   const handleDelete = async () => {
     if (!window.confirm(`Delete ${animal.name}? This also deletes all their events.`)) return
@@ -129,6 +131,13 @@ export function AnimalDetailPage() {
     finally { setSavingPhoto(false) }
   }
 
+  const handleLogEventClick = () => {
+    setLogEventSignal(v => v + 1)
+    window.setTimeout(() => {
+      eventSectionRef.current?.scrollIntoView({ behavior:'smooth', block:'start' })
+    }, 0)
+  }
+
   // Most recent photo = avatar (from profile updates only, not event photos)
   const latestProfilePhoto = [...events]
     .filter(e => e.event_type === 'photo_update' && e.photo_url)
@@ -138,8 +147,12 @@ export function AnimalDetailPage() {
   if (error||!animal) return <div style={S.page}><ErrorMsg message={error||'Animal not found.'}/></div>
 
   const meta    = ANIMAL_META[animal.species] || { emoji:'🐾', label:'Animals' }
-  const st      = STATUS_STYLES[animal.status] || STATUS_STYLES.alive
   const backPath= speciesBasePath(animal.species)
+  const profileStats = [
+    { label:'Age', value:animal.birth_date ? calcAge(animal.birth_date) : 'Unknown' },
+    { label:'Events', value:events.length },
+    { label:'Status', value:animal.status || 'Unknown' },
+  ]
 
   return (
     <div>
@@ -188,9 +201,26 @@ export function AnimalDetailPage() {
               <p style={{ fontSize:12, color:'#a08060', margin:0 }}>
                 {animal.birth_date ? `Born ${formatDate(animal.birth_date)} · ${calcAge(animal.birth_date)}` : 'Birth date unknown'}
               </p>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:9 }}>
+                {profileStats.map(stat => (
+                  <span key={stat.label} style={{ display:'inline-flex', alignItems:'center', gap:5,
+                    border:'1px solid rgba(255,255,255,0.14)', background:'rgba(255,255,255,0.08)',
+                    color:'#f0e6cc', borderRadius:8, padding:'4px 8px', fontSize:11, fontWeight:700 }}>
+                    <span style={{ color:'#c8a878', fontWeight:800, textTransform:'uppercase', fontSize:9 }}>{stat.label}</span>
+                    {stat.value}
+                  </span>
+                ))}
+              </div>
             </div>
             {!isMobile && (
               <div style={{ display:'flex', gap:8, flexShrink:0, alignItems:'center' }}>
+                <button onClick={handleLogEventClick}
+                  style={{ ...S.btn, background:'#c8a060', color:'#2c2416',
+                    border:'1px solid rgba(255,255,255,0.18)', padding:'7px 14px',
+                    fontSize:13, fontWeight:800, whiteSpace:'nowrap',
+                    boxShadow:'0 4px 14px rgba(0,0,0,0.18)' }}>
+                  + Log Event
+                </button>
                 <label style={{ ...S.btn, background:'rgba(200,160,96,0.25)', color:'#f0e6cc',
                   border:'1px solid rgba(200,160,96,0.4)', padding:'7px 14px', fontSize:13,
                   cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6, whiteSpace:'nowrap' }}>
@@ -225,6 +255,14 @@ export function AnimalDetailPage() {
           {/* Mobile action buttons — 4 equal tiles + full-width delete */}
           {isMobile && (
             <div style={{ marginTop:14 }}>
+              <button onClick={handleLogEventClick}
+                style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                  background:'#c8a060', border:'1px solid rgba(255,255,255,0.18)',
+                  borderRadius:10, padding:'12px', cursor:'pointer', color:'#2c2416',
+                  fontFamily:"'Lato',sans-serif", fontSize:14, fontWeight:800,
+                  boxShadow:'0 4px 14px rgba(0,0,0,0.18)', marginBottom:8 }}>
+                <span style={{ fontSize:16, lineHeight:1 }}>+</span> Log Event
+              </button>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:8, marginBottom:8 }}>
                 <label style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5,
                   background:'rgba(200,160,96,0.25)', border:'1px solid rgba(200,160,96,0.4)',
@@ -298,7 +336,7 @@ export function AnimalDetailPage() {
         <MiniLineage animal={animal} allAnimals={allAnimals} navigate={navigate} isMobile={isMobile}/>
 
         {/* Event timeline */}
-        <div style={{ ...S.card, padding:isMobile?'14px 12px':'22px 24px' }}>
+        <div ref={eventSectionRef} style={{ ...S.card, padding:isMobile?'14px 12px':'22px 24px' }}>
           {evLoading ? <Spinner/> : (
             <EventTimeline
               events={events}
@@ -311,6 +349,7 @@ export function AnimalDetailPage() {
               onDelete={deleteEvent}
               onUpdate={updateEvent}
               isMobile={isMobile}
+              openSignal={logEventSignal}
             />
           )}
         </div>

@@ -237,11 +237,12 @@ export function LineagePage() {
   const [species,    setSpecies]    = useState(searchParams.get('species') || 'sheep')
   const [selectedId, setSelectedId] = useState(searchParams.get('id') || null)
   const [search,     setSearch]     = useState('')
+  const [lineageFilter, setLineageFilter] = useState('all')
 
   const { animals, loading } = useAnimals(species)
 
   // When species changes, clear selection
-  const handleSpecies = (s) => { setSpecies(s); setSelectedId(null); setSearch('') }
+  const handleSpecies = (s) => { setSpecies(s); setSelectedId(null); setSearch(''); setLineageFilter('all') }
 
   useEffect(() => {
     const id = searchParams.get('id')
@@ -253,7 +254,6 @@ export function LineagePage() {
   const tree     = selectedId ? buildTree(selectedId, animals, 4) : null
   const selected = selectedId ? animals.find(a=>a.id===selectedId) : null
   const hasLineage = selected && (selected.sire_id || selected.dam_id)
-  const filtered = animals.filter(a => !search || (a.name||'').toLowerCase().includes(search.toLowerCase()))
 
   // Inbreeding check
   const sharedAncestors = tree ? (() => {
@@ -271,10 +271,23 @@ export function LineagePage() {
       return [...sireIds].some(id => damIds.has(id))
     })
     .map(a => a.id))
+  const hasRecordedLineage = (a) => Boolean(a.sire_id || a.dam_id)
+  const searchFiltered = animals.filter(a => !search || (a.name||'').toLowerCase().includes(search.toLowerCase()))
+  const filterOptions = [
+    { key:'all', label:'All', count:animals.length },
+    { key:'warnings', label:'Warnings', count:animalsWithLineageWarnings.size },
+    { key:'with_lineage', label:'With lineage', count:animals.filter(hasRecordedLineage).length },
+    { key:'missing', label:'Missing parents', count:animals.filter(a => !hasRecordedLineage(a)).length },
+  ]
+  const filtered = searchFiltered.filter(a => {
+    if (lineageFilter === 'warnings') return animalsWithLineageWarnings.has(a.id)
+    if (lineageFilter === 'with_lineage') return hasRecordedLineage(a)
+    if (lineageFilter === 'missing') return !hasRecordedLineage(a)
+    return true
+  })
 
   const meta   = ANIMAL_META[species] || ANIMAL_META.sheep
   const emoji  = meta.emoji
-  const label  = meta.label.toLowerCase()
 
   return (
     <div style={{ ...S.page, padding:isMobile?'14px 12px':'32px 24px' }}>
@@ -322,16 +335,53 @@ export function LineagePage() {
       {/* Selector */}
       <div style={{ ...S.card, padding:isMobile?14:22, marginBottom:20 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14, flexWrap:'wrap', gap:8 }}>
-          <span style={S.sectionLabel}>Select an Animal</span>
+          <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+            <span style={S.sectionLabel}>Select an Animal</span>
+            {!loading && (
+              <span style={{ fontSize:11, fontWeight:800, color:'#a08060', background:'#f7f4ef',
+                border:'1px solid #e8e0d0', borderRadius:999, padding:'3px 8px' }}>
+                {filtered.length} shown
+              </span>
+            )}
+          </div>
           {selectedId && (
             <button onClick={()=>setSelectedId(null)} style={{ ...S.btn, ...S.btnSecondary, padding:'5px 12px', fontSize:12 }}>✕ Clear</button>
           )}
         </div>
         <input style={{ ...S.input, marginBottom:14 }} placeholder="Search by name…"
           value={search} onChange={e=>setSearch(e.target.value)}/>
+        {!loading && (
+          <div style={{ display:'flex', gap:7, flexWrap:'wrap', marginBottom:14 }}>
+            {filterOptions.map(opt => {
+              const active = lineageFilter === opt.key
+              const disabled = opt.key !== 'all' && opt.count === 0
+              return (
+                <button key={opt.key} onClick={()=>!disabled && setLineageFilter(opt.key)}
+                  disabled={disabled}
+                  style={{ ...S.btn, borderRadius:999, padding:isMobile?'6px 9px':'7px 11px',
+                    fontSize:isMobile?11:12, fontWeight:800,
+                    background:active?'#5a3e1b':'#fff', color:active?'#fff':disabled?'#c8b89a':'#5a3e1b',
+                    border:active?'1px solid #5a3e1b':'1px solid #e8e0d0',
+                    opacity:disabled?0.55:1, cursor:disabled?'default':'pointer' }}>
+                  {opt.label} <span style={{ color:active?'#f0e6cc':'#a08060', marginLeft:3 }}>{opt.count}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
         {loading
           ? <p style={{ color:'#a08060', fontSize:13 }}>Loading your flock…</p>
-          : <div style={{ display:'grid',
+          : filtered.length === 0 ? (
+            <div style={{ background:'#fdfaf6', border:'1px dashed #d8ccb8', borderRadius:10,
+              padding:isMobile?'18px 14px':'22px', textAlign:'center' }}>
+              <p style={{ fontSize:14, fontWeight:800, color:'#5a3e1b', margin:'0 0 5px' }}>No animals match this view.</p>
+              <p style={{ fontSize:12, color:'#a08060', margin:'0 0 12px' }}>Clear the search or switch the lineage filter.</p>
+              <button onClick={()=>{ setSearch(''); setLineageFilter('all') }}
+                style={{ ...S.btn, ...S.btnSecondary, padding:'7px 14px', fontSize:12 }}>
+                Show all animals
+              </button>
+            </div>
+          ) : <div style={{ display:'grid',
               gridTemplateColumns:isMobile?'1fr 1fr':'repeat(auto-fill, minmax(190px, 1fr))',
               gap:isMobile?8:10, alignItems:'stretch' }}>
               {filtered.map(a=><AnimalChip key={a.id} a={a} selectedId={selectedId} onSelect={setSelectedId} hasWarning={animalsWithLineageWarnings.has(a.id)}/>)}

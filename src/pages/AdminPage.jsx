@@ -190,7 +190,7 @@ export function EmulationBanner() {
     return (
       <button onClick={()=>setExpanded(true)}
         className="admin-emulation-pill"
-        style={{ position:'fixed', right:12, bottom:'calc(86px + env(safe-area-inset-bottom))',
+        style={{ position:'fixed', right:12, bottom:'var(--fh-mobile-float-bottom)',
           zIndex:9999, maxWidth:'calc(100vw - 20px)', display:'flex', alignItems:'center', gap:7,
           background:eu.writeMode ? '#b71c1c' : '#1a237e', color:'#fff',
           border:'1px solid rgba(255,255,255,0.28)', borderRadius:999,
@@ -211,7 +211,7 @@ export function EmulationBanner() {
 
   return (
     <div className="admin-emulation-banner" style={{ position:'fixed', top:0, left:0, right:0, zIndex:9999,
-      ...(isMobile ? { top:'auto', bottom:'calc(86px + env(safe-area-inset-bottom))', left:'auto', right:10, width:'calc(100vw - 20px)', maxWidth:340, borderRadius:14 } : {}),
+      ...(isMobile ? { top:'auto', bottom:'var(--fh-mobile-float-bottom)', left:'auto', right:10, width:'calc(100vw - 20px)', maxWidth:340, borderRadius:14 } : {}),
       background: eu.writeMode ? '#b71c1c' : '#1a237e',
       color:'#fff', padding:isMobile?'8px 10px':'8px 16px', display:'flex', alignItems:'center',
       flexWrap:isMobile?'wrap':'nowrap', gap:isMobile?6:12, fontSize:isMobile?11:13, fontFamily:"'Lato',sans-serif",
@@ -624,7 +624,7 @@ export function AdminPage() {
     <div className="admin-page-root" style={{ ...S.page, padding:'24px', background:'#f7f4ef', minHeight:'100vh' }}>
       <style>{`
         @media(max-width:767px){
-          .admin-page-root{padding:12px!important;padding-bottom:calc(148px + env(safe-area-inset-bottom))!important;max-width:none!important;}
+          .admin-page-root{padding:12px!important;padding-bottom:calc(var(--fh-mobile-page-bottom) + 36px)!important;max-width:none!important;}
           .admin-grid-3{grid-template-columns:1fr!important;}
           .admin-grid-3 > *{grid-column:auto!important;}
           .admin-grid-4{grid-template-columns:1fr 1fr!important;gap:8px!important;}
@@ -646,7 +646,7 @@ export function AdminPage() {
           .admin-user-expanded{padding:12px!important;padding-bottom:calc(22px + env(safe-area-inset-bottom))!important;max-height:calc(100vh - 190px)!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;}
           .admin-user-animal-list{padding-bottom:calc(88px + env(safe-area-inset-bottom))!important;}
           .admin-animal-detail-panel{max-height:calc(100vh - 260px)!important;overflow-y:auto!important;}
-          .admin-emulation-banner{top:auto!important;bottom:calc(86px + env(safe-area-inset-bottom))!important;left:auto!important;right:10px!important;width:calc(100vw - 20px)!important;max-width:340px!important;border-radius:14px!important;padding:8px 10px!important;gap:6px!important;font-size:11px!important;box-shadow:0 8px 26px rgba(0,0,0,0.30)!important;flex-wrap:wrap!important;align-items:center!important;}
+          .admin-emulation-banner{top:auto!important;bottom:var(--fh-mobile-float-bottom)!important;left:auto!important;right:10px!important;width:calc(100vw - 20px)!important;max-width:340px!important;border-radius:14px!important;padding:8px 10px!important;gap:6px!important;font-size:11px!important;box-shadow:0 8px 26px rgba(0,0,0,0.30)!important;flex-wrap:wrap!important;align-items:center!important;}
           .admin-emulation-icon{font-size:13px!important;}
           .admin-emulation-label{font-size:10px!important;}
           .admin-emulation-email{flex:1 1 130px!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;}
