@@ -83,11 +83,22 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel }) {
   const [notes,       setNotes]     = useState('')
   const [saving,      setSaving]    = useState(false)
   const [done,        setDone]      = useState(false)
+  const [selectionFilter, setSelectionFilter] = useState('all')
+  const newbornActive = active.filter(a => isNewbornAnimal(a))
+  const visibleAnimals = selectionFilter === 'newborn' ? newbornActive : active
+  const visibleSelected = visibleAnimals.filter(a => picked.has(a.id)).length
 
   const toggle = (id) => setPicked(prev => {
     const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n
   })
-  const toggleAll = () => setPicked(picked.size===active.length ? new Set() : new Set(active.map(a=>a.id)))
+  const toggleAll = () => setPicked(prev => {
+    const visibleIds = visibleAnimals.map(a => a.id)
+    if (visibleIds.length === 0) return prev
+    const allVisiblePicked = visibleIds.every(id => prev.has(id))
+    const n = new Set(prev)
+    visibleIds.forEach(id => allVisiblePicked ? n.delete(id) : n.add(id))
+    return n
+  })
 
   const handleSave = async () => {
     if (picked.size===0) { alert(`Select at least one ${meta.singular.toLowerCase()}.`); return }
@@ -134,15 +145,31 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel }) {
       {/* Step 1: pick animals */}
       <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase',
         letterSpacing:'0.06em', margin:'0 0 8px' }}>1. Select {meta.plural}</p>
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
+        {[
+          { key:'all', label:`All active (${active.length})`, disabled:false },
+          { key:'newborn', label:`🐣 Newborn (${newbornActive.length})`, disabled:newbornActive.length===0 },
+        ].map(btn => (
+          <button key={btn.key} onClick={()=>!btn.disabled&&setSelectionFilter(btn.key)}
+            disabled={btn.disabled}
+            style={{ ...S.btn, fontSize:11, padding:'5px 10px', borderRadius:20,
+              background:selectionFilter===btn.key?'#5a3e1b':btn.key==='newborn'?'#fff9e6':'#fff',
+              color:selectionFilter===btn.key?'#fff':btn.disabled?'#c8b89a':btn.key==='newborn'?'#ad6500':'#7a6648',
+              border:selectionFilter===btn.key?'none':btn.key==='newborn'?'1px solid #f0c16e':'1px solid #d0c4b0',
+              opacity:btn.disabled?0.55:1, cursor:btn.disabled?'not-allowed':'pointer' }}>
+            {btn.label}
+          </button>
+        ))}
+      </div>
       <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:4 }}>
         <button onClick={toggleAll}
           style={{ ...S.btn, fontSize:11, padding:'4px 10px',
-            background:picked.size===active.length?'#5a3e1b':'#f0ebe4',
-            color:picked.size===active.length?'#fff':'#5a3e1b',
+            background:visibleAnimals.length>0&&visibleSelected===visibleAnimals.length?'#5a3e1b':'#f0ebe4',
+            color:visibleAnimals.length>0&&visibleSelected===visibleAnimals.length?'#fff':'#5a3e1b',
             border:'1px solid #d0c4b0', borderRadius:20 }}>
-          {picked.size===active.length?'✓ All selected':'Select All'}
+          {visibleAnimals.length>0&&visibleSelected===visibleAnimals.length?'✓ Visible selected':'Select visible'}
         </button>
-        {active.map(a => (
+        {visibleAnimals.map(a => (
           <button key={a.id} onClick={()=>toggle(a.id)}
             style={{ ...S.btn, fontSize:12, padding:'5px 11px',
               background:picked.has(a.id)?'#5a3e1b':'#f7f4ef',
@@ -153,6 +180,11 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel }) {
           </button>
         ))}
       </div>
+      {visibleAnimals.length===0 && (
+        <p style={{ fontSize:12, color:'#a08060', margin:'2px 0 12px', fontStyle:'italic' }}>
+          No {selectionFilter} {meta.plural.toLowerCase()} to select.
+        </p>
+      )}
       {picked.size>0 && (
         <p style={{ fontSize:11, color:'#5a3e1b', margin:'4px 0 12px', fontWeight:600 }}>
           {picked.size} {picked.size===1?meta.singular.toLowerCase():meta.plural.toLowerCase()} selected
