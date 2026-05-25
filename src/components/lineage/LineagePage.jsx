@@ -64,7 +64,11 @@ function AnimalChip({ a, selectedId, onSelect, hasWarning=false }) {
         </p>
         <span style={{ fontSize:9, fontWeight:700, padding:'1px 5px', borderRadius:6, background:st.bg, color:st.text, textTransform:'uppercase' }}>{a.status}</span>
       </div>
-      <span style={{ color:isSel?'#c8a060':'#d8ccb8', fontSize:14, justifySelf:'end' }}>{isSel ? '✓' : '›'}</span>
+      <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'flex-end', minWidth:18, justifySelf:'end' }}>
+        {hasWarning ? <WarningBadge compact /> : (
+          <span style={{ color:isSel?'#c8a060':'#d8ccb8', fontSize:14 }}>{isSel ? '✓' : '›'}</span>
+        )}
+      </span>
     </button>
   )
 }
@@ -257,6 +261,15 @@ export function LineagePage() {
     return [...sireIds].filter(id=>damIds.has(id)).map(id=>animals.find(a=>a.id===id)).filter(Boolean)
   })() : []
   const sharedAncestorIds = new Set(sharedAncestors.map(a=>a.id))
+  const animalsWithLineageWarnings = new Set(animals
+    .filter(a => {
+      const t = buildTree(a.id, animals, 4)
+      if (!t?.sire || !t?.dam) return false
+      const sireIds = collectIds(t.sire)
+      const damIds  = collectIds(t.dam)
+      return [...sireIds].some(id => damIds.has(id))
+    })
+    .map(a => a.id))
 
   const emoji  = species === 'sheep' ? '🐑' : '🐔'
   const label  = species === 'sheep' ? 'sheep' : 'chickens'
@@ -317,7 +330,7 @@ export function LineagePage() {
           : <div style={{ display:'grid',
               gridTemplateColumns:isMobile?'1fr 1fr':'repeat(auto-fill, minmax(190px, 1fr))',
               gap:isMobile?8:10, alignItems:'stretch' }}>
-              {filtered.map(a=><AnimalChip key={a.id} a={a} selectedId={selectedId} onSelect={setSelectedId} hasWarning={sharedAncestorIds.has(a.id)}/>)}
+              {filtered.map(a=><AnimalChip key={a.id} a={a} selectedId={selectedId} onSelect={setSelectedId} hasWarning={animalsWithLineageWarnings.has(a.id)}/>)}
             </div>
         }
       </div>
