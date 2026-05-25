@@ -13,12 +13,12 @@ const SPECIES_META = {
 }
 
 const SORT_OPTIONS = [
-  { value:'name_asc', icon:'A↓', label:'Name A-Z' },
-  { value:'name_desc', icon:'Z↓', label:'Name Z-A' },
-  { value:'birth_newest', icon:'Cal', label:'Birthdate newest' },
-  { value:'birth_oldest', icon:'Cal', label:'Birthdate oldest' },
-  { value:'recently_added', icon:'Now', label:'Recently added' },
-  { value:'status', icon:'Dot', label:'Status' },
+  { value:'name_asc', icon:'sortAsc', label:'Name A-Z' },
+  { value:'name_desc', icon:'sortDesc', label:'Name Z-A' },
+  { value:'birth_newest', icon:'calendarDown', label:'Birthdate newest' },
+  { value:'birth_oldest', icon:'calendarUp', label:'Birthdate oldest' },
+  { value:'recently_added', icon:'clock', label:'Recently added' },
+  { value:'status', icon:'status', label:'Status' },
 ]
 
 const dateValue = (value, fallback = 0) => {
@@ -28,6 +28,37 @@ const dateValue = (value, fallback = 0) => {
 }
 
 const compareName = (a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity:'base' })
+
+function SortIcon({ type, selected = false }) {
+  const stroke = selected ? '#fff' : '#5a3e1b'
+  const fill = selected ? '#fff' : '#5a3e1b'
+  if (type === 'clock') return (
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>
+    </svg>
+  )
+  if (type === 'status') return (
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none">
+      <circle cx="7" cy="7" r="3" fill={fill} opacity="0.9"/><circle cx="17" cy="12" r="3" fill={fill} opacity="0.65"/><circle cx="9" cy="18" r="3" fill={fill} opacity="0.4"/>
+    </svg>
+  )
+  if (type === 'calendarDown' || type === 'calendarUp') {
+    const up = type === 'calendarUp'
+    return (
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/>
+        <path d={up ? 'M12 17v-4M9.5 15.5 12 13l2.5 2.5' : 'M12 13v4M9.5 14.5 12 17l2.5-2.5'}/>
+      </svg>
+    )
+  }
+  const desc = type === 'sortDesc'
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d={desc ? 'M6 7h9M6 12h7M6 17h4' : 'M6 7h4M6 12h7M6 17h9'}/>
+      <path d={desc ? 'M18 6v12M15 15l3 3 3-3' : 'M18 18V6M15 9l3-3 3 3'}/>
+    </svg>
+  )
+}
 
 function MenuOptionCard({ icon, title, description, onClick }) {
   return (
@@ -578,7 +609,7 @@ export function AnimalList({ species = 'sheep' }) {
               <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
                 width:28, height:22, borderRadius:6, background:'#f0e8d8', color:'#5a3e1b',
                 fontSize:10, fontWeight:900, letterSpacing:'0.01em' }}>
-                {currentSort.icon}
+                <SortIcon type={currentSort.icon} />
               </span>
               <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight:700 }}>
                 {currentSort.label}
@@ -605,7 +636,7 @@ export function AnimalList({ species = 'sheep' }) {
                         width:28, height:22, borderRadius:6, background:selectedOpt?'#5a3e1b':'#f0e8d8',
                         color:selectedOpt?'#fff':'#5a3e1b', fontSize:10, fontWeight:900,
                         letterSpacing:'0.01em' }}>
-                        {opt.icon}
+                        <SortIcon type={opt.icon} selected={selectedOpt} />
                       </span>
                       <span style={{ fontSize:13, fontWeight:selectedOpt?800:600, overflow:'hidden',
                         textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
