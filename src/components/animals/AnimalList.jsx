@@ -29,11 +29,11 @@ const EVENT_TYPES = [
 ]
 
 const SORT_OPTIONS = [
-  { value:'name_asc', label:'A-Z Name A to Z' },
-  { value:'name_desc', label:'Z-A Name Z to A' },
-  { value:'birth_newest', label:'📅 Birthdate newest first' },
-  { value:'birth_oldest', label:'📆 Birthdate oldest first' },
-  { value:'recently_added', label:'🕒 Recently added' },
+  { value:'name_asc', label:'A-Z Name' },
+  { value:'name_desc', label:'Z-A Name' },
+  { value:'birth_newest', label:'📅 Newest birth' },
+  { value:'birth_oldest', label:'📆 Oldest birth' },
+  { value:'recently_added', label:'🕒 Recent' },
   { value:'status', label:'● Status' },
 ]
 
@@ -531,10 +531,12 @@ export function AnimalList({ species = 'sheep' }) {
           <input style={{ ...S.input, flex:1 }}
             placeholder={`Search ${meta.plural.toLowerCase()}…`}
             value={search} onChange={e=>setSearch(e.target.value)}/>
-          <label style={{ display:'flex', alignItems:'center', gap:isMobile?10:12, flexShrink:0,
+          <label style={{ display:isMobile?'grid':'flex', gridTemplateColumns:isMobile?'86px minmax(0, 1fr)':undefined,
+            alignItems:'center', gap:isMobile?10:12, flexShrink:0,
             background:'#fff', border:'1px solid #d8ccb8', borderRadius:8,
             padding:isMobile?'8px 10px':'0 8px 0 12px', minHeight:38,
-            boxShadow:'0 1px 3px rgba(44,36,22,0.04)' }}>
+            boxShadow:'0 1px 3px rgba(44,36,22,0.04)', width:isMobile?'100%':undefined,
+            boxSizing:'border-box' }}>
             <span style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:11,
               fontWeight:800, color:'#7a6648', whiteSpace:'nowrap',
               textTransform:'uppercase', letterSpacing:'0.04em', paddingRight:isMobile?0:2 }}>
@@ -545,7 +547,7 @@ export function AnimalList({ species = 'sheep' }) {
               aria-label="Sort animals"
               style={{ border:'1px solid #efe7d8', borderRadius:7, background:'#fdfaf6', outline:'none',
                 fontFamily:"'Lato',sans-serif", fontSize:13, color:'#2c2416',
-                width:isMobile?'100%':220, cursor:'pointer', padding:'7px 30px 7px 10px',
+                width:isMobile?'100%':220, minWidth:0, cursor:'pointer', padding:'7px 30px 7px 10px',
                 minHeight:30 }}>
               {SORT_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>

@@ -163,9 +163,14 @@ export function getEmulatedUser() {
 export function EmulationBanner() {
   const eu = getEmulatedUser()
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [expanded, setExpanded] = useState(window.innerWidth >= 768)
 
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 768)
+    const onResize = () => {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      if (!mobile) setExpanded(true)
+    }
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
@@ -181,6 +186,29 @@ export function EmulationBanner() {
     window.location.href = '/admin'
   }
 
+  if (isMobile && !expanded) {
+    return (
+      <button onClick={()=>setExpanded(true)}
+        className="admin-emulation-pill"
+        style={{ position:'fixed', right:10, bottom:'calc(62px + env(safe-area-inset-bottom))',
+          zIndex:9999, maxWidth:'calc(100vw - 20px)', display:'flex', alignItems:'center', gap:7,
+          background:eu.writeMode ? '#b71c1c' : '#1a237e', color:'#fff',
+          border:'1px solid rgba(255,255,255,0.28)', borderRadius:999,
+          padding:'8px 11px', boxShadow:'0 4px 18px rgba(0,0,0,0.28)',
+          cursor:'pointer', fontFamily:"'Lato',sans-serif" }}>
+        <span style={{ fontSize:13 }}>{eu.writeMode ? '✏️' : '👁'}</span>
+        <span style={{ fontSize:11, fontWeight:800, textTransform:'uppercase', letterSpacing:'0.04em' }}>
+          {eu.writeMode ? 'Editing' : 'Viewing'}
+        </span>
+        <span style={{ maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+          fontSize:11, opacity:0.86 }}>
+          {eu.email}
+        </span>
+        <span style={{ fontSize:13, opacity:0.9 }}>▴</span>
+      </button>
+    )
+  }
+
   return (
     <div className="admin-emulation-banner" style={{ position:'fixed', top:0, left:0, right:0, zIndex:9999,
       ...(isMobile ? { top:'auto', bottom:'calc(54px + env(safe-area-inset-bottom))', left:8, right:8, borderRadius:10 } : {}),
@@ -194,6 +222,15 @@ export function EmulationBanner() {
       <span className="admin-emulation-mode" style={{ display:isMobile?'none':'inline', fontSize:11, background:'rgba(255,255,255,0.2)', padding:'2px 8px', borderRadius:6, marginLeft:4 }}>
         {eu.writeMode ? 'Write mode — changes affect their real data' : 'Read-only'}
       </span>
+      {isMobile && (
+        <button onClick={()=>setExpanded(false)}
+          className="admin-emulation-btn"
+          style={{ marginLeft:'auto', background:'rgba(255,255,255,0.14)', border:'1px solid rgba(255,255,255,0.28)',
+            color:'#fff', borderRadius:6, padding:'4px 9px', cursor:'pointer', fontSize:11,
+            fontFamily:"'Lato',sans-serif", fontWeight:800 }}>
+          Collapse
+        </button>
+      )}
       <div className="admin-emulation-actions" style={{ marginLeft:isMobile?0:'auto', display:isMobile?'grid':'flex', gridTemplateColumns:isMobile?'1fr auto':undefined, gap:isMobile?6:8, width:isMobile?'100%':'auto' }}>
         {!eu.writeMode
           ? <button onClick={()=>switchMode(true)}
