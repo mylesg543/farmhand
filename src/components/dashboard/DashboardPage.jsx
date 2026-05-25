@@ -158,10 +158,11 @@ export function DashboardPage() {
   const totalCustRevenue=custStats.reduce((s,c)=>s+c.spent,0)
 
   const card={ ...S.card, padding:isMobile?16:24, marginBottom:16 }
+  const chartCard={ ...card, minHeight:isMobile?260:286, boxSizing:'border-box', transition:'box-shadow 0.2s ease, border-color 0.2s ease' }
   const secTitle={ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, marginBottom:16, color:'#2c2416' }
 
   return (
-    <div style={{ ...S.page, padding:isMobile?'16px 12px':'32px 24px' }}>
+    <div style={{ ...S.page, padding:isMobile?'16px 12px':'32px 24px', scrollbarGutter:'stable' }}>
       <style>{`@media(max-width:767px){.dash-2col{grid-template-columns:1fr!important;}}`}</style>
 
       {/* Header + tabs */}
@@ -221,11 +222,13 @@ export function DashboardPage() {
               {label:animalFilter==='active'?'Active Chickens':'All Chickens', value:displayChickens.length, total:chickens.length, emoji:'🐔'},
               {label:animalFilter==='active'?'Active Total':'All Animals',     value:displaySheep.length+displayChickens.length, total:sheep.length+chickens.length, emoji:'🐾'},
             ].map(s=>(
-              <div key={s.label} style={{ ...S.card, padding:'14px 12px', textAlign:'center' }}>
+              <div key={s.label} style={{ ...S.card, padding:'14px 12px', textAlign:'center', minHeight:isMobile?126:136, boxSizing:'border-box' }}>
                 <div style={{ fontSize:24, marginBottom:4 }}>{s.emoji}</div>
                 <div style={{ fontSize:isMobile?20:26, fontWeight:700, fontFamily:"'Playfair Display',serif" }}>{s.value}</div>
                 <div style={{ fontSize:10, color:'#a08060', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', marginTop:2 }}>{s.label}</div>
-                {animalFilter==='active' && s.total > s.value && <div style={{ fontSize:10, color:'#c8b89a', marginTop:2 }}>{s.total - s.value} sold/deceased</div>}
+                <div style={{ fontSize:10, color:'#c8b89a', marginTop:2, minHeight:14 }}>
+                  {animalFilter==='active' && s.total > s.value ? `${s.total - s.value} sold/deceased` : ''}
+                </div>
               </div>
             ))}
           </div>
@@ -258,10 +261,18 @@ export function DashboardPage() {
           {animalSp==='sheep' && (
             displaySheep.length===0
               ? <div style={{ ...S.card, padding:60, textAlign:'center' }}><div style={{ fontSize:48, marginBottom:12 }}>🐑</div><p style={{ color:'#a08060', fontSize:15 }}>No {animalFilter==='active'?'active ':''} sheep to show.</p></div>
-              : <div className="dash-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-                  <div style={card}><p style={secTitle}>🐑 By Sex</p><DonutChart segments={sheepSexSegs} centerLabel={animalFilter==='active'?'Active':'Total'} centerValue={displaySheep.length}/></div>
-                  <div style={card}><p style={secTitle}>🐑 By Status</p><DonutChart segments={sheepStatusSegs} centerLabel="All" centerValue={sheep.length}/></div>
-                  {Object.keys(sheepByBreed).length>1&&<div style={{ ...card, gridColumn:isMobile?undefined:'span 2' }}><p style={secTitle}>🐑 By Breed</p><DonutChart segments={sheepBreedSegs} centerLabel="Breeds" centerValue={Object.keys(sheepByBreed).length}/></div>}
+              : <div className="dash-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, minHeight:isMobile?820:610 }}>
+                  <div style={chartCard}><p style={secTitle}>🐑 By Sex</p><DonutChart segments={sheepSexSegs} centerLabel={animalFilter==='active'?'Active':'Total'} centerValue={displaySheep.length}/></div>
+                  <div style={chartCard}><p style={secTitle}>🐑 By Status</p><DonutChart segments={sheepStatusSegs} centerLabel="All" centerValue={sheep.length}/></div>
+                  <div style={{ ...chartCard, gridColumn:isMobile?undefined:'span 2' }}>
+                    <p style={secTitle}>🐑 By Breed</p>
+                    {Object.keys(sheepByBreed).length>1
+                      ? <DonutChart segments={sheepBreedSegs} centerLabel="Breeds" centerValue={Object.keys(sheepByBreed).length}/>
+                      : <div style={{ minHeight:160, display:'flex', alignItems:'center', justifyContent:'center', color:'#a08060', fontSize:13, textAlign:'center' }}>
+                          Breed breakdown appears when more than one breed is shown.
+                        </div>
+                    }
+                  </div>
                 </div>
           )}
 
@@ -269,9 +280,9 @@ export function DashboardPage() {
           {animalSp==='chickens' && (
             displayChickens.length===0
               ? <div style={{ ...S.card, padding:60, textAlign:'center' }}><div style={{ fontSize:48, marginBottom:12 }}>🐔</div><p style={{ color:'#a08060', fontSize:15 }}>No {animalFilter==='active'?'active ':''} chickens to show.</p></div>
-              : <div className="dash-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-                  <div style={card}><p style={secTitle}>🐔 By Sex</p><DonutChart segments={chickenSexSegs} centerLabel={animalFilter==='active'?'Active':'Total'} centerValue={displayChickens.length}/></div>
-                  <div style={card}><p style={secTitle}>🐔 By Breed</p><DonutChart segments={chickenBreedSegs} centerLabel="Breeds" centerValue={Object.keys(chickenByBreed).length}/></div>
+              : <div className="dash-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, minHeight:isMobile?540:306 }}>
+                  <div style={chartCard}><p style={secTitle}>🐔 By Sex</p><DonutChart segments={chickenSexSegs} centerLabel={animalFilter==='active'?'Active':'Total'} centerValue={displayChickens.length}/></div>
+                  <div style={chartCard}><p style={secTitle}>🐔 By Breed</p><DonutChart segments={chickenBreedSegs} centerLabel="Breeds" centerValue={Object.keys(chickenByBreed).length}/></div>
                 </div>
           )}
         </>
