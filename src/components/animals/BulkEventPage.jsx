@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useAnimals } from '../../hooks/useAnimals'
+import { getEmulated, useAnimals } from '../../hooks/useAnimals'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
 import { S, getEventTypes, getEventMeta, statusFromEventType, speciesBasePath } from '../ui/shared'
@@ -29,24 +29,41 @@ export function BulkEventPage({ species = 'sheep' }) {
   const [notes,     setNotes]     = useState('')
   const [saving,    setSaving]    = useState(false)
   const [done,      setDone]      = useState(false)
+  const [formError, setFormError] = useState('')
 
   const backPath = speciesBasePath(species)
+  const emulated = getEmulated()
+  const effectiveUid = emulated ? emulated.uid : user?.id
+  const canWrite = !emulated || emulated.writeMode
 
   const handleSave = async () => {
-    if (!eventType) { alert('Please select an event type.'); return }
-    if (!eventDate) { alert('Please select a date.'); return }
-    if (!user) { alert('Not logged in.'); return }
+    if (ids.length === 0) { setFormError(`Select at least one ${meta.singular.toLowerCase()} before logging an event.`); return }
+    if (!eventType) { setFormError('Please select an event type.'); return }
+    if (!eventDate) { setFormError('Please select a date.'); return }
+    if (!effectiveUid) { setFormError('Not logged in.'); return }
+    if (!canWrite) { setFormError('Read-only mode - switch to write mode to make changes.'); return }
     setSaving(true)
+    setFormError('')
     try {
       const rows = ids.map(animal_id => ({
         animal_id,
         event_type: eventType,
         event_date: eventDate,
         notes: notes || null,
-        user_id: user.id,
+        user_id: effectiveUid,
       }))
-      const { error } = await supabase.from('fh_animal_events').insert(rows)
-      if (error) throw error
+      if (emulated) {
+        for (const row of rows) {
+          const { error } = await supabase.rpc('add_event_admin', {
+            target_user_id: effectiveUid,
+            payload: row,
+          })
+          if (error) throw error
+        }
+      } else {
+        const { error } = await supabase.from('fh_animal_events').insert(rows)
+        if (error) throw error
+      }
       const nextStatus = statusFromEventType(eventType)
       if (nextStatus) {
         await Promise.all(ids.map(animalId => updateAnimal(animalId, { status: nextStatus })))
@@ -54,7 +71,7 @@ export function BulkEventPage({ species = 'sheep' }) {
       setDone(true)
       setTimeout(() => navigate(backPath), 1200)
     } catch (err) {
-      alert('Failed to save events: ' + err.message)
+      setFormError('Failed to save events: ' + err.message)
     } finally {
       setSaving(false)
     }
@@ -88,6 +105,13 @@ export function BulkEventPage({ species = 'sheep' }) {
           One event logged for all {ids.length} selected {ids.length === 1 ? meta.singular.toLowerCase() : meta.plural.toLowerCase()}
         </p>
       </div>
+
+      {formError && (
+        <div style={{ background:'#fff3f3', border:'1px solid #f5c6c6', color:'#c62828',
+          borderRadius:10, padding:'11px 14px', fontSize:13, fontWeight:600, marginBottom:16 }}>
+          {formError}
+        </div>
+      )}
 
       {/* Selected animals */}
       {selectedAnimals.length > 0 && (
@@ -159,8 +183,8 @@ export function BulkEventPage({ species = 'sheep' }) {
 
       {/* Buttons */}
       <div style={{ display: 'flex', gap: 10 }}>
-        <button onClick={handleSave} disabled={saving || !eventType}
-          style={{ flex: 1, background: saving || !eventType ? '#c8b89a' : '#c8a060', color: '#2c2416', border: 'none', borderRadius: 8, padding: '12px 20px', fontSize: 15, fontWeight: 700, cursor: saving || !eventType ? 'default' : 'pointer', fontFamily: "'Lato',sans-serif" }}>
+        <button onClick={handleSave} disabled={saving || !eventType || ids.length === 0}
+          style={{ flex: 1, background: saving || !eventType || ids.length === 0 ? '#c8b89a' : '#c8a060', color: '#2c2416', border: 'none', borderRadius: 8, padding: '12px 20px', fontSize: 15, fontWeight: 700, cursor: saving || !eventType || ids.length === 0 ? 'default' : 'pointer', fontFamily: "'Lato',sans-serif" }}>
           {saving ? 'Saving…' : `Save for ${ids.length} ${ids.length === 1 ? meta.singular : meta.plural}`}
         </button>
         <button onClick={() => navigate(backPath)}

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAnimals } from '../../hooks/useAnimals'
+import { getEmulated, useAnimals } from '../../hooks/useAnimals'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
@@ -100,6 +100,7 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
   const [saving,      setSaving]    = useState(false)
   const [done,        setDone]      = useState(false)
   const [selectionFilter, setSelectionFilter] = useState('all')
+  const [formError, setFormError] = useState('')
   const newbornActive = active.filter(a => isNewbornAnimal(a))
   const visibleAnimals = selectionFilter === 'newborn' ? newbornActive : active
   const visibleSelected = visibleAnimals.filter(a => picked.has(a.id)).length
@@ -117,16 +118,32 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
   })
 
   const handleSave = async () => {
-    if (picked.size===0) { alert(`Select at least one ${meta.singular.toLowerCase()}.`); return }
-    if (!eventType)      { alert('Select an event type.'); return }
+    const emulated = getEmulated()
+    const effectiveUid = emulated ? emulated.uid : user?.id
+    const canWrite = !emulated || emulated.writeMode
+    if (picked.size===0) { setFormError(`Select at least one ${meta.singular.toLowerCase()}.`); return }
+    if (!eventType)      { setFormError('Select an event type.'); return }
+    if (!effectiveUid)   { setFormError('Not logged in.'); return }
+    if (!canWrite)       { setFormError('Read-only mode - switch to write mode to make changes.'); return }
     setSaving(true)
+    setFormError('')
     try {
       const rows = [...picked].map(animal_id => ({
         animal_id, event_type: eventType, event_date: eventDate,
-        notes: notes || null, user_id: user.id,
+        notes: notes || null, user_id: effectiveUid,
       }))
-      const { error } = await supabase.from('fh_animal_events').insert(rows)
-      if (error) throw error
+      if (emulated) {
+        for (const row of rows) {
+          const { error } = await supabase.rpc('add_event_admin', {
+            target_user_id: effectiveUid,
+            payload: row,
+          })
+          if (error) throw error
+        }
+      } else {
+        const { error } = await supabase.from('fh_animal_events').insert(rows)
+        if (error) throw error
+      }
       const nextStatus = statusFromEventType(eventType)
       if (nextStatus && onStatusUpdate) {
         await Promise.all([...picked].map(animalId => onStatusUpdate(animalId, { status: nextStatus })))
@@ -134,7 +151,7 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
       setDone(true)
       setTimeout(() => onDone(), 1000)
     } catch(err) {
-      alert('Failed: ' + err.message)
+      setFormError('Failed to save event: ' + err.message)
       setSaving(false)
     }
   }
@@ -161,6 +178,13 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
           style={{ background:'none', border:'none', color:'#a08060', fontSize:20,
             cursor:'pointer', lineHeight:1, padding:0 }}>×</button>
       </div>
+
+      {formError && (
+        <div style={{ background:'#fff3f3', border:'1px solid #f5c6c6', color:'#c62828',
+          borderRadius:9, padding:'9px 11px', fontSize:12, fontWeight:700, marginBottom:12 }}>
+          {formError}
+        </div>
+      )}
 
       {/* Step 1: pick animals */}
       <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase',
