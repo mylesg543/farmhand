@@ -27,7 +27,19 @@ function collectIds(node, depth=3, ids=new Set()) {
 }
 
 // ─── Animal chip for selector ──────────────────────────────────────────────────
-function AnimalChip({ a, selectedId, onSelect }) {
+function WarningBadge({ compact=false }) {
+  return (
+    <span title="Shared ancestor warning" aria-label="Shared ancestor warning"
+      style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+        width:compact?16:18, height:compact?16:18, borderRadius:'50%',
+        background:'#fff3e0', border:'1px solid #ffcc80', color:'#e65100',
+        fontSize:compact?10:12, fontWeight:800, lineHeight:1, flexShrink:0 }}>
+      ⚠
+    </span>
+  )
+}
+
+function AnimalChip({ a, selectedId, onSelect, hasWarning=false }) {
   const [err, setErr] = useState(false)
   const isSel = a.id===selectedId
   const st    = STATUS_STYLES[a.status]||STATUS_STYLES.alive
@@ -45,7 +57,10 @@ function AnimalChip({ a, selectedId, onSelect }) {
         }
       </div>
       <div>
-        <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:13, margin:'0 0 1px', whiteSpace:'nowrap' }}>{a.name}</p>
+        <p style={{ display:'flex', alignItems:'center', gap:5, fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:13, margin:'0 0 1px', whiteSpace:'nowrap' }}>
+          <span>{a.name}</span>
+          {hasWarning && <WarningBadge compact />}
+        </p>
         <span style={{ fontSize:9, fontWeight:700, padding:'1px 5px', borderRadius:6, background:st.bg, color:st.text, textTransform:'uppercase' }}>{a.status}</span>
       </div>
       {isSel && <span style={{ color:'#c8a060', fontSize:14 }}>✓</span>}
@@ -54,7 +69,7 @@ function AnimalChip({ a, selectedId, onSelect }) {
 }
 
 // ─── Node card ─────────────────────────────────────────────────────────────────
-function NodeCard({ animal, isRoot=false, size, onClick }) {
+function NodeCard({ animal, isRoot=false, size, onClick, hasWarning=false }) {
   const [err, setErr] = useState(false)
   if (!animal) return (
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, opacity:0.3 }}>
@@ -81,6 +96,11 @@ function NodeCard({ animal, isRoot=false, size, onClick }) {
           }
         </div>
         <div style={{ width:9, height:9, borderRadius:'50%', background:sb, position:'absolute', bottom:1, right:1, border:'2px solid #fff' }}/>
+        {hasWarning && (
+          <span style={{ position:'absolute', top:-5, right:-7 }}>
+            <WarningBadge compact={size < 50}/>
+          </span>
+        )}
       </div>
       <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:isRoot?13:10, margin:0,
         whiteSpace:'nowrap', maxWidth:isRoot?100:80, overflow:'hidden', textOverflow:'ellipsis', textAlign:'center' }}>
@@ -101,7 +121,7 @@ function NodeCard({ animal, isRoot=false, size, onClick }) {
 
 // ─── Horizontal pedigree — top=great-grandparents, bottom=animal ───────────────
 // Icons sit ABOVE their connecting lines - each avatar floats over its branch
-function PedigreeChart({ root, isMobile, onAnimalClick }) {
+function PedigreeChart({ root, isMobile, onAnimalClick, warningIds=new Set() }) {
   const nodeSize = isMobile ? 38 : 52
   const rootSize = isMobile ? 52 : 66
   const gapX     = isMobile ? 4  : 8
@@ -159,6 +179,7 @@ function PedigreeChart({ root, isMobile, onAnimalClick }) {
                       isRoot={isRoot}
                       size={sz}
                       onClick={animal && !isRoot ? onAnimalClick : null}
+                      hasWarning={animal ? warningIds.has(animal.id) : false}
                     />
                   </div>
                 ))}
@@ -234,6 +255,7 @@ export function LineagePage() {
     const damIds  = collectIds(tree.dam)
     return [...sireIds].filter(id=>damIds.has(id)).map(id=>animals.find(a=>a.id===id)).filter(Boolean)
   })() : []
+  const sharedAncestorIds = new Set(sharedAncestors.map(a=>a.id))
 
   const emoji  = species === 'sheep' ? '🐑' : '🐔'
   const label  = species === 'sheep' ? 'sheep' : 'chickens'
@@ -292,7 +314,7 @@ export function LineagePage() {
         {loading
           ? <p style={{ color:'#a08060', fontSize:13 }}>Loading your flock…</p>
           : <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-              {filtered.map(a=><AnimalChip key={a.id} a={a} selectedId={selectedId} onSelect={setSelectedId}/>)}
+              {filtered.map(a=><AnimalChip key={a.id} a={a} selectedId={selectedId} onSelect={setSelectedId} hasWarning={sharedAncestorIds.has(a.id)}/>)}
             </div>
         }
       </div>
@@ -343,6 +365,7 @@ export function LineagePage() {
             root={tree}
             isMobile={isMobile}
             onAnimalClick={(animal)=>setSelectedId(animal.id)}
+            warningIds={sharedAncestorIds}
           />
 
           {/* Inbreeding result */}
@@ -361,7 +384,10 @@ export function LineagePage() {
                     <p style={{ fontSize:13, color:'#7a3030', margin:'0 0 6px' }}>These animals appear on both sides of the tree:</p>
                     <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
                       {sharedAncestors.map(a=>(
-                        <span key={a.id} style={{ fontSize:12, fontWeight:700, padding:'3px 10px', borderRadius:8, background:'#fff3f3', border:'1px solid #f5c6c6', color:'#c62828' }}>{a.name}</span>
+                        <span key={a.id} style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:12, fontWeight:700, padding:'3px 10px', borderRadius:8, background:'#fff3f3', border:'1px solid #f5c6c6', color:'#c62828' }}>
+                          <WarningBadge compact />
+                          {a.name}
+                        </span>
                       ))}
                     </div>
                   </div>
