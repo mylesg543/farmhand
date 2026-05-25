@@ -29,12 +29,12 @@ const EVENT_TYPES = [
 ]
 
 const SORT_OPTIONS = [
-  { value:'name_asc', label:'A-Z Name' },
-  { value:'name_desc', label:'Z-A Name' },
-  { value:'birth_newest', label:'📅 Newest birth' },
-  { value:'birth_oldest', label:'📆 Oldest birth' },
-  { value:'recently_added', label:'🕒 Recent' },
-  { value:'status', label:'● Status' },
+  { value:'name_asc', label:'Name A-Z' },
+  { value:'name_desc', label:'Name Z-A' },
+  { value:'birth_newest', label:'Birthdate newest' },
+  { value:'birth_oldest', label:'Birthdate oldest' },
+  { value:'recently_added', label:'Recently added' },
+  { value:'status', label:'Status' },
 ]
 
 const dateValue = (value, fallback = 0) => {
