@@ -190,7 +190,7 @@ export function EmulationBanner() {
     return (
       <button onClick={()=>setExpanded(true)}
         className="admin-emulation-pill"
-        style={{ position:'fixed', right:10, bottom:'calc(62px + env(safe-area-inset-bottom))',
+        style={{ position:'fixed', right:12, bottom:'calc(86px + env(safe-area-inset-bottom))',
           zIndex:9999, maxWidth:'calc(100vw - 20px)', display:'flex', alignItems:'center', gap:7,
           background:eu.writeMode ? '#b71c1c' : '#1a237e', color:'#fff',
           border:'1px solid rgba(255,255,255,0.28)', borderRadius:999,
@@ -211,11 +211,11 @@ export function EmulationBanner() {
 
   return (
     <div className="admin-emulation-banner" style={{ position:'fixed', top:0, left:0, right:0, zIndex:9999,
-      ...(isMobile ? { top:'auto', bottom:'calc(54px + env(safe-area-inset-bottom))', left:8, right:8, borderRadius:10 } : {}),
+      ...(isMobile ? { top:'auto', bottom:'calc(86px + env(safe-area-inset-bottom))', left:'auto', right:10, width:'calc(100vw - 20px)', maxWidth:340, borderRadius:14 } : {}),
       background: eu.writeMode ? '#b71c1c' : '#1a237e',
-      color:'#fff', padding:isMobile?'6px 8px':'8px 16px', display:'flex', alignItems:'center',
+      color:'#fff', padding:isMobile?'8px 10px':'8px 16px', display:'flex', alignItems:'center',
       flexWrap:isMobile?'wrap':'nowrap', gap:isMobile?6:12, fontSize:isMobile?11:13, fontFamily:"'Lato',sans-serif",
-      boxShadow:isMobile?'0 4px 18px rgba(0,0,0,0.28)':'0 2px 8px rgba(0,0,0,0.3)' }}>
+      boxShadow:isMobile?'0 8px 26px rgba(0,0,0,0.30)':'0 2px 8px rgba(0,0,0,0.3)' }}>
       <span className="admin-emulation-icon" style={{ fontSize:isMobile?13:16 }}>{eu.writeMode ? '✏️' : '👁'}</span>
       <span className="admin-emulation-label" style={{ fontWeight:700, fontSize:isMobile?10:13 }}>{eu.writeMode ? 'EDITING AS' : 'VIEWING AS'}:</span>
       <span className="admin-emulation-email" style={{ opacity:0.9, flex:isMobile?'1 1 130px':'0 1 auto', minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{eu.email}</span>
@@ -646,7 +646,7 @@ export function AdminPage() {
           .admin-user-expanded{padding:12px!important;padding-bottom:calc(22px + env(safe-area-inset-bottom))!important;max-height:calc(100vh - 190px)!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;}
           .admin-user-animal-list{padding-bottom:calc(88px + env(safe-area-inset-bottom))!important;}
           .admin-animal-detail-panel{max-height:calc(100vh - 260px)!important;overflow-y:auto!important;}
-          .admin-emulation-banner{top:auto!important;bottom:calc(54px + env(safe-area-inset-bottom))!important;left:8px!important;right:8px!important;border-radius:10px!important;padding:6px 8px!important;gap:6px!important;font-size:11px!important;box-shadow:0 4px 18px rgba(0,0,0,0.28)!important;flex-wrap:wrap!important;align-items:center!important;}
+          .admin-emulation-banner{top:auto!important;bottom:calc(86px + env(safe-area-inset-bottom))!important;left:auto!important;right:10px!important;width:calc(100vw - 20px)!important;max-width:340px!important;border-radius:14px!important;padding:8px 10px!important;gap:6px!important;font-size:11px!important;box-shadow:0 8px 26px rgba(0,0,0,0.30)!important;flex-wrap:wrap!important;align-items:center!important;}
           .admin-emulation-icon{font-size:13px!important;}
           .admin-emulation-label{font-size:10px!important;}
           .admin-emulation-email{flex:1 1 130px!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;}
