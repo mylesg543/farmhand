@@ -44,27 +44,28 @@ function AnimalChip({ a, selectedId, onSelect, hasWarning=false }) {
   const isSel = a.id===selectedId
   const st    = STATUS_STYLES[a.status]||STATUS_STYLES.alive
   return (
-    <div onClick={()=>onSelect(isSel?null:a.id)}
-      style={{ display:'flex', alignItems:'center', gap:9, padding:'8px 12px', borderRadius:10, cursor:'pointer',
+    <button onClick={()=>onSelect(isSel?null:a.id)}
+      style={{ display:'grid', gridTemplateColumns:'34px minmax(0, 1fr) auto', alignItems:'center', gap:9,
+        width:'100%', minHeight:60, padding:'10px 11px', borderRadius:10, cursor:'pointer',
         border:isSel?'2px solid #c8a060':'1px solid #e8e0d0',
         background:isSel?'#fdfaf0':'#fff',
         boxShadow:isSel?'0 0 0 3px rgba(200,160,96,0.15)':'none',
-        transition:'all 0.15s' }}>
+        transition:'all 0.15s', fontFamily:"'Lato',sans-serif", textAlign:'left' }}>
       <div style={{ width:32, height:32, borderRadius:'50%', overflow:'hidden', border:'2px solid #e8e0d0', flexShrink:0, background:'#f0ebe4' }}>
         {a.photo_url&&!err
           ? <img src={a.photo_url} alt={a.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={()=>setErr(true)}/>
           : <AnimalIllustration animal={a} size={32}/>
         }
       </div>
-      <div>
+      <div style={{ minWidth:0 }}>
         <p style={{ display:'flex', alignItems:'center', gap:5, fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:13, margin:'0 0 1px', whiteSpace:'nowrap' }}>
-          <span>{a.name}</span>
+          <span style={{ overflow:'hidden', textOverflow:'ellipsis' }}>{a.name}</span>
           {hasWarning && <WarningBadge compact />}
         </p>
         <span style={{ fontSize:9, fontWeight:700, padding:'1px 5px', borderRadius:6, background:st.bg, color:st.text, textTransform:'uppercase' }}>{a.status}</span>
       </div>
-      {isSel && <span style={{ color:'#c8a060', fontSize:14 }}>✓</span>}
-    </div>
+      <span style={{ color:isSel?'#c8a060':'#d8ccb8', fontSize:14, justifySelf:'end' }}>{isSel ? '✓' : '›'}</span>
+    </button>
   )
 }
 
@@ -313,7 +314,9 @@ export function LineagePage() {
           value={search} onChange={e=>setSearch(e.target.value)}/>
         {loading
           ? <p style={{ color:'#a08060', fontSize:13 }}>Loading your flock…</p>
-          : <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+          : <div style={{ display:'grid',
+              gridTemplateColumns:isMobile?'1fr 1fr':'repeat(auto-fill, minmax(190px, 1fr))',
+              gap:isMobile?8:10, alignItems:'stretch' }}>
               {filtered.map(a=><AnimalChip key={a.id} a={a} selectedId={selectedId} onSelect={setSelectedId} hasWarning={sharedAncestorIds.has(a.id)}/>)}
             </div>
         }
