@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { usePhotoUpload } from '../../hooks/usePhotoUpload'
-import { S, Badge, formatDate, getEventTypes } from '../ui/shared'
+import { S, Badge, formatDate, getEventTypes, getEventMeta } from '../ui/shared'
 
 // ─── Event type metadata ───────────────────────────────────────────────────────
 const EVENT_META = {
@@ -31,7 +31,7 @@ const EVENT_META = {
   photo_update:    { icon:'📷', label:'New Photo',         color:'#5a3e1b', bg:'#fdfaf6', border:'#d0c4b0' },
   custom:          { icon:'📝', label:'Note',               color:'#5a3e1b', bg:'#fdfaf6', border:'#d0c4b0' },
 }
-const getMeta = (type) => EVENT_META[type] || EVENT_META.custom
+const getMeta = (type) => EVENT_META[type] || getEventMeta(type)
 
 // ─── Group events by year-month ────────────────────────────────────────────────
 function groupByMonth(events) {

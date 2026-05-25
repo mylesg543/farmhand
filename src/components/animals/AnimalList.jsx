@@ -4,7 +4,7 @@ import { useAnimals } from '../../hooks/useAnimals'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
-import { S, AnimalIllustration, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS, NEWBORN_DAYS, isNewbornAnimal, getEventTypes, animalNewPath, animalBulkPath, animalDetailPath, animalBulkEventPath, speciesBasePath } from '../ui/shared'
+import { S, AnimalIllustration, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS, NEWBORN_DAYS, isNewbornAnimal, getEventTypes, getEventMeta, animalNewPath, animalBulkPath, animalDetailPath, animalBulkEventPath, speciesBasePath } from '../ui/shared'
 
 const SPECIES_META = {
   sheep:    { emoji:'🐑', singular:'Sheep',   plural:'Sheep',    label:'Flock' },
@@ -211,16 +211,28 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel }) {
       <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase',
         letterSpacing:'0.06em', margin:'12px 0 8px' }}>2. Event Type</p>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginBottom:12 }}>
-        {eventTypes.map(et => (
-          <button key={et.value} onClick={()=>setEventType(et.value)}
-            style={{ ...S.btn, fontSize:12, padding:'7px 10px', textAlign:'left',
-              background:eventType===et.value?'#5a3e1b':'#f7f4ef',
-              color:eventType===et.value?'#fff':'#2c2416',
-              border:eventType===et.value?'none':'1px solid #e0d8cc',
-              borderRadius:8, fontWeight:eventType===et.value?700:400 }}>
-            {et.label}
-          </button>
-        ))}
+        {eventTypes.map(et => {
+          const eventMeta = getEventMeta(et.value, et.label)
+          const selected = eventType === et.value
+          return (
+            <button key={et.value} onClick={()=>setEventType(et.value)}
+              style={{ ...S.btn, fontSize:12, padding:'7px 9px', textAlign:'left',
+                background:selected?'#5a3e1b':'#f7f4ef',
+                color:selected?'#fff':'#2c2416',
+                border:selected?'1px solid #5a3e1b':'1px solid #e0d8cc',
+                borderRadius:8, fontWeight:selected?700:600, minHeight:38,
+                display:'flex', alignItems:'center', gap:7 }}>
+              <span style={{ width:22, height:22, borderRadius:6, display:'inline-flex',
+                alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:13,
+                background:selected?'rgba(255,255,255,0.14)':eventMeta.bg,
+                border:selected?'1px solid rgba(255,255,255,0.18)':`1px solid ${eventMeta.border}`,
+                color:selected?'#fff':eventMeta.color }}>
+                {eventMeta.icon}
+              </span>
+              <span style={{ lineHeight:1.15 }}>{eventMeta.label}</span>
+            </button>
+          )
+        })}
       </div>
 
       {/* Step 3: date + notes */}

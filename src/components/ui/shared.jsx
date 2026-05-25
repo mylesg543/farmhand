@@ -92,6 +92,41 @@ export function getEventTypes(species) {
   return EVENT_TYPES_BY_SPECIES[species] || EVENT_TYPES_BY_SPECIES.default
 }
 
+export const EVENT_TYPE_META = {
+  vaccination:      { icon:'💉', label:'Vaccination',      color:'#1565c0', bg:'#e3f2fd', border:'#90caf9' },
+  worming:          { icon:'💊', label:'Worming',           color:'#6a1b9a', bg:'#f3e5f5', border:'#ce93d8' },
+  hoof_trimming:    { icon:'✂️', label:'Hoof Trim',         color:'#4e342e', bg:'#efebe9', border:'#bcaaa4' },
+  hoof_treatment:   { icon:'🩺', label:'Hoof Treatment',    color:'#4e342e', bg:'#efebe9', border:'#bcaaa4' },
+  farrier_visit:    { icon:'🧲', label:'Farrier Visit',     color:'#4e342e', bg:'#efebe9', border:'#bcaaa4' },
+  shoeing:          { icon:'🧲', label:'Shoeing',           color:'#37474f', bg:'#eceff1', border:'#b0bec5' },
+  dental_float:     { icon:'🦷', label:'Dental Float',      color:'#00695c', bg:'#e0f2f1', border:'#80cbc4' },
+  coggins_test:     { icon:'🧪', label:'Coggins Test',      color:'#283593', bg:'#e8eaf6', border:'#9fa8da' },
+  training_session: { icon:'🎯', label:'Training Session',  color:'#33691e', bg:'#f1f8e9', border:'#aed581' },
+  vet_check:        { icon:'🩺', label:'Vet Check',         color:'#0d47a1', bg:'#e3f2fd', border:'#90caf9' },
+  tack_fitting:     { icon:'🎒', label:'Tack Fitting',      color:'#8d6e00', bg:'#fff8e1', border:'#ffe082' },
+  shearing:         { icon:'✂️', label:'Shearing',          color:'#2e7d32', bg:'#e8f5e9', border:'#a5d6a7' },
+  lambing:          { icon:'🐣', label:'Birth',             color:'#e65100', bg:'#fff3e0', border:'#ffcc80' },
+  tail_banding:     { icon:'⭕', label:'Tail Banding',      color:'#6d4c41', bg:'#efebe9', border:'#bcaaa4' },
+  weaning:          { icon:'🍼', label:'Weaning',           color:'#f57f17', bg:'#fff9e6', border:'#ffe082' },
+  sickness:         { icon:'🤒', label:'Sickness',          color:'#c62828', bg:'#fff3f3', border:'#f5c6c6' },
+  injury:           { icon:'🩹', label:'Injury Check',      color:'#c62828', bg:'#fff3f3', border:'#f5c6c6' },
+  death:            { icon:'•',  label:'Death',             color:'#424242', bg:'#fafafa', border:'#bdbdbd' },
+  weight_check:     { icon:'⚖️', label:'Weight Check',      color:'#00695c', bg:'#e0f2f1', border:'#80cbc4' },
+  pregnancy_check:  { icon:'🔍', label:'Pregnancy Check',   color:'#ad1457', bg:'#fce4ec', border:'#f48fb1' },
+  egg_production:   { icon:'🥚', label:'Egg Production',    color:'#f57f17', bg:'#fff9e6', border:'#ffe082' },
+  hatching:         { icon:'🐣', label:'Hatching',          color:'#880e4f', bg:'#fce4ec', border:'#f48fb1' },
+  moulting:         { icon:'🪶', label:'Moulting',          color:'#5d4037', bg:'#efebe9', border:'#bcaaa4' },
+  breeding:         { icon:'♥',  label:'Breeding',          color:'#ad1457', bg:'#fce4ec', border:'#f48fb1' },
+  sale:             { icon:'💰', label:'Sale',              color:'#2e7d32', bg:'#e8f5e9', border:'#a5d6a7' },
+  weight:           { icon:'⚖️', label:'Weight',            color:'#00695c', bg:'#e0f2f1', border:'#80cbc4' },
+  photo_update:     { icon:'📷', label:'New Photo',         color:'#5a3e1b', bg:'#fdfaf6', border:'#d0c4b0' },
+  custom:           { icon:'📝', label:'Custom Event',      color:'#5a3e1b', bg:'#fdfaf6', border:'#d0c4b0' },
+}
+
+export function getEventMeta(type, fallbackLabel) {
+  return EVENT_TYPE_META[type] || { ...EVENT_TYPE_META.custom, label: fallbackLabel || EVENT_TYPE_META.custom.label }
+}
+
 // Keep legacy export for backward compat
 export const EVENT_TYPES = EVENT_TYPES_BY_SPECIES.sheep
 

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAnimals } from '../../hooks/useAnimals'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
-import { S, getEventTypes, speciesBasePath } from '../ui/shared'
+import { S, getEventTypes, getEventMeta, speciesBasePath } from '../ui/shared'
 
 const SPECIES_META = {
   sheep:    { emoji:'🐑', singular:'Sheep',   plural:'Sheep',    label:'Flock' },
@@ -107,17 +107,28 @@ export function BulkEventPage({ species = 'sheep' }) {
           Event Type *
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
-          {eventTypes.map(et => (
-            <button key={et.value} onClick={() => setEventType(et.value)}
-              style={{ padding: '8px 12px', fontSize: 13, textAlign: 'left', borderRadius: 8, cursor: 'pointer',
-                background: eventType === et.value ? '#5a3e1b' : '#f7f4ef',
-                color:      eventType === et.value ? '#fff' : '#5a3e1b',
-                border:     eventType === et.value ? 'none' : '1px solid #e8ddd0',
-                fontWeight: eventType === et.value ? 700 : 500,
-                fontFamily: "'Lato',sans-serif" }}>
-              {et.label}
-            </button>
-          ))}
+          {eventTypes.map(et => {
+            const eventMeta = getEventMeta(et.value, et.label)
+            const selected = eventType === et.value
+            return (
+              <button key={et.value} onClick={() => setEventType(et.value)}
+                style={{ padding: '9px 11px', fontSize: 13, textAlign: 'left', borderRadius: 9, cursor: 'pointer',
+                  background: selected ? '#5a3e1b' : '#f7f4ef',
+                  color:      selected ? '#fff' : '#5a3e1b',
+                  border:     selected ? '1px solid #5a3e1b' : '1px solid #e8ddd0',
+                  fontWeight: selected ? 700 : 600,
+                  fontFamily: "'Lato',sans-serif", display:'flex', alignItems:'center', gap:9, minHeight:44 }}>
+                <span style={{ width:26, height:26, borderRadius:7, display:'inline-flex',
+                  alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:15,
+                  background:selected?'rgba(255,255,255,0.14)':eventMeta.bg,
+                  border:selected?'1px solid rgba(255,255,255,0.18)':`1px solid ${eventMeta.border}`,
+                  color:selected?'#fff':eventMeta.color }}>
+                  {eventMeta.icon}
+                </span>
+                <span style={{ lineHeight:1.2 }}>{eventMeta.label}</span>
+              </button>
+            )
+          })}
         </div>
       </div>
 

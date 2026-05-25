@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAnimalEvents } from '../../hooks/useAnimalEvents'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { EVENT_COLORS, getEventTypes, S, Badge, Spinner, ErrorMsg, formatDate } from '../ui/shared'
+import { EVENT_COLORS, getEventTypes, getEventMeta, S, Badge, Spinner, ErrorMsg, formatDate } from '../ui/shared'
 
 function EventForm({ animalId, animalName, species, onDone, onStatusChange }) {
   const eventTypes = getEventTypes(species)
@@ -32,7 +32,10 @@ function EventForm({ animalId, animalName, species, onDone, onStatusChange }) {
         <div>
           <label style={S.label}>Event Type</label>
           <select style={{ ...S.input, cursor: 'pointer' }} value={form.event_type} onChange={e => set('event_type', e.target.value)}>
-            {eventTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            {eventTypes.map(t => {
+              const meta = getEventMeta(t.value, t.label)
+              return <option key={t.value} value={t.value}>{meta.icon} {meta.label}</option>
+            })}
           </select>
         </div>
         <div>
@@ -92,13 +95,18 @@ export function EventList({ animalId, animalName, species = 'sheep', onStatusCha
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: showForm ? 14 : 0 }}>
             {events.map(ev => {
-              const ec    = EVENT_COLORS[ev.event_type] || EVENT_COLORS.custom
               const label = eventTypes.find(t => t.value === ev.event_type)?.label || ev.event_type.replace(/_/g, ' ')
+              const meta  = getEventMeta(ev.event_type, label)
+              const ec    = EVENT_COLORS[ev.event_type] || { bg:meta.bg, text:meta.color, border:meta.border }
               return (
                 <div key={ev.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: isMobile ? '12px 12px' : '14px 16px', borderRadius: 10, background: ec.bg, border: '1px solid ' + ec.border }}>
+                  <div style={{ width:34, height:34, borderRadius:8, background:'#fff', border:'1px solid '+ec.border,
+                    display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, flexShrink:0 }}>
+                    {meta.icon}
+                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3, flexWrap: 'wrap' }}>
-                      <Badge bg={ec.border} color={ec.text}>{label}</Badge>
+                      <Badge bg={ec.border} color={ec.text}>{meta.label}</Badge>
                       <span style={{ fontSize: 12, color: '#7a6648' }}>{formatDate(ev.event_date)}</span>
                     </div>
                     {ev.notes && <p style={{ fontSize: 13, margin: 0, color: '#4a3c28', lineHeight: 1.5 }}>{ev.notes}</p>}
