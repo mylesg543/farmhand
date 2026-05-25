@@ -127,6 +127,12 @@ export function getEventMeta(type, fallbackLabel) {
   return EVENT_TYPE_META[type] || { ...EVENT_TYPE_META.custom, label: fallbackLabel || EVENT_TYPE_META.custom.label }
 }
 
+export function statusFromEventType(eventType) {
+  if (eventType === 'death' || eventType === 'deceased') return 'deceased'
+  if (eventType === 'sale') return 'sold'
+  return null
+}
+
 // Keep legacy export for backward compat
 export const EVENT_TYPES = EVENT_TYPES_BY_SPECIES.sheep
 

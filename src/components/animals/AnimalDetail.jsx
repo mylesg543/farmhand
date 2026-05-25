@@ -4,7 +4,7 @@ import { useAnimals, useSingleAnimal } from '../../hooks/useAnimals'
 import { useAnimalEvents } from '../../hooks/useAnimalEvents'
 import { usePhotoUpload } from '../../hooks/usePhotoUpload'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { S, AnimalIllustration, STATUS_DOT, SEX_LABELS, formatDate, calcAge, Spinner, ErrorMsg, ANIMAL_META, speciesBasePath, animalEditPath } from '../ui/shared'
+import { S, AnimalIllustration, STATUS_DOT, SEX_LABELS, formatDate, calcAge, Spinner, ErrorMsg, ANIMAL_META, speciesBasePath, animalEditPath, statusFromEventType } from '../ui/shared'
 import { EventTimeline } from './EventTimeline'
 import { PhotoGallery } from './PhotoGallery'
 
@@ -75,15 +75,18 @@ export function AnimalDetailPage() {
   const isMobile   = useIsMobile()
   const fileRef    = useRef()
   const eventSectionRef = useRef()
-  const { animal, loading, error } = useSingleAnimal(id)
+  const { animal, setAnimal, loading, error } = useSingleAnimal(id)
   const { animals: allAnimals, addAnimal, deleteAnimal, updateAnimal } = useAnimals(animal?.species || 'sheep')
   const { events, loading:evLoading, addEvent: _addEvent, addPhotoToEvent, deleteEvent, updateEvent } = useAnimalEvents(id)
 
   // Auto-update animal status when certain events are logged
   const addEvent = async (payload) => {
     await _addEvent(payload)
-    if (payload.event_type === 'sale')     await updateAnimal(id, { status: 'sold' })
-    if (payload.event_type === 'deceased') await updateAnimal(id, { status: 'deceased' })
+    const nextStatus = statusFromEventType(payload.event_type)
+    if (nextStatus) {
+      await updateAnimal(id, { status: nextStatus })
+      setAnimal(prev => prev ? { ...prev, status: nextStatus } : prev)
+    }
   }
   const { upload, uploading } = usePhotoUpload()
   const [showGallery,   setShowGallery]   = useState(false)
@@ -117,6 +120,7 @@ export function AnimalDetailPage() {
     try {
       // 1. Update the animal's avatar
       await updateAnimal(id, { photo_url: pendingPhoto.url })
+      setAnimal(prev => prev ? { ...prev, photo_url: pendingPhoto.url } : prev)
       // 2. Auto-create a photo_update event in the timeline
       await addEvent({
         event_type: 'photo_update',

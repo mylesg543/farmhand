@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAnimalEvents } from '../../hooks/useAnimalEvents'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { EVENT_COLORS, getEventTypes, getEventMeta, S, Badge, Spinner, ErrorMsg, formatDate } from '../ui/shared'
+import { EVENT_COLORS, getEventTypes, getEventMeta, statusFromEventType, S, Badge, Spinner, ErrorMsg, formatDate } from '../ui/shared'
 
 function EventForm({ animalId, animalName, species, onDone, onStatusChange }) {
   const eventTypes = getEventTypes(species)
@@ -17,8 +17,8 @@ function EventForm({ animalId, animalName, species, onDone, onStatusChange }) {
     setSaving(true); setError(null)
     try {
       await addEvent(form)
-      if (form.event_type === 'death' && onStatusChange) await onStatusChange('deceased')
-      if (form.event_type === 'sale'  && onStatusChange) await onStatusChange('sold')
+      const nextStatus = statusFromEventType(form.event_type)
+      if (nextStatus && onStatusChange) await onStatusChange(nextStatus)
       onDone()
     } catch (err) { setError(err.message) }
     finally { setSaving(false) }

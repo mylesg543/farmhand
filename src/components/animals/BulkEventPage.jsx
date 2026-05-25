@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAnimals } from '../../hooks/useAnimals'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
-import { S, getEventTypes, getEventMeta, speciesBasePath } from '../ui/shared'
+import { S, getEventTypes, getEventMeta, statusFromEventType, speciesBasePath } from '../ui/shared'
 
 const SPECIES_META = {
   sheep:    { emoji:'🐑', singular:'Sheep',   plural:'Sheep',    label:'Flock' },
@@ -18,7 +18,7 @@ export function BulkEventPage({ species = 'sheep' }) {
   const meta        = SPECIES_META[species] || SPECIES_META.sheep
   const eventTypes  = getEventTypes(species)
 
-  const { animals }  = useAnimals(species)
+  const { animals, updateAnimal }  = useAnimals(species)
   const { user }     = useAuth()
 
   const selectedAnimals = animals.filter(a => ids.includes(a.id))
@@ -47,6 +47,10 @@ export function BulkEventPage({ species = 'sheep' }) {
       }))
       const { error } = await supabase.from('fh_animal_events').insert(rows)
       if (error) throw error
+      const nextStatus = statusFromEventType(eventType)
+      if (nextStatus) {
+        await Promise.all(ids.map(animalId => updateAnimal(animalId, { status: nextStatus })))
+      }
       setDone(true)
       setTimeout(() => navigate(backPath), 1200)
     } catch (err) {

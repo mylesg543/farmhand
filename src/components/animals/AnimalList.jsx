@@ -4,7 +4,7 @@ import { useAnimals } from '../../hooks/useAnimals'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
-import { S, AnimalIllustration, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS, NEWBORN_DAYS, isNewbornAnimal, getEventTypes, getEventMeta, animalNewPath, animalBulkPath, animalDetailPath, animalBulkEventPath, speciesBasePath } from '../ui/shared'
+import { S, AnimalIllustration, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS, NEWBORN_DAYS, isNewbornAnimal, getEventTypes, getEventMeta, statusFromEventType, animalNewPath, animalBulkPath, animalDetailPath, animalBulkEventPath, speciesBasePath } from '../ui/shared'
 
 const SPECIES_META = {
   sheep:    { emoji:'🐑', singular:'Sheep',   plural:'Sheep',    label:'Flock' },
@@ -88,7 +88,7 @@ function MenuOptionCard({ icon, title, description, onClick }) {
 }
 
 // ─── Mobile inline event panel ──────────────────────────────────────────────
-function MobileEventPanel({ animals, species, user, onDone, onCancel }) {
+function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUpdate }) {
   const meta          = SPECIES_META[species] || SPECIES_META.sheep
   const eventTypes    = getEventTypes(species)
   const today2      = new Date().toISOString().split('T')[0]
@@ -127,6 +127,10 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel }) {
       }))
       const { error } = await supabase.from('fh_animal_events').insert(rows)
       if (error) throw error
+      const nextStatus = statusFromEventType(eventType)
+      if (nextStatus && onStatusUpdate) {
+        await Promise.all([...picked].map(animalId => onStatusUpdate(animalId, { status: nextStatus })))
+      }
       setDone(true)
       setTimeout(() => onDone(), 1000)
     } catch(err) {
@@ -262,7 +266,7 @@ export function AnimalList({ species = 'sheep' }) {
   const navigate  = useNavigate()
   const isMobile  = useIsMobile()
   const { user }  = useAuth()
-  const { animals = [], loading, error } = useAnimals(species)
+  const { animals = [], loading, error, updateAnimal } = useAnimals(species)
   const meta      = SPECIES_META[species] || SPECIES_META.sheep
   const [filter,        setFilter]        = useState('alive')
   const [search,        setSearch]        = useState('')
@@ -561,6 +565,7 @@ export function AnimalList({ species = 'sheep' }) {
             user={user}
             onDone={()=>setShowEventPanel(false)}
             onCancel={()=>setShowEventPanel(false)}
+            onStatusUpdate={updateAnimal}
           />
         )}
 

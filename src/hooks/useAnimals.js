@@ -156,5 +156,5 @@ export function useSingleAnimal(id) {
     fetch()
   }, [user?.id, id, effectiveUid])
 
-  return { animal, loading, error }
+  return { animal, setAnimal, loading, error }
 }
