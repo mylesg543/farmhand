@@ -1,12 +1,13 @@
-import { useState, useRef } from 'react'
+import { useMemo, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAnimals, useSingleAnimal } from '../../hooks/useAnimals'
-import { useAnimalEvents } from '../../hooks/useAnimalEvents'
+import { useAnimalEvents, useRecentAnimalEvents } from '../../hooks/useAnimalEvents'
 import { usePhotoUpload } from '../../hooks/usePhotoUpload'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { S, AnimalAvatar, STATUS_DOT, SEX_LABELS, formatDate, calcAge, Spinner, ErrorMsg, ANIMAL_META, speciesBasePath, animalEditPath, statusFromEventType } from '../ui/shared'
 import { EventTimeline } from './EventTimeline'
 import { PhotoGallery } from './PhotoGallery'
+import { RecentEventsDrawer } from '../events/RecentEventsDrawer'
 
 // ─── Mini lineage preview ──────────────────────────────────────────────────────
 function MiniLineage({ animal, allAnimals, navigate, isMobile }) {
@@ -70,6 +71,11 @@ export function AnimalDetailPage() {
   const eventSectionRef = useRef()
   const { animal, setAnimal, loading, error } = useSingleAnimal(id)
   const { animals: allAnimals, addAnimal, deleteAnimal, updateAnimal } = useAnimals(animal?.species || 'sheep')
+  const { animals: sheep } = useAnimals('sheep')
+  const { animals: chickens } = useAnimals('chickens')
+  const { animals: horses } = useAnimals('horses')
+  const farmAnimals = useMemo(() => [...sheep, ...chickens, ...horses], [sheep, chickens, horses])
+  const { events: recentEvents, loading:recentEventsLoading, error:recentEventsError } = useRecentAnimalEvents(farmAnimals)
   const { events, loading:evLoading, addEvent: _addEvent, addPhotoToEvent, deleteEvent, updateEvent } = useAnimalEvents(id)
 
   // Auto-update animal status when certain events are logged
@@ -88,6 +94,7 @@ export function AnimalDetailPage() {
   const [caption,       setCaption]       = useState('')
   const [savingPhoto,   setSavingPhoto]   = useState(false)
   const [logEventSignal, setLogEventSignal] = useState(0)
+  const [showRecentEvents, setShowRecentEvents] = useState(false)
 
   const handleDelete = async () => {
     if (!window.confirm(`Delete ${animal.name}? This also deletes all their events.`)) return
@@ -227,6 +234,11 @@ export function AnimalDetailPage() {
                     border:'1px solid rgba(255,255,255,0.2)', padding:'7px 14px', fontSize:13, whiteSpace:'nowrap' }}>
                   🔍 Photo History
                 </button>
+                <button onClick={()=>setShowRecentEvents(true)}
+                  style={{ ...S.btn, background:'rgba(255,255,255,0.1)', color:'#f0e6cc',
+                    border:'1px solid rgba(255,255,255,0.2)', padding:'7px 14px', fontSize:13, whiteSpace:'nowrap' }}>
+                  📋 Events
+                </button>
                 <button onClick={()=>navigate(`/lineage?id=${id}&species=${animal.species||'sheep'}`)}
                   style={{ ...S.btn, background:'rgba(76,175,80,0.2)', color:'#a5d6a7',
                     border:'1px solid rgba(76,175,80,0.35)', padding:'7px 14px', fontSize:13, fontWeight:700, whiteSpace:'nowrap' }}>
@@ -256,6 +268,13 @@ export function AnimalDetailPage() {
                   fontFamily:"'Lato',sans-serif", fontSize:14, fontWeight:800,
                   boxShadow:'0 4px 14px rgba(0,0,0,0.18)', marginBottom:8 }}>
                 <span style={{ fontSize:16, lineHeight:1 }}>+</span> Log Event
+              </button>
+              <button onClick={()=>setShowRecentEvents(true)}
+                style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                  background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)',
+                  borderRadius:10, padding:'10px 12px', cursor:'pointer', color:'#f0e6cc',
+                  fontFamily:"'Lato',sans-serif", fontSize:13, fontWeight:700, marginBottom:8 }}>
+                <span style={{ fontSize:15, lineHeight:1 }}>📋</span> Recent Events
               </button>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:8, marginBottom:8 }}>
                 <label style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5,
@@ -403,6 +422,16 @@ export function AnimalDetailPage() {
           }}
         />
       )}
+      <RecentEventsDrawer
+        open={showRecentEvents}
+        onClose={()=>setShowRecentEvents(false)}
+        events={recentEvents}
+        loading={recentEventsLoading}
+        error={recentEventsError}
+        animals={farmAnimals}
+        isMobile={isMobile}
+        initialAnimalId={id}
+      />
     </div>
   )
 }
