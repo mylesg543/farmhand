@@ -28,6 +28,29 @@ function normalizeAnimalCreatePayload(payload, species) {
   }
 }
 
+function latestProfilePhotosByAnimal(events = []) {
+  const latest = new Map()
+  ;(events || [])
+    .filter(e => e.event_type === 'photo_update' && e.photo_url)
+    .sort((a, b) => {
+      const bd = b.event_date || b.created_at || ''
+      const ad = a.event_date || a.created_at || ''
+      return bd.localeCompare(ad)
+    })
+    .forEach(e => {
+      if (!latest.has(e.animal_id)) latest.set(e.animal_id, e.photo_url)
+    })
+  return latest
+}
+
+function mergeEventProfilePhotos(animals = [], events = []) {
+  const latestPhotos = latestProfilePhotosByAnimal(events)
+  return animals.map(a => {
+    const eventPhoto = latestPhotos.get(a.id)
+    return eventPhoto ? { ...a, photo_url: eventPhoto } : a
+  })
+}
+
 export function useAnimals(species) {
   const { user } = useAuth()
   const [animals, setAnimals] = useState([])
@@ -60,7 +83,19 @@ export function useAnimals(species) {
 
       if (err) throw err
       // Filter by species client-side when emulating (RPC returns all)
-      const filtered = species ? (data||[]).filter(a => a.species === species) : (data||[])
+      let eventsData = []
+      if (emulated) {
+        const eventsRes = await supabase.rpc('get_user_events_admin', { target_user_id: effectiveUid })
+        if (!eventsRes.error) eventsData = eventsRes.data || []
+      } else {
+        const eventsRes = await supabase.from('fh_animal_events')
+          .select('animal_id,event_type,event_date,photo_url,created_at')
+          .eq('user_id', effectiveUid)
+          .eq('event_type', 'photo_update')
+        if (!eventsRes.error) eventsData = eventsRes.data || []
+      }
+      const withPhotos = mergeEventProfilePhotos(data || [], eventsData)
+      const filtered = species ? withPhotos.filter(a => a.species === species) : withPhotos
       setAnimals(filtered.sort((a,b) => a.name.localeCompare(b.name)))
     } catch (err) { setError(err.message) }
     finally { setLoading(false) }
@@ -143,12 +178,19 @@ export function useSingleAnimal(id) {
           if (error) throw error
           const found = (data||[]).find(a => a.id === id)
           if (!found) throw new Error('Animal not found')
-          setAnimal(found)
+          const eventsRes = await supabase.rpc('get_user_events_admin', { target_user_id: effectiveUid })
+          const hydrated = mergeEventProfilePhotos([found], eventsRes.error ? [] : eventsRes.data || [])[0]
+          setAnimal(hydrated)
         } else {
           const { data, error } = await supabase.from('fh_animals')
             .select('*').eq('id', id).eq('user_id', effectiveUid).single()
           if (error) throw error
-          setAnimal(data)
+          const eventsRes = await supabase.from('fh_animal_events')
+            .select('animal_id,event_type,event_date,photo_url,created_at')
+            .eq('animal_id', id)
+            .eq('user_id', effectiveUid)
+            .eq('event_type', 'photo_update')
+          setAnimal(mergeEventProfilePhotos([data], eventsRes.error ? [] : eventsRes.data || [])[0])
         }
       } catch (err) { setError(err.message) }
       finally { setLoading(false) }

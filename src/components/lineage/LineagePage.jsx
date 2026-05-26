@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAnimals } from '../../hooks/useAnimals'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { S, AnimalIllustration, STATUS_STYLES, calcAge, ANIMAL_META, animalEditPath, animalDetailPath } from '../ui/shared'
+import { S, AnimalAvatar, AnimalIllustration, STATUS_STYLES, calcAge, ANIMAL_META, animalEditPath, animalDetailPath } from '../ui/shared'
 
 // ─── Build ancestor tree ───────────────────────────────────────────────────────
 function buildTree(animalId, allAnimals, depth=4, visited=new Set()) {
@@ -42,7 +42,6 @@ function WarningBadge({ compact=false, prominent=false }) {
 }
 
 function AnimalChip({ a, selectedId, onSelect, hasWarning=false }) {
-  const [err, setErr] = useState(false)
   const isSel = a.id===selectedId
   const st    = STATUS_STYLES[a.status]||STATUS_STYLES.alive
   return (
@@ -54,10 +53,7 @@ function AnimalChip({ a, selectedId, onSelect, hasWarning=false }) {
         boxShadow:isSel?'0 0 0 3px rgba(200,160,96,0.15)':'none',
         transition:'all 0.15s', fontFamily:"'Lato',sans-serif", textAlign:'left' }}>
       <div style={{ width:32, height:32, borderRadius:'50%', overflow:'hidden', border:'2px solid #e8e0d0', flexShrink:0, background:'#f0ebe4' }}>
-        {a.photo_url&&!err
-          ? <img src={a.photo_url} alt={a.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={()=>setErr(true)}/>
-          : <AnimalIllustration animal={a} size={32}/>
-        }
+        <AnimalAvatar animal={a} size={32}/>
       </div>
       <div style={{ minWidth:0 }}>
         <p style={{ display:'flex', alignItems:'center', gap:5, fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:13, margin:'0 0 1px', whiteSpace:'nowrap' }}>
@@ -76,7 +72,6 @@ function AnimalChip({ a, selectedId, onSelect, hasWarning=false }) {
 
 // ─── Node card ─────────────────────────────────────────────────────────────────
 function NodeCard({ animal, isRoot=false, size, onClick, hasWarning=false }) {
-  const [err, setErr] = useState(false)
   if (!animal) return (
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, opacity:0.3 }}>
       <div style={{ width:size, height:size, borderRadius:'50%', border:'2px dashed #c8b89a', background:'#f7f4ef', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12 }}>?</div>
@@ -96,10 +91,7 @@ function NodeCard({ animal, isRoot=false, size, onClick, hasWarning=false }) {
           boxShadow: isRoot ? '0 0 0 4px rgba(200,160,96,0.2)' : 'none',
           filter: animal.status==='deceased'?'grayscale(0.6)':'none',
           opacity: animal.status==='deceased'?0.75:1 }}>
-          {animal.photo_url&&!err
-            ? <img src={animal.photo_url} alt={animal.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={()=>setErr(true)}/>
-            : <AnimalIllustration animal={animal} size={size}/>
-          }
+          <AnimalAvatar animal={animal} size={size}/>
         </div>
         <div style={{ width:9, height:9, borderRadius:'50%', background:sb, position:'absolute', bottom:1, right:1, border:'2px solid #fff' }}/>
         {hasWarning && (

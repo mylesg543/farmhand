@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
 
@@ -87,4 +87,59 @@ export function useAnimalEvents(animalId) {
   }
 
   return { events, loading, error, refetch: fetch, addEvent, updateEvent, deleteEvent, addPhotoToEvent }
+}
+
+export function useRecentAnimalEvents(animals = []) {
+  const { user } = useAuth()
+  const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const emulated = getEmulated()
+  const effectiveUid = emulated ? emulated.uid : user?.id
+  const animalIds = useMemo(() => animals.map(a => a.id).filter(Boolean).sort().join(','), [animals])
+
+  useEffect(() => {
+    if (!effectiveUid) return
+    if (animals.length === 0) {
+      setEvents([])
+      setLoading(false)
+      return
+    }
+    const fetch = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        let data, err
+        if (emulated) {
+          const res = await supabase.rpc('get_user_events_admin', { target_user_id: effectiveUid })
+          data = res.data
+          err = res.error
+        } else {
+          const res = await supabase.from('fh_animal_events')
+            .select('*')
+            .eq('user_id', effectiveUid)
+            .order('event_date', { ascending: false })
+            .limit(300)
+          data = res.data
+          err = res.error
+        }
+        if (err) throw err
+        const animalMap = new Map(animals.map(a => [a.id, a]))
+        const scoped = (data || [])
+          .filter(e => !animalIds || animalMap.has(e.animal_id))
+          .map(e => ({ ...e, animal: animalMap.get(e.animal_id) || null }))
+          .sort((a, b) => {
+            const bd = b.event_date || b.created_at || ''
+            const ad = a.event_date || a.created_at || ''
+            return bd.localeCompare(ad)
+          })
+        setEvents(scoped)
+      } catch (err) { setError(err.message) }
+      finally { setLoading(false) }
+    }
+    fetch()
+  }, [effectiveUid, animalIds, emulated])
+
+  return { events, loading, error }
 }

@@ -4,7 +4,7 @@ import { getEmulated, useAnimals } from '../../hooks/useAnimals'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
-import { S, AnimalIllustration, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS, NEWBORN_DAYS, isNewbornAnimal, getEventTypes, getEventMeta, statusFromEventType, animalNewPath, animalBulkPath, animalDetailPath, animalBulkEventPath, speciesBasePath } from '../ui/shared'
+import { S, AnimalAvatar, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS, NEWBORN_DAYS, isNewbornAnimal, getEventTypes, getEventMeta, statusFromEventType, animalNewPath, animalBulkPath, animalDetailPath, animalBulkEventPath, speciesBasePath } from '../ui/shared'
 
 const SPECIES_META = {
   sheep:    { emoji:'🐑', singular:'Sheep',   plural:'Sheep',    label:'Flock' },
@@ -552,10 +552,7 @@ export function AnimalList({ species = 'sheep' }) {
                     <div style={{ width:isMobile?44:54, height:isMobile?44:54, borderRadius:'50%',
                       overflow:'hidden', border:`2px solid ${isInactive?'#666':(STATUS_DOT[a.status]||'#9e9e9e')}`,
                       filter:isInactive?'grayscale(0.7)':'none', background:'#f0ebe4' }}>
-                      {a.photo_url
-                        ? <img src={a.photo_url} alt={a.name} style={{ width:'100%',height:'100%',objectFit:'cover' }}/>
-                        : <AnimalIllustration animal={a} size={isMobile?44:54}/>
-                      }
+                      <AnimalAvatar animal={a} size={isMobile?44:54}/>
                     </div>
                     <div style={{ width:8,height:8,borderRadius:'50%',
                       background:isInactive?'#c62828':(STATUS_DOT[a.status]||'#9e9e9e'),
@@ -757,10 +754,7 @@ export function AnimalList({ species = 'sheep' }) {
               <div style={{ width:isMobile?42:52, height:isMobile?42:52, borderRadius:'50%',
                 overflow:'hidden', border:'2px solid #e8e0d0', flexShrink:0,
                 filter:!isActive?'grayscale(0.5)':'none', background:'#f0ebe4' }}>
-                {a.photo_url
-                  ? <img src={a.photo_url} alt={a.name} style={{ width:'100%',height:'100%',objectFit:'cover' }}/>
-                  : <AnimalIllustration animal={a} size={isMobile?42:52}/>
-                }
+                <AnimalAvatar animal={a} size={isMobile?42:52}/>
               </div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:2, flexWrap:'wrap' }}>

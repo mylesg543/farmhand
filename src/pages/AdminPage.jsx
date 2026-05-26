@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
-import { S, fmt, formatDate } from '../components/ui/shared'
+import { S, AnimalAvatar, fmt, formatDate } from '../components/ui/shared'
 
 // ─── Auth guard — only your UID gets in ───────────────────────────────────────
 const ADMIN_UIDS = ['d1b58a87-b815-47aa-8d8d-33c3eedb1e57']
@@ -84,12 +84,7 @@ function AnimalDetailPanel({ animal, events }) {
       {/* Animal header */}
       <div style={{ background:'linear-gradient(135deg,#2c2416,#4a3520)', padding:'14px 16px', display:'flex', alignItems:'center', gap:12 }}>
         <div style={{ width:44, height:44, borderRadius:'50%', overflow:'hidden', border:'2px solid rgba(255,255,255,0.25)', background:'rgba(255,255,255,0.1)', flexShrink:0 }}>
-          {animal.photo_url
-            ? <img src={animal.photo_url} alt={animal.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-            : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>
-                {animal.species==='chickens'?'🐔':animal.species==='horses'?'🐴':'🐑'}
-              </div>
-          }
+          <AnimalAvatar animal={animal} size={44}/>
         </div>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:2 }}>
@@ -371,12 +366,7 @@ function UserRow({ u, allEvents }) {
                           cursor:'pointer', userSelect:'none', transition:'background 0.15s' }}>
                         <div style={{ width:38, height:38, borderRadius:'50%', overflow:'hidden',
                           border:`2px solid ${statusColors[a.status]||'#9e9e9e'}`, background:'#f0ebe4', flexShrink:0 }}>
-                          {a.photo_url
-                            ? <img src={a.photo_url} alt={a.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                            : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>
-                                {a.species==='chickens'?'🐔':a.species==='horses'?'🐴':'🐑'}
-                              </div>
-                          }
+                          <AnimalAvatar animal={a} size={38}/>
                         </div>
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:2 }}>

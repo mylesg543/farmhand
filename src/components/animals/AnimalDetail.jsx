@@ -4,7 +4,7 @@ import { useAnimals, useSingleAnimal } from '../../hooks/useAnimals'
 import { useAnimalEvents } from '../../hooks/useAnimalEvents'
 import { usePhotoUpload } from '../../hooks/usePhotoUpload'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { S, AnimalIllustration, STATUS_DOT, SEX_LABELS, formatDate, calcAge, Spinner, ErrorMsg, ANIMAL_META, speciesBasePath, animalEditPath, statusFromEventType } from '../ui/shared'
+import { S, AnimalAvatar, STATUS_DOT, SEX_LABELS, formatDate, calcAge, Spinner, ErrorMsg, ANIMAL_META, speciesBasePath, animalEditPath, statusFromEventType } from '../ui/shared'
 import { EventTimeline } from './EventTimeline'
 import { PhotoGallery } from './PhotoGallery'
 
@@ -36,11 +36,7 @@ function MiniLineage({ animal, allAnimals, navigate, isMobile }) {
             <div key={role} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
               <div style={{ width:44, height:44, borderRadius:'50%', overflow:'hidden',
                 border:'2px solid #e8e0d0', background:'#f0ebe4', opacity:!parent?0.35:1 }}>
-                {parent?.photo_url
-                  ? <img src={parent.photo_url} alt={parent.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                  : parent ? <AnimalIllustration animal={parent} size={44}/>
-                  : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, color:'#c8b89a' }}>?</div>
-                }
+                {parent ? <AnimalAvatar animal={parent} size={44}/> : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, color:'#c8b89a' }}>?</div>}
               </div>
               <span style={{ fontSize:9, fontWeight:700, color:parent?'#2c2416':'#a08060', textTransform:'uppercase', textAlign:'center', maxWidth:60, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                 {parent ? parent.name : 'Unknown'}
@@ -51,10 +47,7 @@ function MiniLineage({ animal, allAnimals, navigate, isMobile }) {
           <span style={{ fontSize:18, color:'#c8b89a' }}>→</span>
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
             <div style={{ width:48, height:48, borderRadius:'50%', overflow:'hidden', border:'3px solid #c8a060', background:'#f0ebe4' }}>
-              {animal.photo_url
-                ? <img src={animal.photo_url} alt={animal.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                : <AnimalIllustration animal={animal} size={48}/>
-              }
+              <AnimalAvatar animal={animal} size={48}/>
             </div>
             <span style={{ fontSize:9, fontWeight:700, color:'#2c2416', textTransform:'uppercase', textAlign:'center', maxWidth:60, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{animal.name}</span>
             <span style={{ fontSize:8, color:'#c8a060', fontWeight:700 }}>This Animal</span>
@@ -172,10 +165,7 @@ export function AnimalDetailPage() {
             <div style={{ position:'relative', flexShrink:0 }}>
               <div style={{ width:isMobile?64:80, height:isMobile?64:80, borderRadius:'50%', overflow:'hidden',
                 border:'3px solid rgba(255,255,255,0.25)', background:'rgba(255,255,255,0.08)' }}>
-                {latestProfilePhoto
-                  ? <img src={latestProfilePhoto} alt={animal.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                  : <AnimalIllustration animal={animal} size={isMobile?64:80}/>
-                }
+                <AnimalAvatar animal={{ ...animal, photo_url: latestProfilePhoto }} size={isMobile?64:80}/>
               </div>
               {/* Camera badge - clean circle, no emoji weirdness */}
               <label title="Update profile photo"

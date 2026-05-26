@@ -219,6 +219,11 @@ export function isNewbornAnimal(animal, now = new Date()) {
 
 export function fmt(n) { return `$${Number(n).toFixed(2)}` }
 
+export function getAnimalPhotoUrl(animal) {
+  if (!animal) return null
+  return animal.photo_url || animal.photo || animal.image_url || animal.avatar_url || animal.profile_photo_url || null
+}
+
 export function speciesBasePath(species) {
   if (species === 'chickens') return '/chickens'
   if (species === 'horses') return '/horses'
@@ -423,11 +428,36 @@ function HorseSVG({ animal, size }) {
   )
 }
 
-export function AnimalIllustration({ animal, size = 52 }) {
-  if (animal.photo_url) {
-    return <img src={animal.photo_url} alt={animal.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+export function AnimalIllustration({ animal, size = 52, forceIllustration = false }) {
+  const photoUrl = getAnimalPhotoUrl(animal)
+  if (photoUrl && !forceIllustration) {
+    return <img src={photoUrl} alt={animal.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
   }
   if (animal.species === 'chickens') return <ChickenSVG animal={animal} size={size} />
   if (animal.species === 'horses') return <HorseSVG animal={animal} size={size} />
   return <SheepSVG animal={animal} size={size} />
+}
+
+export function AnimalAvatar({ animal, size = 52, style }) {
+  const photoUrl = getAnimalPhotoUrl(animal)
+  if (photoUrl) {
+    return (
+      <>
+        <img
+          src={photoUrl}
+          alt={animal?.name || 'Animal'}
+          style={{ width:'100%', height:'100%', objectFit:'cover', display:'block', ...style }}
+          onError={(e) => {
+            e.currentTarget.style.display = 'none'
+            const fallback = e.currentTarget.nextElementSibling
+            if (fallback) fallback.style.display = 'flex'
+          }}
+        />
+        <span style={{ display:'none', width:'100%', height:'100%', alignItems:'center', justifyContent:'center' }}>
+          <AnimalIllustration animal={animal || { species:'sheep', name:'Animal' }} size={size} forceIllustration />
+        </span>
+      </>
+    )
+  }
+  return <AnimalIllustration animal={animal || { species:'sheep', name:'Animal' }} size={size} forceIllustration />
 }
