@@ -126,7 +126,6 @@ export function AnimalDetailPage() {
   const [caption,       setCaption]       = useState('')
   const [savingPhoto,   setSavingPhoto]   = useState(false)
   const [logEventSignal, setLogEventSignal] = useState(0)
-  const [showOffspring, setShowOffspring] = useState(false)
 
   const handleDelete = async () => {
     if (!window.confirm(`Delete ${animal.name}? This also deletes all their events.`)) return
@@ -187,7 +186,6 @@ export function AnimalDetailPage() {
 
   const hasOffspring = offspring.length > 0
   const handleOffspringClick = () => {
-    setShowOffspring(true)
     window.setTimeout(() => {
       offspringSectionRef.current?.scrollIntoView({ behavior:'smooth', block:'start' })
     }, 0)
@@ -405,7 +403,7 @@ export function AnimalDetailPage() {
         {/* Mini lineage */}
         <MiniLineage animal={animal} allAnimals={allAnimals} navigate={navigate} isMobile={isMobile}/>
 
-        {showOffspring && hasOffspring && (
+        {hasOffspring && (
           <div ref={offspringSectionRef}>
             <OffspringPanel offspring={offspring} navigate={navigate} isMobile={isMobile}/>
           </div>
