@@ -33,7 +33,11 @@ function MiniLineage({ animal, allAnimals, navigate, isMobile }) {
       ) : (
         <div style={{ display:'flex', gap:isMobile?12:20, alignItems:'center', flexWrap:'wrap' }}>
           {[['Sire', sire], ['Dam', dam]].map(([role, parent])=>(
-            <div key={role} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+            <button key={role} type="button" onClick={()=>parent&&navigate(animalDetailPath(parent.species, parent.id))}
+              disabled={!parent}
+              style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, border:'none',
+                background:'transparent', padding:0, fontFamily:"'Lato',sans-serif",
+                cursor:parent?'pointer':'default' }}>
               <div style={{ width:44, height:44, borderRadius:'50%', overflow:'hidden',
                 border:'2px solid #e8e0d0', background:'#f0ebe4', opacity:!parent?0.35:1 }}>
                 {parent ? <AnimalAvatar animal={parent} size={44}/> : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, color:'#c8b89a' }}>?</div>}
@@ -42,16 +46,18 @@ function MiniLineage({ animal, allAnimals, navigate, isMobile }) {
                 {parent ? parent.name : 'Unknown'}
               </span>
               <span style={{ fontSize:8, color:'#a08060' }}>{role}</span>
-            </div>
+            </button>
           ))}
           <span style={{ fontSize:18, color:'#c8b89a' }}>→</span>
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+          <button type="button" onClick={()=>navigate(animalDetailPath(animal.species, animal.id))}
+            style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, border:'none',
+              background:'transparent', padding:0, fontFamily:"'Lato',sans-serif", cursor:'pointer' }}>
             <div style={{ width:48, height:48, borderRadius:'50%', overflow:'hidden', border:'3px solid #c8a060', background:'#f0ebe4' }}>
               <AnimalAvatar animal={animal} size={48}/>
             </div>
             <span style={{ fontSize:9, fontWeight:700, color:'#2c2416', textTransform:'uppercase', textAlign:'center', maxWidth:60, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{animal.name}</span>
             <span style={{ fontSize:8, color:'#c8a060', fontWeight:700 }}>This Animal</span>
-          </div>
+          </button>
           <p style={{ fontSize:12, color:'#a08060', margin:0, fontStyle:'italic', flex:1, minWidth:100 }}>
             Tap "View Full Tree" to see 4 generations.
           </p>
