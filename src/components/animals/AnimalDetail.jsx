@@ -66,7 +66,7 @@ function OffspringPanel({ offspring, navigate, isMobile }) {
   return (
     <div style={{ ...S.card, padding:isMobile?'14px 16px':'18px 22px', marginBottom:14 }}>
       <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:14 }}>
-        <span style={{ fontSize:10, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em' }}>Offspring</span>
+        <span style={{ fontSize:10, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em' }}>Children</span>
         <span style={{ fontSize:12, color:'#a08060' }}>{offspring.length}</span>
       </div>
       <div style={{
@@ -203,6 +203,7 @@ export function AnimalDetailPage() {
   const backPath= speciesBasePath(animal.species)
   const profileStats = [
     { label:'Age', value:animal.birth_date ? calcAge(animal.birth_date) : 'Unknown' },
+    ...(hasOffspring ? [{ label:'Children', value:offspring.length }] : []),
     { label:'Events', value:events.length },
     { label:'Status', value:animal.status || 'Unknown' },
   ]
@@ -293,7 +294,7 @@ export function AnimalDetailPage() {
                     style={{ ...S.btn, background:'rgba(200,160,96,0.2)', color:'#f0d8a8',
                       border:'1px solid rgba(200,160,96,0.35)', padding:'7px 14px',
                       fontSize:13, fontWeight:700, whiteSpace:'nowrap' }}>
-                    Offspring
+                    Children
                   </button>
                 )}
                 <button onClick={()=>navigate(animalEditPath(animal.species, id))}
@@ -353,7 +354,7 @@ export function AnimalDetailPage() {
                       borderRadius:10, padding:'12px 4px', cursor:'pointer', color:'#f0d8a8',
                       fontFamily:"'Lato',sans-serif", minWidth:0 }}>
                     <span style={{ fontSize:22, lineHeight:1 }}>O</span>
-                    <span style={{ fontSize:10, fontWeight:700, maxWidth:'100%', overflow:'hidden', textOverflow:'ellipsis' }}>Offspring</span>
+                    <span style={{ fontSize:10, fontWeight:700, maxWidth:'100%', overflow:'hidden', textOverflow:'ellipsis' }}>Children</span>
                   </button>
                 )}
                 <button onClick={()=>navigate(animalEditPath(animal.species, id))}
