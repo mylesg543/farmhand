@@ -62,7 +62,7 @@ function MiniLineage({ animal, allAnimals, navigate, isMobile }) {
 }
 
 // ─── Animal Detail Page ────────────────────────────────────────────────────────
-function OffspringPanel({ offspring, navigate, isMobile }) {
+function OffspringPanel({ animal, offspring, allAnimals, navigate, isMobile }) {
   return (
     <div style={{ ...S.card, padding:isMobile?'14px 16px':'18px 22px', marginBottom:14 }}>
       <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:14 }}>
@@ -71,29 +71,54 @@ function OffspringPanel({ offspring, navigate, isMobile }) {
       </div>
       <div style={{
         display:'grid',
-        gridTemplateColumns:isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(auto-fill, minmax(150px, 1fr))',
+        gridTemplateColumns:isMobile ? '1fr' : 'repeat(auto-fill, minmax(230px, 1fr))',
         gap:isMobile?10:12,
       }}>
-        {offspring.map(child => (
-          <button key={child.id}
-            onClick={()=>navigate(animalDetailPath(child.species, child.id))}
-            style={{ display:'flex', alignItems:'center', gap:10, minWidth:0, width:'100%',
-              textAlign:'left', background:'#fff', border:'1px solid #e8e0d0', borderRadius:8,
-              padding:isMobile?'9px 10px':'10px 12px', cursor:'pointer',
-              fontFamily:"'Lato',sans-serif", color:'#2c2416' }}>
-            <span style={{ width:isMobile?42:48, height:isMobile?42:48, borderRadius:'50%',
-              overflow:'hidden', border:'2px solid #e8e0d0', background:'#f0ebe4', flexShrink:0 }}>
-              <AnimalAvatar animal={child} size={isMobile?42:48}/>
-            </span>
-            <span style={{ minWidth:0, flex:1 }}>
-              <span style={{ display:'block', fontFamily:"'Playfair Display',serif",
-                fontSize:isMobile?14:16, fontWeight:700, overflow:'hidden',
-                textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                {child.name}
+        {offspring.map(child => {
+          const sire = child.sire_id ? allAnimals.find(a => a.id === child.sire_id) : null
+          const dam = child.dam_id ? allAnimals.find(a => a.id === child.dam_id) : null
+          const currentRole = child.dam_id === animal.id ? 'Dam' : child.sire_id === animal.id ? 'Sire' : 'Parent'
+          const detailLine = [SEX_LABELS[child.sex] || child.sex, child.breed].filter(Boolean).join(' · ')
+          return (
+            <button key={child.id}
+              onClick={()=>navigate(animalDetailPath(child.species, child.id))}
+              style={{ display:'grid', gridTemplateColumns:'52px minmax(0, 1fr)', gap:11, minWidth:0, width:'100%',
+                textAlign:'left', background:'#fff', border:'1px solid #e8e0d0', borderRadius:8,
+                padding:isMobile?'10px 11px':'12px 13px', cursor:'pointer',
+                fontFamily:"'Lato',sans-serif", color:'#2c2416' }}>
+              <span style={{ width:52, height:52, borderRadius:'50%',
+                overflow:'hidden', border:'2px solid #e8e0d0', background:'#f0ebe4', flexShrink:0 }}>
+                <AnimalAvatar animal={child} size={52}/>
               </span>
-            </span>
-          </button>
-        ))}
+              <span style={{ minWidth:0 }}>
+                <span style={{ display:'flex', alignItems:'center', gap:6, minWidth:0, marginBottom:2 }}>
+                  <span style={{ display:'block', fontFamily:"'Playfair Display',serif",
+                    fontSize:isMobile?15:16, fontWeight:700, overflow:'hidden',
+                    textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    {child.name}
+                  </span>
+                  <span style={{ fontSize:9, fontWeight:800, color:'#5a3e1b', background:'#f0ebe4',
+                    border:'1px solid #e0d8cc', borderRadius:7, padding:'1px 6px', flexShrink:0 }}>
+                    {currentRole}
+                  </span>
+                </span>
+                {detailLine && (
+                  <span style={{ display:'block', fontSize:11, color:'#a08060', overflow:'hidden',
+                    textOverflow:'ellipsis', whiteSpace:'nowrap', marginBottom:2 }}>
+                    {detailLine}
+                  </span>
+                )}
+                <span style={{ display:'block', fontSize:11, color:'#7a6648', marginBottom:2 }}>
+                  {child.birth_date ? `Born ${formatDate(child.birth_date)}` : 'Birth date unknown'}
+                </span>
+                <span style={{ display:'block', fontSize:10, color:'#a08060', overflow:'hidden',
+                  textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                  Sire: {sire?.name || 'Unknown'} · Dam: {dam?.name || 'Unknown'}
+                </span>
+              </span>
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -406,7 +431,7 @@ export function AnimalDetailPage() {
 
         {hasOffspring && (
           <div ref={offspringSectionRef}>
-            <OffspringPanel offspring={offspring} navigate={navigate} isMobile={isMobile}/>
+            <OffspringPanel animal={animal} offspring={offspring} allAnimals={allAnimals} navigate={navigate} isMobile={isMobile}/>
           </div>
         )}
 

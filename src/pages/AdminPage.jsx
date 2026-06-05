@@ -109,15 +109,22 @@ function AnimalDetailPanel({ animal, events, animals }) {
           </p>
           <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
             {offspring.map(child => (
-              <div key={child.id} style={{ display:'flex', alignItems:'center', gap:8, border:'1px solid #e8e0d0',
-                borderRadius:8, background:'#fdfaf6', padding:'7px 9px', minWidth:130, maxWidth:190 }}>
+              <div key={child.id} style={{ display:'grid', gridTemplateColumns:'34px minmax(0, 1fr)', alignItems:'center',
+                gap:8, border:'1px solid #e8e0d0', borderRadius:8, background:'#fdfaf6',
+                padding:'7px 9px', minWidth:180, maxWidth:260 }}>
                 <div style={{ width:34, height:34, borderRadius:'50%', overflow:'hidden', border:'2px solid #e8e0d0',
                   background:'#f0ebe4', flexShrink:0 }}>
                   <AnimalAvatar animal={child} size={34}/>
                 </div>
-                <span style={{ fontFamily:"'Playfair Display',serif", fontSize:13, fontWeight:700,
-                  color:'#2c2416', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                  {child.name}
+                <span style={{ minWidth:0 }}>
+                  <span style={{ display:'block', fontFamily:"'Playfair Display',serif", fontSize:13, fontWeight:700,
+                    color:'#2c2416', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    {child.name}
+                  </span>
+                  <span style={{ display:'block', fontSize:10, color:'#a08060', overflow:'hidden',
+                    textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    Sire: {animals.find(a => a.id === child.sire_id)?.name || 'Unknown'} · Dam: {animals.find(a => a.id === child.dam_id)?.name || 'Unknown'}
+                  </span>
                 </span>
               </div>
             ))}
