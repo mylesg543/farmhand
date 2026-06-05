@@ -198,6 +198,28 @@ export function AnimalDetailPage() {
     }, 0)
   }
 
+  const latestProfilePhotoFromEvents = (eventList) => [...eventList]
+    .filter(e => e.event_type === 'photo_update' && e.photo_url)
+    .sort((a,b) => {
+      const bd = b.event_date || b.created_at || ''
+      const ad = a.event_date || a.created_at || ''
+      return bd.localeCompare(ad)
+    })[0]?.photo_url || null
+
+  const handleDeleteEvent = async (eventId) => {
+    const target = events.find(e => e.id === eventId)
+    const remainingEvents = events.filter(e => e.id !== eventId)
+    const nextProfilePhoto = target?.event_type === 'photo_update'
+      ? latestProfilePhotoFromEvents(remainingEvents)
+      : null
+
+    if (target?.event_type === 'photo_update') {
+      await updateAnimal(id, { photo_url: nextProfilePhoto })
+      setAnimal(prev => prev ? { ...prev, photo_url: nextProfilePhoto } : prev)
+    }
+    await deleteEvent(eventId)
+  }
+
   const offspring = useMemo(() => {
     if (!animal?.id) return []
     return allAnimals
@@ -217,9 +239,7 @@ export function AnimalDetailPage() {
   }
 
   // Most recent photo = avatar (from profile updates only, not event photos)
-  const latestProfilePhoto = [...events]
-    .filter(e => e.event_type === 'photo_update' && e.photo_url)
-    .sort((a,b) => b.event_date > a.event_date ? 1 : -1)[0]?.photo_url || animal?.photo_url
+  const latestProfilePhoto = latestProfilePhotoFromEvents(events) || animal?.photo_url
 
   if (loading) return <div style={S.page}><Spinner/></div>
   if (error||!animal) return <div style={S.page}><ErrorMsg message={error||'Animal not found.'}/></div>
@@ -446,7 +466,7 @@ export function AnimalDetailPage() {
               animal={animal}
               allAnimals={allAnimals}
               onAddPhoto={addPhotoToEvent}
-              onDelete={deleteEvent}
+              onDelete={handleDeleteEvent}
               onUpdate={updateEvent}
               isMobile={isMobile}
               openSignal={logEventSignal}
@@ -500,6 +520,7 @@ export function AnimalDetailPage() {
           events={events}
           animalName={animal.name}
           onClose={()=>setShowGallery(false)}
+          onDeletePhoto={handleDeleteEvent}
           onUploadPhoto={async(file)=>{
             try {
               const url = await upload(file)

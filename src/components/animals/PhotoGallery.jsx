@@ -26,7 +26,7 @@ const closeBtn = {
   fontSize:13, fontFamily:"'Lato',sans-serif", fontWeight:600,
 }
 
-export function PhotoGallery({ events, animalName, onClose, onUploadPhoto }) {
+export function PhotoGallery({ events, animalName, onClose, onUploadPhoto, onDeletePhoto }) {
   // Sort newest → oldest so left = most recent, right = oldest
   const photos = events
     .filter(e => e.photo_url)
@@ -36,6 +36,7 @@ export function PhotoGallery({ events, animalName, onClose, onUploadPhoto }) {
       return db < da ? -1 : db > da ? 1 : 0
     })
     .map(e => ({
+      id:        e.id,
       url:       e.photo_url,
       date:      (e.event_date||'').slice(0,10),
       eventType: EVENT_LABELS[e.event_type] || (e.event_type||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),
@@ -45,6 +46,7 @@ export function PhotoGallery({ events, animalName, onClose, onUploadPhoto }) {
 
   const [idx,       setIdx]      = useState(0) // 0 = most recent (left)
   const [imgLoaded, setImgLoaded] = useState(false)
+  const [deleting,  setDeleting]  = useState(false)
   const touchStartX = useRef(null)
   const touchStartY = useRef(null)
 
@@ -89,6 +91,20 @@ export function PhotoGallery({ events, animalName, onClose, onUploadPhoto }) {
   )
 
   const photo = photos[idx]
+  const handleDelete = async () => {
+    if (!photo?.id || !onDeletePhoto) return
+    if (!window.confirm('Delete this photo?')) return
+    setDeleting(true)
+    try {
+      await onDeletePhoto(photo.id)
+      if (photos.length <= 1) onClose()
+      else setIdx(i => Math.max(0, Math.min(photos.length - 2, i)))
+    } catch (err) {
+      alert('Delete failed: ' + err.message)
+    } finally {
+      setDeleting(false)
+    }
+  }
   const dateLabel = photo.date
     ? new Date(photo.date+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})
     : ''
@@ -109,6 +125,13 @@ export function PhotoGallery({ events, animalName, onClose, onUploadPhoto }) {
           </p>
         </div>
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          {onDeletePhoto && (
+            <button onClick={handleDelete} disabled={deleting}
+              style={{ ...closeBtn, background:'rgba(255,80,80,0.18)', border:'1px solid rgba(255,80,80,0.35)',
+                color:'#ffcdd2', opacity:deleting?0.6:1 }}>
+              {deleting ? 'Deleting…' : 'Delete Photo'}
+            </button>
+          )}
           {onUploadPhoto && (
             <label style={{ ...closeBtn, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6 }}>
               📷 Upload New Photo
