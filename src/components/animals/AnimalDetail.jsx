@@ -1,10 +1,10 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAnimals, useSingleAnimal } from '../../hooks/useAnimals'
 import { useAnimalEvents } from '../../hooks/useAnimalEvents'
 import { usePhotoUpload } from '../../hooks/usePhotoUpload'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { S, AnimalAvatar, STATUS_DOT, SEX_LABELS, formatDate, calcAge, Spinner, ErrorMsg, ANIMAL_META, speciesBasePath, animalEditPath, statusFromEventType } from '../ui/shared'
+import { S, AnimalAvatar, STATUS_DOT, SEX_LABELS, formatDate, calcAge, Spinner, ErrorMsg, ANIMAL_META, speciesBasePath, animalEditPath, animalDetailPath, statusFromEventType } from '../ui/shared'
 import { EventTimeline } from './EventTimeline'
 import { PhotoGallery } from './PhotoGallery'
 
@@ -62,12 +62,50 @@ function MiniLineage({ animal, allAnimals, navigate, isMobile }) {
 }
 
 // ─── Animal Detail Page ────────────────────────────────────────────────────────
+function OffspringPanel({ offspring, navigate, isMobile }) {
+  return (
+    <div style={{ ...S.card, padding:isMobile?'14px 16px':'18px 22px', marginBottom:14 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:14 }}>
+        <span style={{ fontSize:10, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em' }}>Offspring</span>
+        <span style={{ fontSize:12, color:'#a08060' }}>{offspring.length}</span>
+      </div>
+      <div style={{
+        display:'grid',
+        gridTemplateColumns:isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(auto-fill, minmax(150px, 1fr))',
+        gap:isMobile?10:12,
+      }}>
+        {offspring.map(child => (
+          <button key={child.id}
+            onClick={()=>navigate(animalDetailPath(child.species, child.id))}
+            style={{ display:'flex', alignItems:'center', gap:10, minWidth:0, width:'100%',
+              textAlign:'left', background:'#fff', border:'1px solid #e8e0d0', borderRadius:8,
+              padding:isMobile?'9px 10px':'10px 12px', cursor:'pointer',
+              fontFamily:"'Lato',sans-serif", color:'#2c2416' }}>
+            <span style={{ width:isMobile?42:48, height:isMobile?42:48, borderRadius:'50%',
+              overflow:'hidden', border:'2px solid #e8e0d0', background:'#f0ebe4', flexShrink:0 }}>
+              <AnimalAvatar animal={child} size={isMobile?42:48}/>
+            </span>
+            <span style={{ minWidth:0, flex:1 }}>
+              <span style={{ display:'block', fontFamily:"'Playfair Display',serif",
+                fontSize:isMobile?14:16, fontWeight:700, overflow:'hidden',
+                textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {child.name}
+              </span>
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function AnimalDetailPage() {
   const { id }     = useParams()
   const navigate   = useNavigate()
   const isMobile   = useIsMobile()
   const fileRef    = useRef()
   const eventSectionRef = useRef()
+  const offspringSectionRef = useRef()
   const { animal, setAnimal, loading, error } = useSingleAnimal(id)
   const { animals: allAnimals, addAnimal, deleteAnimal, updateAnimal } = useAnimals(animal?.species || 'sheep')
   const { events, loading:evLoading, addEvent: _addEvent, addPhotoToEvent, deleteEvent, updateEvent } = useAnimalEvents(id)
@@ -88,6 +126,7 @@ export function AnimalDetailPage() {
   const [caption,       setCaption]       = useState('')
   const [savingPhoto,   setSavingPhoto]   = useState(false)
   const [logEventSignal, setLogEventSignal] = useState(0)
+  const [showOffspring, setShowOffspring] = useState(false)
 
   const handleDelete = async () => {
     if (!window.confirm(`Delete ${animal.name}? This also deletes all their events.`)) return
@@ -132,6 +171,25 @@ export function AnimalDetailPage() {
     setLogEventSignal(v => v + 1)
     window.setTimeout(() => {
       eventSectionRef.current?.scrollIntoView({ behavior:'smooth', block:'start' })
+    }, 0)
+  }
+
+  const offspring = useMemo(() => {
+    if (!animal?.id) return []
+    return allAnimals
+      .filter(a => a.id !== animal.id && (a.sire_id === animal.id || a.dam_id === animal.id))
+      .sort((a, b) => {
+        const ad = a.birth_date || ''
+        const bd = b.birth_date || ''
+        return bd.localeCompare(ad) || (a.name || '').localeCompare(b.name || '', undefined, { sensitivity:'base' })
+      })
+  }, [allAnimals, animal?.id])
+
+  const hasOffspring = offspring.length > 0
+  const handleOffspringClick = () => {
+    setShowOffspring(true)
+    window.setTimeout(() => {
+      offspringSectionRef.current?.scrollIntoView({ behavior:'smooth', block:'start' })
     }, 0)
   }
 
@@ -232,6 +290,14 @@ export function AnimalDetailPage() {
                     border:'1px solid rgba(76,175,80,0.35)', padding:'7px 14px', fontSize:13, fontWeight:700, whiteSpace:'nowrap' }}>
                   ⑂ Lineage
                 </button>
+                {hasOffspring && (
+                  <button onClick={handleOffspringClick}
+                    style={{ ...S.btn, background:'rgba(200,160,96,0.2)', color:'#f0d8a8',
+                      border:'1px solid rgba(200,160,96,0.35)', padding:'7px 14px',
+                      fontSize:13, fontWeight:700, whiteSpace:'nowrap' }}>
+                    Offspring
+                  </button>
+                )}
                 <button onClick={()=>navigate(animalEditPath(animal.species, id))}
                   style={{ ...S.btn, background:'rgba(255,255,255,0.1)', color:'#f0e6cc',
                     border:'1px solid rgba(255,255,255,0.2)', padding:'7px 14px', fontSize:13, whiteSpace:'nowrap' }}>
@@ -257,7 +323,7 @@ export function AnimalDetailPage() {
                   boxShadow:'0 4px 14px rgba(0,0,0,0.18)', marginBottom:8 }}>
                 <span style={{ fontSize:16, lineHeight:1 }}>+</span> Log Event
               </button>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:8, marginBottom:8 }}>
+              <div style={{ display:'grid', gridTemplateColumns:hasOffspring?'repeat(5, minmax(0, 1fr))':'1fr 1fr 1fr 1fr', gap:8, marginBottom:8 }}>
                 <label style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5,
                   background:'rgba(200,160,96,0.25)', border:'1px solid rgba(200,160,96,0.4)',
                   borderRadius:10, padding:'12px 6px', cursor:'pointer', color:'#f0e6cc' }}>
@@ -282,6 +348,16 @@ export function AnimalDetailPage() {
                   <span style={{ fontSize:22, lineHeight:1 }}>⑂</span>
                   <span style={{ fontSize:11, fontWeight:700 }}>Lineage</span>
                 </button>
+                {hasOffspring && (
+                  <button onClick={handleOffspringClick}
+                    style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5,
+                      background:'rgba(200,160,96,0.2)', border:'1px solid rgba(200,160,96,0.35)',
+                      borderRadius:10, padding:'12px 4px', cursor:'pointer', color:'#f0d8a8',
+                      fontFamily:"'Lato',sans-serif", minWidth:0 }}>
+                    <span style={{ fontSize:22, lineHeight:1 }}>O</span>
+                    <span style={{ fontSize:10, fontWeight:700, maxWidth:'100%', overflow:'hidden', textOverflow:'ellipsis' }}>Offspring</span>
+                  </button>
+                )}
                 <button onClick={()=>navigate(animalEditPath(animal.species, id))}
                   style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5,
                     background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)',
@@ -328,6 +404,12 @@ export function AnimalDetailPage() {
 
         {/* Mini lineage */}
         <MiniLineage animal={animal} allAnimals={allAnimals} navigate={navigate} isMobile={isMobile}/>
+
+        {showOffspring && hasOffspring && (
+          <div ref={offspringSectionRef}>
+            <OffspringPanel offspring={offspring} navigate={navigate} isMobile={isMobile}/>
+          </div>
+        )}
 
         {/* Event timeline */}
         <div ref={eventSectionRef} style={{ ...S.card, padding:isMobile?'14px 12px':'22px 24px' }}>
