@@ -176,7 +176,7 @@ function PedigreeChart({ root, isMobile, onAnimalClick, warningIds=new Set() }) 
                       animal={animal}
                       isRoot={isRoot}
                       size={sz}
-                      onClick={animal && !isRoot ? onAnimalClick : null}
+                      onClick={animal ? onAnimalClick : null}
                       hasWarning={animal ? warningIds.has(animal.id) : false}
                     />
                   </div>
@@ -415,7 +415,7 @@ export function LineagePage() {
             <div style={{ flex:1, minWidth:0 }}>
               <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:isMobile?17:20, margin:'0 0 2px' }}>{selected.name}'s Family Tree</p>
               <p style={{ fontSize:12, color:'#a08060', margin:0 }}>
-                {selected.breed||'Unknown breed'} · {calcAge(selected.birth_date)||'Unknown age'} · Tap an ancestor to view their tree
+                {selected.breed||'Unknown breed'} · {calcAge(selected.birth_date)||'Unknown age'} · Tap an animal to view their profile
               </p>
             </div>
             <button onClick={()=>navigate(animalDetailPath(species, selectedId))} style={{ ...S.btn, ...S.btnSecondary, padding:'7px 14px', fontSize:13, flexShrink:0 }}>
@@ -426,7 +426,7 @@ export function LineagePage() {
           <PedigreeChart
             root={tree}
             isMobile={isMobile}
-            onAnimalClick={(animal)=>setSelectedId(animal.id)}
+            onAnimalClick={(animal)=>navigate(animalDetailPath(animal.species || species, animal.id))}
             warningIds={sharedAncestorIds}
           />
 
