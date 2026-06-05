@@ -73,10 +73,13 @@ const EV_COLORS = {
 }
 
 // ─── Read-only animal events panel ────────────────────────────────────────────
-function AnimalDetailPanel({ animal, events }) {
+function AnimalDetailPanel({ animal, events, animals }) {
   const animalEvents = events
     .filter(e => e.animal_id === animal.id)
     .sort((a,b) => b.event_date > a.event_date ? 1 : -1)
+  const offspring = (animals || [])
+    .filter(a => a.id !== animal.id && (a.sire_id === animal.id || a.dam_id === animal.id))
+    .sort((a,b) => (b.birth_date || '').localeCompare(a.birth_date || '') || (a.name || '').localeCompare(b.name || '', undefined, { sensitivity:'base' }))
   const st = { alive:'#4caf50', sold:'#9c27b0', deceased:'#9e9e9e', rented:'#f9a825' }
 
   return (
@@ -98,6 +101,29 @@ function AnimalDetailPanel({ animal, events }) {
         </div>
         <span style={{ fontSize:11, color:'#c8a878', flexShrink:0 }}>{animalEvents.length} event{animalEvents.length!==1?'s':''}</span>
       </div>
+
+      {offspring.length > 0 && (
+        <div style={{ padding:'12px 16px', borderBottom:'1px solid #f0ebe4', background:'#fff' }}>
+          <p style={{ fontSize:10, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em', margin:'0 0 10px' }}>
+            Offspring
+          </p>
+          <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+            {offspring.map(child => (
+              <div key={child.id} style={{ display:'flex', alignItems:'center', gap:8, border:'1px solid #e8e0d0',
+                borderRadius:8, background:'#fdfaf6', padding:'7px 9px', minWidth:130, maxWidth:190 }}>
+                <div style={{ width:34, height:34, borderRadius:'50%', overflow:'hidden', border:'2px solid #e8e0d0',
+                  background:'#f0ebe4', flexShrink:0 }}>
+                  <AnimalAvatar animal={child} size={34}/>
+                </div>
+                <span style={{ fontFamily:"'Playfair Display',serif", fontSize:13, fontWeight:700,
+                  color:'#2c2416', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                  {child.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Events timeline — read only */}
       {animalEvents.length === 0 ? (
@@ -387,7 +413,7 @@ function UserRow({ u, allEvents }) {
                       </div>
 
                       {/* Animal events drill-down */}
-                      {isOpen && <AnimalDetailPanel animal={a} events={allEvents}/>}
+                      {isOpen && <AnimalDetailPanel animal={a} animals={u.animals} events={allEvents}/>}
                     </div>
                   )
                 })}
@@ -429,7 +455,7 @@ export function AdminPage() {
       // ── Fetch all users from auth (via a service-role workaround using public profiles)
       // We use fh_animals grouped by user_id to infer users + activity
       const [animals, events, income, costs, emailsRes] = await Promise.all([
-        supabase.from('fh_animals').select('id, user_id, species, status, created_at, name, breed, sex, tag_number, birth_date, photo_url'),
+        supabase.from('fh_animals').select('id, user_id, species, status, created_at, name, breed, sex, tag_number, birth_date, photo_url, sire_id, dam_id'),
         supabase.from('fh_animal_events').select('id, user_id, animal_id, event_type, event_date, notes, photo_url, created_at'),
         supabase.from('fh_income').select('id, user_id, amount, date, created_at'),
         supabase.from('fh_feed_costs').select('id, user_id, amount, date, created_at'),
