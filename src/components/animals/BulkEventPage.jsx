@@ -74,7 +74,9 @@ export function BulkEventPage({ species = 'sheep' }) {
       }
       if (eventType === 'do_not_breed') {
         const restriction = breedingRestrictionPayload(breedingReason, eventDate)
-        await Promise.all(ids.map(animalId => updateAnimal(animalId, restriction)))
+        const updates = await Promise.allSettled(ids.map(animalId => updateAnimal(animalId, restriction)))
+        updates.filter(result => result.status === 'rejected')
+          .forEach(result => console.warn('Breeding warning field update fell back to event history:', result.reason))
       }
       setDone(true)
       setTimeout(() => navigate(backPath), 1200)
@@ -208,9 +210,14 @@ export function BulkEventPage({ species = 'sheep' }) {
       </div>
 
       {/* Buttons */}
-      <div style={{ display: 'flex', gap: 10 }}>
-        <button onClick={handleSave} disabled={saving || !eventType || ids.length === 0}
-          style={{ flex: 1, background: saving || !eventType || ids.length === 0 ? '#c8b89a' : '#c8a060', color: '#2c2416', border: 'none', borderRadius: 8, padding: '12px 20px', fontSize: 15, fontWeight: 700, cursor: saving || !eventType || ids.length === 0 ? 'default' : 'pointer', fontFamily: "'Lato',sans-serif" }}>
+      <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+        <button onClick={handleSave}
+          disabled={saving || !eventType || ids.length === 0 || (eventType === 'do_not_breed' && !breedingReason)}
+          style={{ flex:'1 1 220px',
+            background:saving || !eventType || ids.length === 0 || (eventType === 'do_not_breed' && !breedingReason) ? '#c8b89a' : '#c8a060',
+            color:'#2c2416', border:'none', borderRadius:8, padding:'12px 20px', fontSize:15,
+            fontWeight:700, cursor:saving || !eventType || ids.length === 0 || (eventType === 'do_not_breed' && !breedingReason) ? 'default' : 'pointer',
+            fontFamily:"'Lato',sans-serif" }}>
           {saving ? 'Saving…' : `Save for ${ids.length} ${ids.length === 1 ? meta.singular : meta.plural}`}
         </button>
         <button onClick={() => navigate(backPath)}

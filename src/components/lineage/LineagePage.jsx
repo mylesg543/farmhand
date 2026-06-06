@@ -26,6 +26,14 @@ function collectIds(node, depth=3, ids=new Set()) {
   return ids
 }
 
+function collectAnimals(node, animals=new Map()) {
+  if (!node?.animal) return animals
+  animals.set(node.animal.id, node.animal)
+  collectAnimals(node.sire, animals)
+  collectAnimals(node.dam, animals)
+  return animals
+}
+
 // ─── Animal chip for selector ──────────────────────────────────────────────────
 function WarningBadge({ compact=false, prominent=false }) {
   const size = prominent ? 24 : compact ? 16 : 18
@@ -80,10 +88,11 @@ function AnimalChip({ a, selectedId, onSelect, hasLineageWarning=false }) {
           {hasBreedingRestriction(a) && <DoNotBreedBadge compact reason={a.breeding_restriction_reason}/>}
         </div>
       </div>
-      <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'flex-end', minWidth:18, justifySelf:'end' }}>
-        {hasBreedingWarning ? (
-          <BreedingWarningIcon prominent reason={a.breeding_restriction_reason}/>
-        ) : hasLineageWarning ? <WarningBadge prominent /> : (
+      <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'flex-end',
+        gap:4, minWidth:18, justifySelf:'end' }}>
+        {hasBreedingWarning && <BreedingWarningIcon prominent reason={a.breeding_restriction_reason}/>}
+        {hasLineageWarning && <WarningBadge prominent />}
+        {!hasBreedingWarning && !hasLineageWarning && (
           <span style={{ color:isSel?'#c8a060':'#d8ccb8', fontSize:14 }}>{isSel ? '✓' : '›'}</span>
         )}
       </span>
@@ -280,6 +289,9 @@ export function LineagePage() {
     return [...sireIds].filter(id=>damIds.has(id)).map(id=>animals.find(a=>a.id===id)).filter(Boolean)
   })() : []
   const sharedAncestorIds = new Set(sharedAncestors.map(a=>a.id))
+  const restrictedTreeAnimals = tree
+    ? [...collectAnimals(tree).values()].filter(hasBreedingRestriction)
+    : []
   const animalsWithSharedAncestorWarnings = new Set(animals
     .filter(a => {
       const t = buildTree(a.id, animals, 4)
@@ -324,10 +336,12 @@ export function LineagePage() {
           </p>
         </div>
         {/* Species toggle */}
-        <div style={{ display:'flex', background:'#f0e8d8', borderRadius:10, padding:3, gap:2 }}>
+        <div style={{ display:'flex', background:'#f0e8d8', borderRadius:10, padding:3, gap:2,
+          width:isMobile?'100%':undefined }}>
           {[['sheep','🐑 Sheep'],['chickens','🐔 Chickens'],['horses','🐴 Horses']].map(([k,l])=>(
             <button key={k} onClick={()=>handleSpecies(k)}
-              style={{ ...S.btn, padding:'6px 14px', fontSize:13, borderRadius:8,
+              style={{ ...S.btn, padding:isMobile?'7px 5px':'6px 14px', fontSize:isMobile?11:13,
+                flex:isMobile?1:undefined, justifyContent:'center', borderRadius:8,
                 background:species===k?'#5a3e1b':'transparent',
                 color:species===k?'#fff':'#7a6648', border:'none', transition:'all 0.2s' }}>
               {l}
@@ -404,7 +418,7 @@ export function LineagePage() {
               </button>
             </div>
           ) : <div style={{ display:'grid',
-              gridTemplateColumns:isMobile?'1fr 1fr':'repeat(auto-fill, minmax(190px, 1fr))',
+              gridTemplateColumns:isMobile?'1fr':'repeat(auto-fill, minmax(190px, 1fr))',
               gap:isMobile?8:10, alignItems:'stretch' }}>
               {filtered.map(a=><AnimalChip key={a.id} a={a} selectedId={selectedId}
                 onSelect={setSelectedId} hasLineageWarning={animalsWithSharedAncestorWarnings.has(a.id)}/>)}
@@ -413,7 +427,7 @@ export function LineagePage() {
       </div>
 
       {!selectedId && (
-        <div style={{ ...S.card, padding:60, textAlign:'center' }}>
+        <div style={{ ...S.card, padding:isMobile?'28px 18px':60, textAlign:'center' }}>
           <div style={{ fontSize:52, marginBottom:14 }}>{emoji}</div>
           <p style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:700, marginBottom:8 }}>
             Select {species==='sheep'?'a sheep':species==='horses'?'a horse':'a chicken'} to see their family tree
@@ -425,8 +439,20 @@ export function LineagePage() {
       )}
 
       {selectedId && !hasLineage && (
-        <div style={{ ...S.card, padding:48, textAlign:'center' }}>
+        <div style={{ ...S.card, padding:isMobile?'26px 18px':48, textAlign:'center' }}>
           <div style={{ fontSize:40, marginBottom:12 }}>{emoji}</div>
+          {hasBreedingRestriction(selected) && (
+            <div style={{ display:'flex', justifyContent:'center', alignItems:'center',
+              gap:7, flexWrap:'wrap', marginBottom:12 }}>
+              <BreedingWarningIcon reason={selected?.breeding_restriction_reason}/>
+              <DoNotBreedBadge reason={selected?.breeding_restriction_reason}/>
+              {selected?.breeding_restriction_reason && (
+                <span style={{ fontSize:12, color:'#a51d1d', fontWeight:700 }}>
+                  {selected.breeding_restriction_reason}
+                </span>
+              )}
+            </div>
+          )}
           <p style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, marginBottom:8 }}>No lineage recorded for {selected?.name}</p>
           <p style={{ fontSize:14, color:'#a08060', marginBottom:20 }}>Edit this animal and select a Sire and Dam to start building their tree.</p>
           <button onClick={()=>navigate(animalEditPath(species, selectedId))} style={{ ...S.btn, ...S.btnPrimary, padding:'10px 24px' }}>
@@ -470,11 +496,37 @@ export function LineagePage() {
           />
 
           {/* Inbreeding result */}
-          <div style={{ marginTop:20 }}>
+          <div style={{ marginTop:20, display:'flex', flexDirection:'column', gap:10 }}>
+            {restrictedTreeAnimals.length > 0 && (
+              <div style={{ background:'#fff3f3', border:'1px solid #ef9a9a', borderRadius:10, padding:'12px 16px' }}>
+                <div style={{ display:'flex', gap:10, alignItems:'flex-start' }}>
+                  <BreedingWarningIcon />
+                  <div>
+                    <p style={{ fontSize:13, color:'#a51d1d', fontWeight:800, margin:'0 0 4px' }}>
+                      Do Not Breed warning in this family tree
+                    </p>
+                    <p style={{ fontSize:12, color:'#7a3030', margin:'0 0 7px' }}>
+                      Review these active restrictions before making any breeding decision.
+                    </p>
+                    <div style={{ display:'flex', gap:7, flexWrap:'wrap' }}>
+                      {restrictedTreeAnimals.map(a => (
+                        <button key={a.id} onClick={()=>navigate(animalDetailPath(a.species || species, a.id))}
+                          style={{ ...S.btn, padding:'4px 8px', fontSize:11, fontWeight:800,
+                            background:'#fff', color:'#a51d1d', border:'1px solid #ef9a9a' }}>
+                          {a.name}{a.breeding_restriction_reason ? ` · ${a.breeding_restriction_reason}` : ''}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             {sharedAncestors.length===0 ? (
               <div style={{ background:'#f1f8f1', border:'1px solid #a5d6a7', borderRadius:10, padding:'12px 16px', display:'flex', gap:10, alignItems:'center' }}>
                 <span style={{ fontSize:18 }}>✓</span>
-                <p style={{ fontSize:13, color:'#2e7d32', fontWeight:600, margin:0 }}>No shared ancestors detected. Safe to breed.</p>
+                <p style={{ fontSize:13, color:'#2e7d32', fontWeight:600, margin:0 }}>
+                  No shared ancestors detected in the recorded lineage.
+                </p>
               </div>
             ) : (
               <div style={{ background:'#fff3f3', border:'1px solid #f5c6c6', borderRadius:10, padding:'12px 16px' }}>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { mergeAnimalEventData } from '../lib/animalEventHydration'
 import { useNavigate } from 'react-router-dom'
 import { S, AnimalAvatar, fmt, formatDate, hasBreedingRestriction, DoNotBreedBadge } from '../components/ui/shared'
 
@@ -525,8 +526,11 @@ export function AdminPage() {
       const emailMap = {}
       ;(emailsRes.data || []).forEach(u => { emailMap[u.id] = { email: u.email, signedUpAt: u.created_at, lastSignIn: u.last_sign_in_at } })
 
-      const animalsData = (animals.data || []).filter(a => a.user_id)
       const eventsData  = (events.data  || []).filter(e => e.user_id)
+      const animalsData = mergeAnimalEventData(
+        (animals.data || []).filter(a => a.user_id),
+        eventsData,
+      )
       const incomeData  = (income.data  || []).filter(i => i.user_id)
       const costsData   = (costs.data   || []).filter(c => c.user_id)
 

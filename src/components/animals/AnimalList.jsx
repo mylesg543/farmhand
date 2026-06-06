@@ -4,7 +4,7 @@ import { getEmulated, useAnimals } from '../../hooks/useAnimals'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
-import { S, AnimalAvatar, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS, NEWBORN_DAYS, isNewbornAnimal, getEventTypes, getEventMeta, statusFromEventType, animalNewPath, animalBulkPath, animalDetailPath, animalBulkEventPath, speciesBasePath, BREEDING_RESTRICTION_REASONS, breedingRestrictionPayload, hasBreedingRestriction, DoNotBreedBadge } from '../ui/shared'
+import { S, AnimalAvatar, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS, NEWBORN_DAYS, isNewbornAnimal, getEventTypes, getEventMeta, statusFromEventType, animalNewPath, animalBulkPath, animalDetailPath, animalBulkEventPath, BREEDING_RESTRICTION_REASONS, breedingRestrictionPayload, hasBreedingRestriction, DoNotBreedBadge } from '../ui/shared'
 
 const SPECIES_META = {
   sheep:    { emoji:'🐑', singular:'Sheep',   plural:'Sheep',    label:'Flock' },
@@ -155,7 +155,9 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
       }
       if (eventType === 'do_not_breed' && onStatusUpdate) {
         const restriction = breedingRestrictionPayload(breedingReason, eventDate)
-        await Promise.all([...picked].map(animalId => onStatusUpdate(animalId, restriction)))
+        const updates = await Promise.allSettled([...picked].map(animalId => onStatusUpdate(animalId, restriction)))
+        updates.filter(result => result.status === 'rejected')
+          .forEach(result => console.warn('Breeding warning field update fell back to event history:', result.reason))
       }
       setDone(true)
       setTimeout(() => onDone(), 1000)
@@ -298,9 +300,10 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
         value={notes} onChange={e=>setNotes(e.target.value)}/>
 
       {/* Save */}
-      <button onClick={handleSave} disabled={saving||picked.size===0||!eventType}
+      <button onClick={handleSave}
+        disabled={saving||picked.size===0||!eventType||(eventType==='do_not_breed'&&!breedingReason)}
         style={{ ...S.btn, ...S.btnPrimary, width:'100%', justifyContent:'center',
-          opacity:saving||picked.size===0||!eventType?0.55:1,
+          opacity:saving||picked.size===0||!eventType||(eventType==='do_not_breed'&&!breedingReason)?0.55:1,
           fontSize:14, padding:'11px 0', fontWeight:700 }}>
         {saving ? 'Saving…' : `Log Event for ${picked.size||'?'} ${picked.size===1?meta.singular:meta.plural}`}
       </button>
@@ -313,7 +316,7 @@ export function AnimalList({ species = 'sheep' }) {
   const navigate  = useNavigate()
   const isMobile  = useIsMobile()
   const { user }  = useAuth()
-  const { animals = [], loading, error, updateAnimal } = useAnimals(species)
+  const { animals = [], loading, error, updateAnimal, refetch } = useAnimals(species)
   const meta      = SPECIES_META[species] || SPECIES_META.sheep
   const [filter,        setFilter]        = useState('alive')
   const [search,        setSearch]        = useState('')
@@ -344,12 +347,14 @@ export function AnimalList({ species = 'sheep' }) {
   const deceasedAnimals = animals.filter(a => a.status === 'deceased')
   const expiredRented   = animals.filter(a => a.status === 'rented' && a.departure_date && a.departure_date < today)
   const newbornAnimals  = animals.filter(a => isNewbornAnimal(a))
+  const warningAnimals  = animals.filter(a => hasBreedingRestriction(a))
 
   const baseList = filter==='alive'    ? activeAnimals
     : filter==='sold'     ? soldAnimals
     : filter==='deceased' ? deceasedAnimals
     : filter==='rented'   ? expiredRented
     : filter==='newborn'  ? newbornAnimals
+    : filter==='warnings' ? warningAnimals
     : animals
 
   const filteredList = useMemo(() => {
@@ -390,12 +395,14 @@ export function AnimalList({ species = 'sheep' }) {
   const filterBtns = [
     { key:'alive',    label:`Active (${activeAnimals.length})` },
     { key:'all',      label:`All (${animals.length})` },
+    ...(warningAnimals.length > 0 ? [{ key:'warnings', label:`Warnings (${warningAnimals.length})` }] : []),
     ...(newbornAnimals.length  > 0 ? [{ key:'newborn',  label:`Newborn (${newbornAnimals.length})` }]      : []),
     ...(soldAnimals.length     > 0 ? [{ key:'sold',     label:`Sold (${soldAnimals.length})` }]           : []),
     ...(deceasedAnimals.length > 0 ? [{ key:'deceased', label:`Deceased (${deceasedAnimals.length})` }]   : []),
     ...(expiredRented.length   > 0 ? [{ key:'rented',   label:`Rented/Returned (${expiredRented.length})` }] : []),
   ]
   const currentSort = SORT_OPTIONS.find(opt => opt.value === sortBy) || SORT_OPTIONS[0]
+  const allFilteredSelected = filteredList.length > 0 && filteredList.every(a => selected.has(a.id))
 
   if (loading) return <div style={S.page}><p style={{ color:'#a08060', padding:40, textAlign:'center' }}>Loading…</p></div>
   if (error)   return <div style={S.page}><p style={{ color:'#c62828', padding:40, textAlign:'center' }}>{error}</p></div>
@@ -440,7 +447,8 @@ export function AnimalList({ species = 'sheep' }) {
       <div style={{ background:'linear-gradient(160deg,#2c2416 0%,#4a3520 40%,#6b4f2e 100%)', width:'100%' }}>
         <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'16px 14px 0':'24px 24px 0' }}>
           {/* Title row */}
-          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:14 }}>
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between',
+            flexDirection:isMobile?'column':'row', gap:isMobile?12:0, marginBottom:14 }}>
             <div style={{ display:'flex', alignItems:'center', gap:12 }}>
               <div>
                 <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?22:30,
@@ -451,6 +459,7 @@ export function AnimalList({ species = 'sheep' }) {
                   {activeAnimals.length} active
                   {soldAnimals.length>0?` · ${soldAnimals.length} sold`:''}
                   {deceasedAnimals.length>0?` · ${deceasedAnimals.length} deceased`:''}
+                  {warningAnimals.length>0?` · ${warningAnimals.length} warning${warningAnimals.length!==1?'s':''}`:''}
                 </p>
               </div>
               <div style={{ background:'rgba(200,160,96,0.2)', border:'1px solid rgba(200,160,96,0.4)',
@@ -492,15 +501,9 @@ export function AnimalList({ species = 'sheep' }) {
                       <p style={{ fontSize:10, color:'#6a5040', fontWeight:700, textTransform:'uppercase',
                         letterSpacing:'0.06em', margin:'4px 8px 8px', padding:0 }}>Log an event for…</p>
                       <MenuOptionCard
-                        icon={meta.emoji}
-                        title={`Single ${meta.singular.toLowerCase()}`}
-                        description={`Use this when adding an event for one ${meta.singular.toLowerCase()}.`}
-                        onClick={()=>{ setShowBulkMenu(false); navigate(speciesBasePath(species)) }}
-                      />
-                      <MenuOptionCard
                         icon="☑"
-                        title={`Multiple ${meta.plural.toLowerCase()}`}
-                        description="Apply the same event to more than one animal."
+                        title={`Choose ${meta.plural.toLowerCase()}`}
+                        description={`Select one or more ${meta.plural.toLowerCase()}, then log the event.`}
                         onClick={()=>{ setShowBulkMenu(false); setSelecting(true) }}
                       />
                     </div>
@@ -555,15 +558,17 @@ export function AnimalList({ species = 'sheep' }) {
 
             {/* ── Mobile buttons (in hero) ── */}
             {isMobile && !selecting && (
-              <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+              <div style={{ display:'flex', gap:8, width:'100%' }}>
                 <button onClick={()=>{ setShowEventPanel(v=>!v) }}
                   style={{ ...S.btn, background:'rgba(255,255,255,0.12)', color:'#f0e6cc',
-                    border:'1px solid rgba(255,255,255,0.25)', padding:'7px 11px', fontSize:12, borderRadius:7 }}>
+                    border:'1px solid rgba(255,255,255,0.25)', padding:'9px 11px', fontSize:12,
+                    borderRadius:7, flex:1, justifyContent:'center' }}>
                   ☑ Add Event
                 </button>
                 <button onClick={()=>navigate(newPath)}
                   style={{ ...S.btn, background:'#c8a060', color:'#2c2416',
-                    fontWeight:700, padding:'7px 11px', fontSize:12, borderRadius:7 }}>
+                    fontWeight:700, padding:'9px 11px', fontSize:12, borderRadius:7,
+                    flex:1, justifyContent:'center' }}>
                   ＋ Add
                 </button>
               </div>
@@ -604,6 +609,13 @@ export function AnimalList({ species = 'sheep' }) {
                     <div style={{ width:8,height:8,borderRadius:'50%',
                       background:isInactive?'#c62828':(STATUS_DOT[a.status]||'#9e9e9e'),
                       position:'absolute',bottom:0,right:0,border:'2px solid #2c2416' }}/>
+                    {hasBreedingRestriction(a) && (
+                      <span title={`Do Not Breed${a.breeding_restriction_reason ? `: ${a.breeding_restriction_reason}` : ''}`}
+                        style={{ position:'absolute', top:-3, left:-3, width:16, height:16,
+                          borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center',
+                          background:'#c62828', color:'#fff', border:'2px solid #2c2416',
+                          fontSize:10, fontWeight:900, lineHeight:1 }}>!</span>
+                    )}
                   </div>
                   <span style={{ fontSize:8, fontWeight:700, color:isInactive?'#6a5040':'#c8a878',
                     textTransform:'uppercase', whiteSpace:'nowrap', maxWidth:isMobile?46:58,
@@ -631,7 +643,7 @@ export function AnimalList({ species = 'sheep' }) {
             animals={animals}
             species={species}
             user={user}
-            onDone={()=>setShowEventPanel(false)}
+            onDone={()=>{ setShowEventPanel(false); refetch() }}
             onCancel={()=>setShowEventPanel(false)}
             onStatusUpdate={updateAnimal}
           />
@@ -654,14 +666,14 @@ export function AnimalList({ species = 'sheep' }) {
                 background:filter===btn.key?'#5a3e1b':btn.key==='newborn'?'#fff9e6':'#fff',
                 color:filter===btn.key?'#fff':btn.key==='newborn'?'#ad6500':'#7a6648',
                 border:filter===btn.key?'none':btn.key==='newborn'?'1px solid #f0c16e':'1px solid #d0c4b0' }}>
-              {btn.key==='newborn' ? '🐣 ' : ''}{btn.label}
+              {btn.key==='newborn' ? '🐣 ' : btn.key==='warnings' ? '⚠️ ' : ''}{btn.label}
             </button>
           ))}
           {selecting && (
-            <button onClick={()=>setSelected(selected.size===filteredList.length
+            <button onClick={()=>setSelected(allFilteredSelected
               ? new Set() : new Set(filteredList.map(a=>a.id)))}
               style={{ ...S.btn, ...S.btnSecondary, padding:'5px 10px', fontSize:12, marginLeft:'auto' }}>
-              {selected.size===filteredList.length?'Deselect All':'Select All'}
+              {allFilteredSelected?'Deselect All':'Select All'}
             </button>
           )}
         </div>
@@ -826,6 +838,12 @@ export function AnimalList({ species = 'sheep' }) {
                 <p style={{ fontSize:11, color:'#a08060', margin:0 }}>
                   {[sexLabel,a.breed,age].filter(Boolean).join(' · ')}
                 </p>
+                {hasBreedingRestriction(a) && a.breeding_restriction_reason && (
+                  <p style={{ fontSize:11, color:'#a51d1d', fontWeight:700, margin:'3px 0 0',
+                    overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    Do Not Breed: {a.breeding_restriction_reason}
+                  </p>
+                )}
               </div>
               {!selecting && <span style={{ color:'#c8b89a', fontSize:18, flexShrink:0 }}>›</span>}
             </div>

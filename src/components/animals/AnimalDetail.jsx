@@ -4,6 +4,7 @@ import { useAnimals, useSingleAnimal } from '../../hooks/useAnimals'
 import { useAnimalEvents } from '../../hooks/useAnimalEvents'
 import { usePhotoUpload } from '../../hooks/usePhotoUpload'
 import { useIsMobile } from '../../hooks/useIsMobile'
+import { BREEDING_CLEAR_NOTE } from '../../lib/animalEventHydration'
 import { S, AnimalAvatar, STATUS_DOT, SEX_LABELS, formatDate, calcAge, Spinner, ErrorMsg, ANIMAL_META, speciesBasePath, animalEditPath, animalDetailPath, statusFromEventType, breedingRestrictionPayload, hasBreedingRestriction, DoNotBreedBadge } from '../ui/shared'
 import { EventTimeline } from './EventTimeline'
 import { PhotoGallery } from './PhotoGallery'
@@ -156,8 +157,12 @@ export function AnimalDetailPage() {
     }
     if (eventPayload.event_type === 'do_not_breed') {
       const restriction = breedingRestrictionPayload(breedingRestrictionReason, eventPayload.event_date)
-      await updateAnimal(id, restriction)
       setAnimal(prev => prev ? { ...prev, ...restriction } : prev)
+      try {
+        await updateAnimal(id, restriction)
+      } catch (err) {
+        console.warn('Persistent breeding warning fell back to event history:', err)
+      }
     }
   }
   const { upload, uploading } = usePhotoUpload()
@@ -219,13 +224,22 @@ export function AnimalDetailPage() {
     if (!window.confirm(`Remove the Do Not Breed flag from ${animal.name}? The original event will remain in the timeline.`)) return
     setClearingBreedingFlag(true)
     try {
+      await _addEvent({
+        event_type: 'custom',
+        event_date: new Date().toISOString().split('T')[0],
+        notes: BREEDING_CLEAR_NOTE,
+      })
       const cleared = {
         breeding_status: 'cleared',
         breeding_restriction_reason: null,
         breeding_restriction_date: null,
       }
-      await updateAnimal(id, cleared)
       setAnimal(prev => prev ? { ...prev, ...cleared } : prev)
+      try {
+        await updateAnimal(id, cleared)
+      } catch (err) {
+        console.warn('Persistent breeding flag clear fell back to event history:', err)
+      }
     } catch (err) {
       alert('Could not remove the flag: ' + err.message)
     } finally {
@@ -347,7 +361,8 @@ export function AnimalDetailPage() {
               </div>
             </div>
             {!isMobile && (
-              <div style={{ display:'flex', gap:8, flexShrink:0, alignItems:'center' }}>
+              <div style={{ display:'flex', gap:8, flexShrink:1, alignItems:'center',
+                flexWrap:'wrap', justifyContent:'flex-end', maxWidth:620 }}>
                 <button onClick={handleLogEventClick}
                   style={{ ...S.btn, background:'#c8a060', color:'#2c2416',
                     border:'1px solid rgba(255,255,255,0.18)', padding:'7px 14px',
@@ -405,7 +420,7 @@ export function AnimalDetailPage() {
                   boxShadow:'0 4px 14px rgba(0,0,0,0.18)', marginBottom:8 }}>
                 <span style={{ fontSize:16, lineHeight:1 }}>+</span> Log Event
               </button>
-              <div style={{ display:'grid', gridTemplateColumns:hasOffspring?'repeat(5, minmax(0, 1fr))':'1fr 1fr 1fr 1fr', gap:8, marginBottom:8 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:8, marginBottom:8 }}>
                 <label style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5,
                   background:'rgba(200,160,96,0.25)', border:'1px solid rgba(200,160,96,0.4)',
                   borderRadius:10, padding:'12px 6px', cursor:'pointer', color:'#f0e6cc' }}>

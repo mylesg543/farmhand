@@ -388,7 +388,7 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
             {eventMenuOpen && (
               <div role="listbox" aria-label="Event type"
                 style={{ position:'absolute', zIndex:200, top:'calc(100% + 5px)', left:0, right:0,
-                  maxHeight:360, overflowY:'auto', background:'#fff', border:'1px solid #d0c4b0',
+                  maxHeight:'min(360px, 48vh)', overflowY:'auto', background:'#fff', border:'1px solid #d0c4b0',
                   borderRadius:8, padding:5, boxShadow:'0 12px 30px rgba(44,36,22,0.18)' }}>
                 {eventOptions.map(([key, option]) => {
                   const selected = key === form.event_type
@@ -518,8 +518,10 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
       </div>
 
       <div style={{ display:'flex', gap:10 }}>
-        <button onClick={handleSave} disabled={saving||uploading}
-          style={{ ...S.btn, ...S.btnPrimary, padding:'10px 22px', opacity:(saving||uploading)?0.7:1 }}>
+        <button onClick={handleSave}
+          disabled={saving||uploading||(isDoNotBreed&&!form.breeding_restriction_reason)}
+          style={{ ...S.btn, ...S.btnPrimary, padding:'10px 22px',
+            opacity:(saving||uploading||(isDoNotBreed&&!form.breeding_restriction_reason))?0.55:1 }}>
           {saving ? 'Saving…' : 'Save Event'}
         </button>
         <button onClick={onCancel} style={{ ...S.btn, ...S.btnSecondary }}>Cancel</button>
