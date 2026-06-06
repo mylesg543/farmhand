@@ -73,13 +73,16 @@ const EV_COLORS = {
 }
 
 // ─── Read-only animal events panel ────────────────────────────────────────────
-function AnimalDetailPanel({ animal, events, animals }) {
+function AnimalDetailPanel({ animal, events, animals, onOpenAnimal }) {
   const animalEvents = events
     .filter(e => e.animal_id === animal.id)
     .sort((a,b) => b.event_date > a.event_date ? 1 : -1)
   const offspring = (animals || [])
     .filter(a => a.id !== animal.id && (a.sire_id === animal.id || a.dam_id === animal.id))
     .sort((a,b) => (b.birth_date || '').localeCompare(a.birth_date || '') || (a.name || '').localeCompare(b.name || '', undefined, { sensitivity:'base' }))
+  const sire = animal.sire_id ? animals.find(a => a.id === animal.sire_id) : null
+  const dam = animal.dam_id ? animals.find(a => a.id === animal.dam_id) : null
+  const hasParents = sire || dam
   const st = { alive:'#4caf50', sold:'#9c27b0', deceased:'#9e9e9e', rented:'#f9a825' }
 
   return (
@@ -101,6 +104,54 @@ function AnimalDetailPanel({ animal, events, animals }) {
         </div>
         <span style={{ fontSize:11, color:'#c8a878', flexShrink:0 }}>{animalEvents.length} event{animalEvents.length!==1?'s':''}</span>
       </div>
+
+      {hasParents && (
+        <div style={{ padding:'12px 16px', borderBottom:'1px solid #f0ebe4', background:'#fff' }}>
+          <p style={{ fontSize:10, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em', margin:'0 0 10px' }}>
+            Lineage
+          </p>
+          <div style={{ display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
+            {[['Sire', sire], ['Dam', dam]].map(([role, parent]) => (
+              <button key={role} type="button" onClick={() => parent && onOpenAnimal?.(parent.id)}
+                disabled={!parent}
+                style={{ display:'grid', gridTemplateColumns:'34px minmax(0, 1fr)', alignItems:'center',
+                  gap:8, border:'1px solid #e8e0d0', borderRadius:8, background:'#fdfaf6',
+                  padding:'7px 9px', minWidth:150, cursor:parent?'pointer':'default',
+                  fontFamily:"'Lato',sans-serif", textAlign:'left', opacity:parent?1:0.55 }}>
+                <div style={{ width:34, height:34, borderRadius:'50%', overflow:'hidden',
+                  border:'2px solid #e8e0d0', background:'#f0ebe4' }}>
+                  {parent ? <AnimalAvatar animal={parent} size={34}/> : null}
+                </div>
+                <span style={{ minWidth:0 }}>
+                  <span style={{ display:'block', fontFamily:"'Playfair Display',serif", fontSize:13,
+                    fontWeight:700, color:'#2c2416', overflow:'hidden', textOverflow:'ellipsis',
+                    whiteSpace:'nowrap' }}>
+                    {parent?.name || 'Unknown'}
+                  </span>
+                  <span style={{ display:'block', fontSize:10, color:'#a08060' }}>{role}</span>
+                </span>
+              </button>
+            ))}
+            <span style={{ color:'#c8b89a', fontSize:18 }}>→</span>
+            <div style={{ display:'grid', gridTemplateColumns:'34px minmax(0, 1fr)', alignItems:'center',
+              gap:8, border:'1px solid #e8e0d0', borderRadius:8, background:'#f0ebe4',
+              padding:'7px 9px', minWidth:150 }}>
+              <div style={{ width:34, height:34, borderRadius:'50%', overflow:'hidden',
+                border:'2px solid #c8a060', background:'#f0ebe4' }}>
+                <AnimalAvatar animal={animal} size={34}/>
+              </div>
+              <span style={{ minWidth:0 }}>
+                <span style={{ display:'block', fontFamily:"'Playfair Display',serif", fontSize:13,
+                  fontWeight:700, color:'#2c2416', overflow:'hidden', textOverflow:'ellipsis',
+                  whiteSpace:'nowrap' }}>
+                  {animal.name}
+                </span>
+                <span style={{ display:'block', fontSize:10, color:'#c8a060', fontWeight:700 }}>This Animal</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {offspring.length > 0 && (
         <div style={{ padding:'12px 16px', borderBottom:'1px solid #f0ebe4', background:'#fff' }}>
@@ -420,7 +471,7 @@ function UserRow({ u, allEvents }) {
                       </div>
 
                       {/* Animal events drill-down */}
-                      {isOpen && <AnimalDetailPanel animal={a} animals={u.animals} events={allEvents}/>}
+                      {isOpen && <AnimalDetailPanel animal={a} animals={u.animals} events={allEvents} onOpenAnimal={setOpenAnimal}/>}
                     </div>
                   )
                 })}
