@@ -41,9 +41,25 @@ function WarningBadge({ compact=false, prominent=false }) {
   )
 }
 
-function AnimalChip({ a, selectedId, onSelect, hasWarning=false }) {
+function BreedingWarningIcon({ compact=false, prominent=false, reason }) {
+  const size = prominent ? 24 : compact ? 16 : 18
+  return (
+    <span title={reason ? `Do Not Breed: ${reason}` : 'Do Not Breed'}
+      aria-label={reason ? `Do Not Breed: ${reason}` : 'Do Not Breed'}
+      style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+        width:size, height:size, borderRadius:'50%',
+        background:'#c62828', border:'1px solid #b71c1c', color:'#fff',
+        fontSize:prominent?14:compact?10:12, fontWeight:800, lineHeight:1, flexShrink:0,
+        boxShadow:prominent?'0 1px 4px rgba(198,40,40,0.24)':'none' }}>
+      !
+    </span>
+  )
+}
+
+function AnimalChip({ a, selectedId, onSelect, hasLineageWarning=false }) {
   const isSel = a.id===selectedId
   const st    = STATUS_STYLES[a.status]||STATUS_STYLES.alive
+  const hasBreedingWarning = hasBreedingRestriction(a)
   return (
     <button onClick={()=>onSelect(a.id)}
       style={{ display:'grid', gridTemplateColumns:'34px minmax(0, 1fr) auto', alignItems:'center', gap:9,
@@ -65,7 +81,9 @@ function AnimalChip({ a, selectedId, onSelect, hasWarning=false }) {
         </div>
       </div>
       <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'flex-end', minWidth:18, justifySelf:'end' }}>
-        {hasWarning ? <WarningBadge prominent /> : (
+        {hasBreedingWarning ? (
+          <BreedingWarningIcon prominent reason={a.breeding_restriction_reason}/>
+        ) : hasLineageWarning ? <WarningBadge prominent /> : (
           <span style={{ color:isSel?'#c8a060':'#d8ccb8', fontSize:14 }}>{isSel ? '✓' : '›'}</span>
         )}
       </span>
@@ -104,7 +122,7 @@ function NodeCard({ animal, isRoot=false, size, onClick, hasWarning=false }) {
         )}
         {hasBreedingRestriction(animal) && (
           <span style={{ position:'absolute', top:-5, left:-7 }}>
-            <DoNotBreedBadge compact reason={animal.breeding_restriction_reason}/>
+            <BreedingWarningIcon compact={size < 50} reason={animal.breeding_restriction_reason}/>
           </span>
         )}
       </div>
@@ -262,7 +280,7 @@ export function LineagePage() {
     return [...sireIds].filter(id=>damIds.has(id)).map(id=>animals.find(a=>a.id===id)).filter(Boolean)
   })() : []
   const sharedAncestorIds = new Set(sharedAncestors.map(a=>a.id))
-  const animalsWithLineageWarnings = new Set(animals
+  const animalsWithSharedAncestorWarnings = new Set(animals
     .filter(a => {
       const t = buildTree(a.id, animals, 4)
       if (!t?.sire || !t?.dam) return false
@@ -271,16 +289,20 @@ export function LineagePage() {
       return [...sireIds].some(id => damIds.has(id))
     })
     .map(a => a.id))
+  const animalsWithWarnings = new Set([
+    ...animalsWithSharedAncestorWarnings,
+    ...animals.filter(hasBreedingRestriction).map(a => a.id),
+  ])
   const hasRecordedLineage = (a) => Boolean(a.sire_id || a.dam_id)
   const searchFiltered = animals.filter(a => !search || (a.name||'').toLowerCase().includes(search.toLowerCase()))
   const filterOptions = [
     { key:'all', label:'All', count:animals.length },
-    { key:'warnings', label:'Warnings', count:animalsWithLineageWarnings.size },
+    { key:'warnings', label:'Warnings', count:animalsWithWarnings.size },
     { key:'with_lineage', label:'With lineage', count:animals.filter(hasRecordedLineage).length },
     { key:'missing', label:'Missing parents', count:animals.filter(a => !hasRecordedLineage(a)).length },
   ]
   const filtered = searchFiltered.filter(a => {
-    if (lineageFilter === 'warnings') return animalsWithLineageWarnings.has(a.id)
+    if (lineageFilter === 'warnings') return animalsWithWarnings.has(a.id)
     if (lineageFilter === 'with_lineage') return hasRecordedLineage(a)
     if (lineageFilter === 'missing') return !hasRecordedLineage(a)
     return true
@@ -384,7 +406,8 @@ export function LineagePage() {
           ) : <div style={{ display:'grid',
               gridTemplateColumns:isMobile?'1fr 1fr':'repeat(auto-fill, minmax(190px, 1fr))',
               gap:isMobile?8:10, alignItems:'stretch' }}>
-              {filtered.map(a=><AnimalChip key={a.id} a={a} selectedId={selectedId} onSelect={setSelectedId} hasWarning={animalsWithLineageWarnings.has(a.id)}/>)}
+              {filtered.map(a=><AnimalChip key={a.id} a={a} selectedId={selectedId}
+                onSelect={setSelectedId} hasLineageWarning={animalsWithSharedAncestorWarnings.has(a.id)}/>)}
             </div>
         }
       </div>
@@ -421,7 +444,15 @@ export function LineagePage() {
               <AnimalIllustration animal={selected} size={44}/>
             </div>
             <div style={{ flex:1, minWidth:0 }}>
-              <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:isMobile?17:20, margin:'0 0 2px' }}>{selected.name}'s Family Tree</p>
+              <div style={{ display:'flex', alignItems:'center', gap:7, flexWrap:'wrap', marginBottom:2 }}>
+                <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:isMobile?17:20, margin:0 }}>{selected.name}'s Family Tree</p>
+                {hasBreedingRestriction(selected) && (
+                  <>
+                    <BreedingWarningIcon reason={selected.breeding_restriction_reason}/>
+                    <DoNotBreedBadge compact reason={selected.breeding_restriction_reason}/>
+                  </>
+                )}
+              </div>
               <p style={{ fontSize:12, color:'#a08060', margin:0 }}>
                 {selected.breed||'Unknown breed'} · {calcAge(selected.birth_date)||'Unknown age'} · Tap an animal to view their profile
               </p>
