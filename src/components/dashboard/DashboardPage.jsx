@@ -217,8 +217,8 @@ export function DashboardPage() {
   const incomeSegments=Object.entries(byType).map(([k,v])=>({ label:incomeTypeLabels[k]||k, value:v, color:incomeTypeColors[k]||'#78909c' })).filter(s=>s.value>0).sort((a,b)=>b.value-a.value)
 
   // ── Expense breakdown ──────────────────────────────────────────────────────────
-  const expCatColors={ hay:'#f9a825',feed:'#795548',medicine:'#ef5350',infrastructure:'#546e7a',equipment:'#1565c0',bedding:'#66bb6a',supplements:'#ab47bc',labour:'#8d6e63',other:'#78909c' }
-  const expCatLabels={ hay:'Hay',feed:'Feed',medicine:'Medicine',infrastructure:'Infrastructure',equipment:'Equipment',bedding:'Bedding',supplements:'Supplements',labour:'Labour',other:'Other' }
+  const expCatColors={ hay:'#f9a825',feed:'#795548',medicine:'#ef5350',infrastructure:'#546e7a',equipment:'#1565c0',bedding:'#66bb6a',supplements:'#ab47bc',shearing:'#00897b',labour:'#8d6e63',other:'#78909c' }
+  const expCatLabels={ hay:'Hay',feed:'Feed',medicine:'Medicine',infrastructure:'Infrastructure',equipment:'Equipment',bedding:'Bedding',supplements:'Supplements',shearing:'Shearing',labour:'Labour',other:'Other' }
   const byCat={}; costs.forEach(c=>{ byCat[c.category||'other']=(byCat[c.category||'other']||0)+Number(c.amount) })
   const expSegments=Object.entries(byCat).map(([k,v])=>({ label:expCatLabels[k]||k, value:v, color:expCatColors[k]||'#78909c' })).filter(s=>s.value>0).sort((a,b)=>b.value-a.value)
 

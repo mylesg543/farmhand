@@ -22,6 +22,7 @@ const EXPENSE_CATS = [
   { value:'equipment',      label:'Equipment' },
   { value:'infrastructure', label:'Infrastructure' },
   { value:'supplements',    label:'Supplements' },
+  { value:'shearing',       label:'Shearing' },
   { value:'labour',         label:'Labour' },
   { value:'other',          label:'Other' },
 ]
@@ -198,12 +199,24 @@ function ExpenseForm({ onSave, onCancel }) {
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState('')
   const set = (k,v) => setForm(f=>({...f,[k]:v}))
+  const availableCategories = form.species === 'sheep'
+    ? EXPENSE_CATS
+    : EXPENSE_CATS.filter(category => category.value !== 'shearing')
+
+  const setSpecies = (species) => {
+    setForm(current => ({
+      ...current,
+      species,
+      category: current.category === 'shearing' && species !== 'sheep' ? 'hay' : current.category,
+    }))
+  }
 
   const handleSave = async () => {
     if (!form.amount || isNaN(Number(form.amount))) { setError('Enter a valid amount'); return }
     setSaving(true); setError('')
     try {
-      await onSave({ ...form, amount: Number(form.amount), description: form.description || form.category })
+      const categoryLabel = EXPENSE_CATS.find(category => category.value === form.category)?.label || form.category
+      await onSave({ ...form, amount: Number(form.amount), description: form.description || categoryLabel })
     } catch (err) { setError(err.message); setSaving(false) }
   }
 
@@ -215,7 +228,7 @@ function ExpenseForm({ onSave, onCancel }) {
       <div className="exp-form-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
         <div>
           <label style={S.label}>Animal Type</label>
-          <select style={{ ...S.input, cursor:'pointer' }} value={form.species} onChange={e=>set('species',e.target.value)}>
+          <select style={{ ...S.input, cursor:'pointer' }} value={form.species} onChange={e=>setSpecies(e.target.value)}>
             {SUPPORTED_ANIMALS.map(([key, meta]) => (
               <option key={key} value={key}>{meta.emoji} {meta.label}</option>
             ))}
@@ -225,7 +238,7 @@ function ExpenseForm({ onSave, onCancel }) {
         <div>
           <label style={S.label}>Category</label>
           <select style={{ ...S.input, cursor:'pointer' }} value={form.category} onChange={e=>set('category',e.target.value)}>
-            {EXPENSE_CATS.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}
+            {availableCategories.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
         </div>
         <div>
