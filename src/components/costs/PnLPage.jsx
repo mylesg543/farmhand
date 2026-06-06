@@ -269,7 +269,7 @@ function ExpenseForm({ expense = null, onSave, onCancel }) {
 }
 
 // ─── P&L Page ──────────────────────────────────────────────────────────────────
-export function PnLPage() {
+export function PnLPage({ embedded = false }) {
   const { costs, loading:lc, error:ec, addCost, updateCost, deleteCost } = useFeedCosts()
   const { income, loading:li, error:ei, addIncome, deleteIncome } = useIncome()
   const { customers }    = useCustomers()
@@ -297,14 +297,18 @@ export function PnLPage() {
   if (ec||ei) return <div style={S.page}><ErrorMsg message={ec||ei}/></div>
 
   return (
-    <div style={{ ...S.page, padding:isMobile?'14px 12px':'32px 24px' }}>
+    <div style={embedded
+      ? { width:'100%' }
+      : { ...S.page, padding:isMobile?'14px 12px':'32px 24px' }}>
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:12 }}>
         <div>
           <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:30, fontWeight:700, margin:'0 0 4px' }}>
-            💰 Profit & Loss
+            {embedded ? 'Income & Expenses' : '💰 Profit & Loss'}
           </h1>
-          <p style={{ fontSize:13, color:'#a08060', margin:0 }}>Track income and expenses across your farm</p>
+          <p style={{ fontSize:13, color:'#a08060', margin:0 }}>
+            {embedded ? 'Add, review, and correct financial records.' : 'Track income and expenses across your farm'}
+          </p>
         </div>
         <div style={{ display:'flex', gap:8 }}>
           <button onClick={()=>{ setShowInc(v=>!v); setShowExp(false); setEditingExpense(null) }}

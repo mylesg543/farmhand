@@ -7,6 +7,7 @@ import { useRecentAnimalEvents } from '../../hooks/useAnimalEvents'
 import { useCustomers } from '../../hooks/useCustomers'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { S, AnimalAvatar, ANIMAL_META, animalDetailPath, fmt, formatDate, getEventMeta, getEventTypes } from '../ui/shared'
+import { PnLPage } from '../costs/PnLPage'
 
 // ─── Bar Chart ─────────────────────────────────────────────────────────────────
 function BarChart({ months, incomeByMonth, costsByMonth }) {
@@ -182,7 +183,7 @@ function RecentEventsDrawer({ open, onClose, events, loading, error, animals, is
 }
 
 // ─── Dashboard Page ────────────────────────────────────────────────────────────
-export function DashboardPage() {
+export function DashboardPage({ initialMode = 'overview' }) {
   const navigate = useNavigate()
   const { costs }              = useFeedCosts()
   const { income }             = useIncome()
@@ -195,6 +196,7 @@ export function DashboardPage() {
   const { events: recentEvents, loading:recentEventsLoading, error:recentEventsError } = useRecentAnimalEvents(allAnimals)
 
   const [view,         setView]        = useState('pnl')      // pnl | animals | customers
+  const [workspaceMode, setWorkspaceMode] = useState(initialMode)
   const [animalSp,     setAnimalSp]    = useState('sheep')    // sheep | chickens | horses
   const [animalFilter, setAnimalFilter]= useState('active')   // active | all
   const [expanded,     setExpanded]    = useState(null)       // customer id
@@ -273,6 +275,38 @@ export function DashboardPage() {
   const card={ ...S.card, padding:isMobile?16:24, marginBottom:16 }
   const chartCard={ ...card, minHeight:isMobile?260:286, boxSizing:'border-box', transition:'box-shadow 0.2s ease, border-color 0.2s ease' }
   const secTitle={ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, marginBottom:16, color:'#2c2416' }
+  const workspaceTabs = (
+    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', background:'#e9e1d4',
+      borderRadius:8, padding:3, gap:3, width:isMobile?'100%':360 }}>
+      {[['overview','Overview'],['records','Income & Expenses']].map(([key,label]) => (
+        <button key={key} onClick={()=>setWorkspaceMode(key)}
+          style={{ ...S.btn, justifyContent:'center', minHeight:38, padding:'8px 12px',
+            fontSize:isMobile?12:13, borderRadius:6, border:'none',
+            background:workspaceMode===key?'#5a3e1b':'transparent',
+            color:workspaceMode===key?'#fff':'#6f5b42', fontWeight:800 }}>
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+
+  if (workspaceMode === 'records') {
+    return (
+      <div style={{ ...S.page, padding:isMobile?'16px 12px':'32px 24px' }}>
+        <div style={{ display:'flex', alignItems:isMobile?'stretch':'center',
+          justifyContent:'space-between', flexDirection:isMobile?'column':'row',
+          gap:12, marginBottom:20 }}>
+          <div>
+            <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:30,
+              fontWeight:700, margin:'0 0 4px' }}>Dashboard</h1>
+            <p style={{ fontSize:13, color:'#a08060', margin:0 }}>Farm activity and financial management</p>
+          </div>
+          {workspaceTabs}
+        </div>
+        <PnLPage embedded />
+      </div>
+    )
+  }
 
   return (
     <div style={{ ...S.page, padding:isMobile?'16px 12px':'32px 24px', scrollbarGutter:'stable' }}>
@@ -281,9 +315,13 @@ export function DashboardPage() {
       {/* Header + tabs */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:12 }}>
         <div>
-          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:30, fontWeight:700, margin:'0 0 4px' }}>📊 Dashboard</h1>
-          <p style={{ fontSize:13, color:'#a08060', margin:0 }}>Farm overview and analytics</p>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:30, fontWeight:700, margin:'0 0 4px' }}>Dashboard</h1>
+          <p style={{ fontSize:13, color:'#a08060', margin:0 }}>Farm activity and financial management</p>
         </div>
+        {workspaceTabs}
+      </div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+        marginBottom:20, flexWrap:'wrap', gap:10 }}>
         <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
           <button onClick={()=>setShowRecentEvents(true)}
             style={{ ...S.btn, ...S.btnSecondary, padding:isMobile?'7px 10px':'8px 14px', fontSize:isMobile?11:13 }}>

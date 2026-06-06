@@ -10,7 +10,6 @@ import { AddAnimalPage, EditAnimalPage } from './components/animals/AnimalForm'
 import { BulkAddPage } from './components/animals/BulkAddPage'
 import { BulkEventPage } from './components/animals/BulkEventPage'
 import { PlantsPage } from './components/plants/PlantsPage'
-import { PnLPage } from './components/costs/PnLPage'
 import { DashboardPage } from './components/dashboard/DashboardPage'
 import { CustomersPage } from './components/customers/CustomersPage'
 import { LineagePage } from './components/lineage/LineagePage'
@@ -81,8 +80,7 @@ function DesktopNav({ user, isAdmin, navigate, location, signOut }) {
 
   const isAnimals = location.pathname === '/' || location.pathname.startsWith('/animals') || location.pathname === '/chickens' || location.pathname.startsWith('/chickens') || location.pathname === '/horses' || location.pathname.startsWith('/horses')
   const isPlants  = location.pathname.startsWith('/plants')
-  const isPnL     = location.pathname.startsWith('/pnl')
-  const isDash    = location.pathname.startsWith('/dashboard')
+  const isDash    = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/pnl')
   const isAdminP  = location.pathname.startsWith('/admin')
 
   const tabStyle = active => ({
@@ -171,10 +169,6 @@ function DesktopNav({ user, isAdmin, navigate, location, signOut }) {
             )}
           </Dropdown>
           <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '8px 4px' }} />
-          <button onClick={() => navigate('/pnl')} style={tabStyle(isPnL)}>
-            <span style={{ fontSize: 15 }}>💰</span>P & L
-          </button>
-          <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '8px 4px' }} />
           <button onClick={() => navigate('/dashboard')} style={tabStyle(isDash)}>
             <span style={{ fontSize: 15 }}>📊</span>Dashboard
           </button>
@@ -200,8 +194,7 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
 
   const isAnimals = location.pathname === '/' || location.pathname.startsWith('/animals') || location.pathname.startsWith('/chickens') || location.pathname.startsWith('/horses')
   const isPlants  = location.pathname.startsWith('/plants')
-  const isPnL     = location.pathname.startsWith('/pnl')
-  const isDash    = location.pathname.startsWith('/dashboard')
+  const isDash    = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/pnl')
   const isAdminP  = location.pathname.startsWith('/admin')
 
   const tabBtn = (active, emoji, label, onClick) => (
@@ -255,8 +248,7 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200, background: '#2c2416', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {tabBtn(isAnimals, '🐾', 'Animals', () => setSheet('animals'))}
         {tabBtn(isPlants,  '🌱', 'Plants',  () => setSheet('plants'))}
-        {tabBtn(isPnL,     '💰', 'P & L',   () => navigate('/pnl'))}
-        {tabBtn(isDash,    '📊', 'Dash',    () => navigate('/dashboard'))}
+        {tabBtn(isDash,    '📊', 'Dashboard', () => navigate('/dashboard'))}
         {tabBtn(isAdminP || sheet === 'more', '⚙️', 'More', () => setSheet('more'))}
       </div>
 
@@ -340,7 +332,7 @@ function FarmApp() {
         <Route path="/horses/:id"              element={<AnimalDetailPage />} />
         <Route path="/horses/:id/edit"         element={<EditAnimalPage />} />
         <Route path="/plants"                  element={<PlantsPage />} />
-        <Route path="/pnl"                     element={<PnLPage />} />
+        <Route path="/pnl"                     element={<DashboardPage initialMode="records" />} />
         <Route path="/dashboard"               element={<DashboardPage />} />
         <Route path="/customers"               element={<CustomersPage />} />
         <Route path="/lineage"                 element={<LineagePage />} />
