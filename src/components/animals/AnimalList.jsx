@@ -469,7 +469,7 @@ export function AnimalList({ species = 'sheep' }) {
                   <button onClick={()=>navigate('/lineage?species=sheep')}
                     style={{ ...S.btn, background:'rgba(255,255,255,0.12)', color:'#f0e6cc',
                       border:'1px solid rgba(255,255,255,0.25)', padding:'8px 14px', fontSize:13 }}>
-                    🌳 Lineage
+                    ⑂ Lineage
                   </button>
                 )}
                 {/* Add Event dropdown */}
@@ -574,7 +574,7 @@ export function AnimalList({ species = 'sheep' }) {
               style={{ ...S.btn, width:'100%', justifyContent:'center', marginBottom:14,
                 background:'rgba(255,255,255,0.1)', color:'#f0e6cc',
                 border:'1px solid rgba(255,255,255,0.22)', padding:'8px 12px', fontSize:12 }}>
-              🌳 Lineage
+              ⑂ Lineage
             </button>
           )}
 
