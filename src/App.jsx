@@ -170,7 +170,7 @@ function DesktopNav({ user, isAdmin, navigate, location, signOut }) {
           </Dropdown>
           <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '8px 4px' }} />
           <button onClick={() => navigate('/dashboard')} style={tabStyle(isDash)}>
-            <span style={{ fontSize: 15 }}>📊</span>Dashboard
+            <span style={{ fontSize: 15 }}>💰</span>P & L
           </button>
           {isAdmin && (
             <>
@@ -248,7 +248,7 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200, background: '#2c2416', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {tabBtn(isAnimals, '🐾', 'Animals', () => setSheet('animals'))}
         {tabBtn(isPlants,  '🌱', 'Plants',  () => setSheet('plants'))}
-        {tabBtn(isDash,    '📊', 'Dashboard', () => navigate('/dashboard'))}
+        {tabBtn(isDash,    '💰', 'P & L', () => navigate('/dashboard'))}
         {tabBtn(isAdminP || sheet === 'more', '⚙️', 'More', () => setSheet('more'))}
       </div>
 
@@ -332,7 +332,7 @@ function FarmApp() {
         <Route path="/horses/:id"              element={<AnimalDetailPage />} />
         <Route path="/horses/:id/edit"         element={<EditAnimalPage />} />
         <Route path="/plants"                  element={<PlantsPage />} />
-        <Route path="/pnl"                     element={<DashboardPage initialMode="records" />} />
+        <Route path="/pnl"                     element={<DashboardPage />} />
         <Route path="/dashboard"               element={<DashboardPage />} />
         <Route path="/customers"               element={<CustomersPage />} />
         <Route path="/lineage"                 element={<LineagePage />} />

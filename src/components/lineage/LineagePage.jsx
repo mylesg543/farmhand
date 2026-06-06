@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAnimals } from '../../hooks/useAnimals'
 import { useIsMobile } from '../../hooks/useIsMobile'
@@ -265,6 +265,7 @@ export function LineagePage() {
   const [selectedId, setSelectedId] = useState(searchParams.get('id') || null)
   const [search,     setSearch]     = useState('')
   const [lineageFilter, setLineageFilter] = useState('all')
+  const lineageResultRef = useRef(null)
 
   const { animals, loading } = useAnimals(species)
 
@@ -277,6 +278,14 @@ export function LineagePage() {
     if (sp) setSpecies(sp)
     if (id) setSelectedId(id)
   }, [searchParams])
+
+  useEffect(() => {
+    if (!selectedId || loading) return
+    const timer = window.setTimeout(() => {
+      lineageResultRef.current?.scrollIntoView({ behavior:'smooth', block:'start' })
+    }, 80)
+    return () => window.clearTimeout(timer)
+  }, [selectedId, loading])
 
   const tree     = selectedId ? buildTree(selectedId, animals, 4) : null
   const selected = selectedId ? animals.find(a=>a.id===selectedId) : null
@@ -439,7 +448,8 @@ export function LineagePage() {
       )}
 
       {selectedId && !hasLineage && (
-        <div style={{ ...S.card, padding:isMobile?'26px 18px':48, textAlign:'center' }}>
+        <div ref={lineageResultRef} style={{ ...S.card, padding:isMobile?'26px 18px':48,
+          textAlign:'center', scrollMarginTop:isMobile?68:76 }}>
           <div style={{ fontSize:40, marginBottom:12 }}>{emoji}</div>
           {hasBreedingRestriction(selected) && (
             <div style={{ display:'flex', justifyContent:'center', alignItems:'center',
@@ -463,7 +473,8 @@ export function LineagePage() {
 
       {/* Pedigree chart */}
       {tree && selected && hasLineage && (
-        <div style={{ ...S.card, padding:isMobile?14:28 }}>
+        <div ref={lineageResultRef} style={{ ...S.card, padding:isMobile?14:28,
+          scrollMarginTop:isMobile?68:76 }}>
           {/* Header */}
           <div style={{ display:'flex', alignItems:'center', marginBottom:20, paddingBottom:16, borderBottom:'1px solid #f0ebe4', flexWrap:'wrap', gap:10 }}>
             <div style={{ width:44, height:44, borderRadius:'50%', overflow:'hidden', border:'2px solid #c8a060', background:'#f0ebe4', flexShrink:0 }}>

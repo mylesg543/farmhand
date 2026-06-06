@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFeedCosts } from '../../hooks/useFeedCosts'
 import { useIncome } from '../../hooks/useIncome'
@@ -183,7 +183,7 @@ function RecentEventsDrawer({ open, onClose, events, loading, error, animals, is
 }
 
 // ─── Dashboard Page ────────────────────────────────────────────────────────────
-export function DashboardPage({ initialMode = 'overview' }) {
+export function DashboardPage() {
   const navigate = useNavigate()
   const { costs }              = useFeedCosts()
   const { income }             = useIncome()
@@ -195,12 +195,12 @@ export function DashboardPage({ initialMode = 'overview' }) {
   const allAnimals = useMemo(() => [...sheep, ...chickens, ...horses], [sheep, chickens, horses])
   const { events: recentEvents, loading:recentEventsLoading, error:recentEventsError } = useRecentAnimalEvents(allAnimals)
 
-  const [view,         setView]        = useState('pnl')      // pnl | animals | customers
-  const [workspaceMode, setWorkspaceMode] = useState(initialMode)
+  const [view,         setView]        = useState('animals')  // animals | customers
   const [animalSp,     setAnimalSp]    = useState('sheep')    // sheep | chickens | horses
   const [animalFilter, setAnimalFilter]= useState('active')   // active | all
   const [expanded,     setExpanded]    = useState(null)       // customer id
   const [showRecentEvents, setShowRecentEvents] = useState(false)
+  const financialChartsRef = useRef(null)
 
   // ── P&L by month ──────────────────────────────────────────────────────────────
   const incomeByMonth={}, costsByMonth={}
@@ -275,68 +275,20 @@ export function DashboardPage({ initialMode = 'overview' }) {
   const card={ ...S.card, padding:isMobile?16:24, marginBottom:16 }
   const chartCard={ ...card, minHeight:isMobile?260:286, boxSizing:'border-box', transition:'box-shadow 0.2s ease, border-color 0.2s ease' }
   const secTitle={ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, marginBottom:16, color:'#2c2416' }
-  const workspaceTabs = (
-    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', background:'#e9e1d4',
-      borderRadius:8, padding:3, gap:3, width:isMobile?'100%':360 }}>
-      {[['overview','Overview'],['records','Income & Expenses']].map(([key,label]) => (
-        <button key={key} onClick={()=>setWorkspaceMode(key)}
-          style={{ ...S.btn, justifyContent:'center', minHeight:38, padding:'8px 12px',
-            fontSize:isMobile?12:13, borderRadius:6, border:'none',
-            background:workspaceMode===key?'#5a3e1b':'transparent',
-            color:workspaceMode===key?'#fff':'#6f5b42', fontWeight:800 }}>
-          {label}
-        </button>
-      ))}
-    </div>
-  )
-
-  if (workspaceMode === 'records') {
-    return (
-      <div style={{ ...S.page, padding:isMobile?'16px 12px':'32px 24px' }}>
-        <div style={{ display:'flex', alignItems:isMobile?'stretch':'center',
-          justifyContent:'space-between', flexDirection:isMobile?'column':'row',
-          gap:12, marginBottom:20 }}>
-          <div>
-            <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:30,
-              fontWeight:700, margin:'0 0 4px' }}>Dashboard</h1>
-            <p style={{ fontSize:13, color:'#a08060', margin:0 }}>Farm activity and financial management</p>
-          </div>
-          {workspaceTabs}
-        </div>
-        <PnLPage embedded />
-      </div>
-    )
-  }
-
   return (
     <div style={{ ...S.page, padding:isMobile?'16px 12px':'32px 24px', scrollbarGutter:'stable' }}>
       <style>{`@media(max-width:767px){.dash-2col{grid-template-columns:1fr!important;}}`}</style>
 
-      {/* Header + tabs */}
+      {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:12 }}>
         <div>
-          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:30, fontWeight:700, margin:'0 0 4px' }}>Dashboard</h1>
-          <p style={{ fontSize:13, color:'#a08060', margin:0 }}>Farm activity and financial management</p>
+          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:30, fontWeight:700, margin:'0 0 4px' }}>Profit & Loss</h1>
+          <p style={{ fontSize:13, color:'#a08060', margin:0 }}>Enter farm income and expenses, then see where the money is going.</p>
         </div>
-        {workspaceTabs}
-      </div>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-        marginBottom:20, flexWrap:'wrap', gap:10 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-          <button onClick={()=>setShowRecentEvents(true)}
-            style={{ ...S.btn, ...S.btnSecondary, padding:isMobile?'7px 10px':'8px 14px', fontSize:isMobile?11:13 }}>
-            📋 Recent Events
-          </button>
-          <div style={{ display:'flex', background:'#f0e8d8', borderRadius:10, padding:3, gap:2 }}>
-            {[['pnl','💰 P & L'],['animals','🐾 Animals'],['customers','👥 Customers']].map(([key,label])=>(
-              <button key={key} onClick={()=>setView(key)}
-                style={{ ...S.btn, padding:isMobile?'6px 10px':'7px 16px', fontSize:isMobile?11:13, borderRadius:8,
-                  background:view===key?'#5a3e1b':'transparent', color:view===key?'#fff':'#7a6648', border:'none', transition:'all 0.2s' }}>
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <button onClick={()=>setShowRecentEvents(true)}
+          style={{ ...S.btn, ...S.btnSecondary, padding:isMobile?'8px 11px':'8px 14px', fontSize:isMobile?11:13 }}>
+          📋 Recent Events
+        </button>
       </div>
 
       <RecentEventsDrawer
@@ -350,35 +302,53 @@ export function DashboardPage({ initialMode = 'overview' }) {
         navigate={navigate}
       />
 
-      {/* ── P&L View ─────────────────────────────────────────────────────────── */}
-      {view==='pnl' && (
-        <>
-          <div className="dash-2col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
-            {[{label:'Total Income',value:fmt(totalIncome),color:'#2e7d32',bg:'#f1f8f1'},{label:'Total Expenses',value:fmt(totalCosts),color:'#c62828',bg:'#fff3f3'},{label:'Net P & L',value:(netPnL>=0?'+':'')+fmt(netPnL),color:netPnL>=0?'#2e7d32':'#c62828',bg:netPnL>=0?'#e8f5e9':'#fff3f3'}].map(s=>(
-              <div key={s.label} style={{ ...S.card, padding:'14px 12px', textAlign:'center', background:s.bg, border:`1px solid ${s.color}22` }}>
-                <div style={{ fontSize:isMobile?16:22, fontWeight:700, color:s.color, fontFamily:"'Playfair Display',serif" }}>{s.value}</div>
-                <div style={{ fontSize:10, color:'#a08060', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.05em', marginTop:3 }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-          <div style={card}>
-            <p style={secTitle}>Income vs Expenses by Month</p>
-            {last6.length===0
-              ? <p style={{ color:'#a08060', fontSize:13 }}>No data yet — log some income or expenses to see your chart.</p>
-              : <BarChart months={last6} incomeByMonth={incomeByMonth} costsByMonth={costsByMonth}/>
-            }
-            <div style={{ display:'flex', gap:20, marginTop:12 }}>
-              {[['#4caf50','Income'],['#c62828','Expenses']].map(([c,l])=>(
-                <div key={l} style={{ display:'flex', alignItems:'center', gap:6 }}><div style={{ width:12, height:12, borderRadius:2, background:c }}/><span style={{ fontSize:12, color:'#4a3c28', fontWeight:600 }}>{l}</span></div>
-              ))}
-            </div>
-          </div>
-          <div className="dash-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-            <div style={card}><p style={secTitle}>Income Breakdown</p><DonutChart segments={incomeSegments} centerLabel="Total" centerValue={fmt(totalIncome)}/></div>
-            <div style={card}><p style={secTitle}>Expense Breakdown</p><DonutChart segments={expSegments} centerLabel="Total" centerValue={fmt(totalCosts)}/></div>
-          </div>
-        </>
-      )}
+      <PnLPage embedded onViewCharts={()=>{
+        financialChartsRef.current?.scrollIntoView({ behavior:'smooth', block:'start' })
+      }} />
+
+      <div ref={financialChartsRef} style={{ margin:'26px 0 14px', paddingTop:22,
+        borderTop:'2px solid #e8e0d0', scrollMarginTop:isMobile?68:76 }}>
+        <p style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?20:23,
+          fontWeight:700, margin:'0 0 4px' }}>Financial Charts</p>
+        <p style={{ fontSize:13, color:'#a08060', margin:0 }}>Your records update these charts automatically.</p>
+      </div>
+      <div style={card}>
+        <p style={secTitle}>Income vs Expenses by Month</p>
+        {last6.length===0
+          ? <p style={{ color:'#a08060', fontSize:13 }}>Add income or an expense above to start this chart.</p>
+          : <BarChart months={last6} incomeByMonth={incomeByMonth} costsByMonth={costsByMonth}/>
+        }
+        <div style={{ display:'flex', gap:20, marginTop:12 }}>
+          {[['#4caf50','Income'],['#c62828','Expenses']].map(([c,l])=>(
+            <div key={l} style={{ display:'flex', alignItems:'center', gap:6 }}><div style={{ width:12, height:12, borderRadius:2, background:c }}/><span style={{ fontSize:12, color:'#4a3c28', fontWeight:600 }}>{l}</span></div>
+          ))}
+        </div>
+      </div>
+      <div className="dash-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+        <div style={card}><p style={secTitle}>Income Breakdown</p><DonutChart segments={incomeSegments} centerLabel="Total" centerValue={fmt(totalIncome)}/></div>
+        <div style={card}><p style={secTitle}>Expense Breakdown</p><DonutChart segments={expSegments} centerLabel="Total" centerValue={fmt(totalCosts)}/></div>
+      </div>
+
+      <div style={{ margin:'26px 0 14px', paddingTop:22, borderTop:'2px solid #e8e0d0',
+        display:'flex', alignItems:isMobile?'stretch':'center', justifyContent:'space-between',
+        flexDirection:isMobile?'column':'row', gap:12 }}>
+        <div>
+          <p style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?20:23,
+            fontWeight:700, margin:'0 0 4px' }}>Farm Insights</p>
+          <p style={{ fontSize:13, color:'#a08060', margin:0 }}>Animal and customer summaries.</p>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', background:'#f0e8d8',
+          borderRadius:8, padding:3, gap:3, minWidth:isMobile?0:250 }}>
+          {[['animals','🐾 Animals'],['customers','👥 Customers']].map(([key,label])=>(
+            <button key={key} onClick={()=>setView(key)}
+              style={{ ...S.btn, justifyContent:'center', padding:'8px 12px', fontSize:12, borderRadius:6,
+                background:view===key?'#5a3e1b':'transparent', color:view===key?'#fff':'#7a6648',
+                border:'none', fontWeight:800 }}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* ── Animals View ──────────────────────────────────────────────────────── */}
       {view==='animals' && (

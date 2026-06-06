@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useFeedCosts } from '../../hooks/useFeedCosts'
 import { useIncome } from '../../hooks/useIncome'
 import { useCustomers } from '../../hooks/useCustomers'
@@ -269,7 +269,7 @@ function ExpenseForm({ expense = null, onSave, onCancel }) {
 }
 
 // ─── P&L Page ──────────────────────────────────────────────────────────────────
-export function PnLPage({ embedded = false }) {
+export function PnLPage({ embedded = false, onViewCharts = null }) {
   const { costs, loading:lc, error:ec, addCost, updateCost, deleteCost } = useFeedCosts()
   const { income, loading:li, error:ei, addIncome, deleteIncome } = useIncome()
   const { customers }    = useCustomers()
@@ -277,6 +277,8 @@ export function PnLPage({ embedded = false }) {
   const [showInc,  setShowInc]  = useState(false)
   const [showExp,  setShowExp]  = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
+  const [viewingRecord, setViewingRecord] = useState(null)
+  const recordDetailRef = useRef(null)
   const [speciesFilter, setSpeciesFilter] = useState('all')
   const [view,     setView]     = useState('overview') // overview | income | expenses
 
@@ -292,6 +294,14 @@ export function PnLPage({ embedded = false }) {
     await updateCost(editingExpense.id, p)
     setEditingExpense(null)
   }
+
+  useEffect(() => {
+    if (!viewingRecord) return
+    const timer = window.setTimeout(() => {
+      recordDetailRef.current?.scrollIntoView({ behavior:'smooth', block:'start' })
+    }, 50)
+    return () => window.clearTimeout(timer)
+  }, [viewingRecord])
 
   if (lc||li) return <div style={S.page}><Spinner/></div>
   if (ec||ei) return <div style={S.page}><ErrorMsg message={ec||ei}/></div>
@@ -310,7 +320,7 @@ export function PnLPage({ embedded = false }) {
             {embedded ? 'Add, review, and correct financial records.' : 'Track income and expenses across your farm'}
           </p>
         </div>
-        <div style={{ display:'flex', gap:8 }}>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
           <button onClick={()=>{ setShowInc(v=>!v); setShowExp(false); setEditingExpense(null) }}
             style={{ ...S.btn, background:showInc?'#2e7d32':'#e8f5e9', color:showInc?'#fff':'#2e7d32', border:'1px solid #c8e6c9', fontWeight:600 }}>
             {showInc?'✕ Cancel':'+ Income'}
@@ -319,6 +329,12 @@ export function PnLPage({ embedded = false }) {
             style={{ ...S.btn, ...S.btnPrimary }}>
             {showExp?'✕ Cancel':'+ Expense'}
           </button>
+          {onViewCharts && (
+            <button onClick={onViewCharts}
+              style={{ ...S.btn, ...S.btnSecondary, fontWeight:700 }}>
+              View Charts
+            </button>
+          )}
         </div>
       </div>
 
@@ -331,6 +347,53 @@ export function PnLPage({ embedded = false }) {
           onSave={handleUpdateExpense}
           onCancel={()=>setEditingExpense(null)}
         />
+      )}
+      {viewingRecord && (
+        <div ref={recordDetailRef} style={{ ...S.card, padding:isMobile?16:20, marginBottom:16,
+          border:'1px solid #d8ccb8', background:'#fdfaf6', scrollMarginTop:isMobile?68:76 }}>
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between',
+            gap:12, marginBottom:14 }}>
+            <div>
+              <p style={{ fontSize:10, fontWeight:800, color:'#a08060', textTransform:'uppercase',
+                letterSpacing:'0.06em', margin:'0 0 3px' }}>
+                {viewingRecord.kind === 'income' ? 'Income record' : 'Expense record'}
+              </p>
+              <p style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:700,
+                margin:0 }}>
+                {viewingRecord.record.description || 'No description'}
+              </p>
+            </div>
+            <button onClick={()=>setViewingRecord(null)} aria-label="Close record details"
+              style={{ ...S.btn, ...S.btnSecondary, width:36, height:36, padding:0,
+                justifyContent:'center', fontSize:18 }}>×</button>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:isMobile?'1fr 1fr':'repeat(4, 1fr)',
+            gap:10 }}>
+            {[
+              ['Amount', `${viewingRecord.kind === 'income' ? '+' : '−'}${fmt(Number(viewingRecord.record.amount))}`],
+              ['Date', formatDate(viewingRecord.record.date)],
+              ['Animal', ANIMAL_META[viewingRecord.record.species]?.label || 'General'],
+              ['Category', viewingRecord.kind === 'income'
+                ? (INCOME_TYPES.find(type=>type.value===viewingRecord.record.income_type)?.label || viewingRecord.record.income_type)
+                : (EXPENSE_CATS.find(category=>category.value===viewingRecord.record.category)?.label || viewingRecord.record.category)],
+            ].map(([label,value])=>(
+              <div key={label} style={{ background:'#fff', border:'1px solid #e8e0d0',
+                borderRadius:7, padding:'10px 11px', minWidth:0 }}>
+                <p style={{ fontSize:9, fontWeight:800, color:'#a08060', textTransform:'uppercase',
+                  margin:'0 0 3px' }}>{label}</p>
+                <p style={{ fontSize:13, fontWeight:700, color:'#2c2416', margin:0,
+                  overflow:'hidden', textOverflow:'ellipsis' }}>{value || 'Not recorded'}</p>
+              </div>
+            ))}
+          </div>
+          {viewingRecord.kind === 'income' && (viewingRecord.record.customer?.name || viewingRecord.record.quantity) && (
+            <p style={{ fontSize:12, color:'#7a6648', margin:'12px 0 0' }}>
+              {viewingRecord.record.customer?.name && <>Customer: <strong>{viewingRecord.record.customer.name}</strong></>}
+              {viewingRecord.record.customer?.name && viewingRecord.record.quantity && <span> · </span>}
+              {viewingRecord.record.quantity && <>Quantity: <strong>{viewingRecord.record.quantity} {viewingRecord.record.unit || ''}</strong></>}
+            </p>
+          )}
+        </div>
       )}
 
       {/* Species filter tiles */}
@@ -405,7 +468,8 @@ export function PnLPage({ embedded = false }) {
           {filterI.map(i=>{
             const typeLabel=(INCOME_TYPES.find(t=>t.value===i.income_type)||{label:i.income_type}).label
             return (
-              <div key={i.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 11px', borderRadius:8, background:'#f1f8f1', marginBottom:7 }}>
+              <div key={i.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 11px',
+                borderRadius:8, background:'#f1f8f1', marginBottom:7, flexWrap:isMobile?'wrap':'nowrap' }}>
                 <span style={{ fontSize:16 }}>{ANIMAL_META[i.species]?.emoji||'🌾'}</span>
                 <div style={{ flex:1, minWidth:0 }}>
                   <p style={{ fontSize:13, fontWeight:600, margin:'0 0 1px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{i.description||typeLabel}</p>
@@ -415,6 +479,11 @@ export function PnLPage({ embedded = false }) {
                   </p>
                 </div>
                 <span style={{ fontWeight:700, fontSize:13, color:'#2e7d32', flexShrink:0 }}>+{fmt(Number(i.amount))}</span>
+                <button onClick={()=>setViewingRecord({ kind:'income', record:i })}
+                  style={{ background:'none', border:'1px solid #d0c4b0', borderRadius:6,
+                    color:'#5a3e1b', cursor:'pointer', fontSize:12, padding:'4px 7px', flexShrink:0 }}>
+                  View
+                </button>
                 <button onClick={()=>deleteIncome(i.id)} style={{ background:'none', border:'none', color:'#c0a080', cursor:'pointer', fontSize:16, padding:'0 4px', flexShrink:0 }}>×</button>
               </div>
             )
@@ -428,13 +497,20 @@ export function PnLPage({ embedded = false }) {
           {filterC.map(c=>{
             const catLabel=(EXPENSE_CATS.find(x=>x.value===c.category)||{label:c.category}).label
             return (
-              <div key={c.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 11px', borderRadius:8, background:'#fff3f3', marginBottom:7 }}>
+              <div key={c.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 11px',
+                borderRadius:8, background:'#fff3f3', marginBottom:7, flexWrap:isMobile?'wrap':'nowrap' }}>
                 <span style={{ fontSize:16 }}>{ANIMAL_META[c.species]?.emoji||'🌾'}</span>
                 <div style={{ flex:1, minWidth:0 }}>
                   <p style={{ fontSize:13, fontWeight:600, margin:'0 0 1px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{c.description||catLabel}</p>
                   <p style={{ fontSize:11, color:'#a08060', margin:0 }}>{catLabel} · {formatDate(c.date)}</p>
                 </div>
                 <span style={{ fontWeight:700, fontSize:13, color:'#c62828', flexShrink:0 }}>−{fmt(Number(c.amount))}</span>
+                <button onClick={()=>setViewingRecord({ kind:'expense', record:c })}
+                  style={{ background:'none', border:'1px solid #d0c4b0', borderRadius:6,
+                    color:'#5a3e1b', cursor:'pointer', fontSize:12, padding:'4px 7px',
+                    flexShrink:0 }}>
+                  View
+                </button>
                 <button
                   onClick={()=>{
                     setEditingExpense(c)
