@@ -148,7 +148,7 @@ export const EVENT_TYPE_META = {
   weaning:          { icon:'🍼', label:'Weaning',           color:'#f57f17', bg:'#fff9e6', border:'#ffe082' },
   sickness:         { icon:'🤒', label:'Sickness',          color:'#c62828', bg:'#fff3f3', border:'#f5c6c6' },
   injury:           { icon:'🩹', label:'Injury Check',      color:'#c62828', bg:'#fff3f3', border:'#f5c6c6' },
-  do_not_breed:     { icon:'⚠',  label:'Do Not Breed',      color:'#b71c1c', bg:'#ffebee', border:'#ef9a9a' },
+  do_not_breed:     { icon:'⚠️', label:'Do Not Breed',      color:'#b71c1c', bg:'#ffebee', border:'#ef9a9a' },
   death:            { icon:'•',  label:'Death',             color:'#424242', bg:'#fafafa', border:'#bdbdbd' },
   weight_check:     { icon:'⚖️', label:'Weight Check',      color:'#00695c', bg:'#e0f2f1', border:'#80cbc4' },
   pregnancy_check:  { icon:'🔍', label:'Pregnancy Check',   color:'#ad1457', bg:'#fce4ec', border:'#f48fb1' },

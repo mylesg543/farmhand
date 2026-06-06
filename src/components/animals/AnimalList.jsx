@@ -468,9 +468,9 @@ export function AnimalList({ species = 'sheep' }) {
                 {species === 'sheep' && (
                   <button onClick={()=>navigate('/lineage?species=sheep')}
                     style={{ ...S.btn, background:'rgba(255,255,255,0.12)', color:'#f0e6cc',
-                      border:'1px solid rgba(255,255,255,0.25)', padding:'8px 14px', fontSize:13,
-                      display:'inline-flex', alignItems:'center', gap:7 }}>
-                    <span aria-hidden="true" style={{ width:16, textAlign:'center', lineHeight:1 }}>⑂</span>
+                      border:'1px solid rgba(255,255,255,0.25)', padding:'8px 12px', minHeight:36,
+                      fontSize:13, display:'inline-flex', alignItems:'center', gap:6 }}>
+                    <span aria-hidden="true" style={{ width:14, display:'flex', justifyContent:'center', lineHeight:1 }}>⑂</span>
                     <span>Lineage</span>
                   </button>
                 )}
@@ -478,9 +478,9 @@ export function AnimalList({ species = 'sheep' }) {
                 <div style={{ position:'relative' }} ref={bulkMenuRef}>
                   <button onClick={()=>setShowBulkMenu(v=>!v)}
                     style={{ ...S.btn, background:'rgba(255,255,255,0.12)', color:'#f0e6cc',
-                      border:'1px solid rgba(255,255,255,0.25)', padding:'8px 14px', fontSize:13,
-                      display:'inline-flex', alignItems:'center', gap:7 }}>
-                    <span aria-hidden="true" style={{ width:16, textAlign:'center', lineHeight:1 }}>☑</span>
+                      border:'1px solid rgba(255,255,255,0.25)', padding:'8px 12px', minHeight:36,
+                      fontSize:13, display:'inline-flex', alignItems:'center', gap:6 }}>
+                    <span aria-hidden="true" style={{ width:14, display:'flex', justifyContent:'center', lineHeight:1 }}>☑</span>
                     <span>Add Event</span>
                     <span aria-hidden="true" style={{ fontSize:11, lineHeight:1, marginLeft:1 }}>▾</span>
                   </button>
@@ -510,9 +510,9 @@ export function AnimalList({ species = 'sheep' }) {
                 <div style={{ position:'relative' }} ref={addMenuRef}>
                   <button onClick={()=>setShowAddMenu(v=>!v)}
                     style={{ ...S.btn, background:'#c8a060', color:'#2c2416',
-                      fontWeight:700, padding:'8px 14px', fontSize:13,
-                      display:'inline-flex', alignItems:'center', gap:7 }}>
-                    <span aria-hidden="true" style={{ width:16, textAlign:'center', lineHeight:1 }}>+</span>
+                      fontWeight:700, padding:'8px 12px', minHeight:36, fontSize:13,
+                      display:'inline-flex', alignItems:'center', gap:6 }}>
+                    <span aria-hidden="true" style={{ width:14, display:'flex', justifyContent:'center', lineHeight:1 }}>+</span>
                     <span>Add {meta.singular}</span>
                     <span aria-hidden="true" style={{ fontSize:11, lineHeight:1, marginLeft:1 }}>▾</span>
                   </button>

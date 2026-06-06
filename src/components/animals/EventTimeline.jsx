@@ -21,7 +21,7 @@ const EVENT_META = {
   weaning:         { icon:'🍼', label:'Weaning',           color:'#f57f17', bg:'#fff9e6', border:'#ffe082' },
   sickness:        { icon:'🤒', label:'Illness',           color:'#c62828', bg:'#fff3f3', border:'#f5c6c6' },
   injury:          { icon:'🩹', label:'Injury',            color:'#c62828', bg:'#fff3f3', border:'#f5c6c6' },
-  do_not_breed:    { icon:'⚠',  label:'Do Not Breed',       color:'#b71c1c', bg:'#ffebee', border:'#ef9a9a' },
+  do_not_breed:    { icon:'⚠️', label:'Do Not Breed',       color:'#b71c1c', bg:'#ffebee', border:'#ef9a9a' },
   weight_check:    { icon:'⚖️',  label:'Weight Check',     color:'#00695c', bg:'#e0f2f1', border:'#80cbc4' },
   pregnancy_check: { icon:'🔍', label:'Pregnancy Check',  color:'#ad1457', bg:'#fce4ec', border:'#f48fb1' },
   egg_production:  { icon:'🥚', label:'Egg Production',   color:'#f57f17', bg:'#fff9e6', border:'#ffe082' },
@@ -378,7 +378,8 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
               style={{ ...S.input, cursor:'pointer', display:'grid',
                 gridTemplateColumns:'28px minmax(0, 1fr) 16px', alignItems:'center',
                 textAlign:'left', fontFamily:"'Lato',sans-serif" }}>
-              <span aria-hidden="true" style={{ width:28, textAlign:'left', fontSize:17, lineHeight:1 }}>
+              <span aria-hidden="true" style={{ width:28, height:22, display:'flex',
+                alignItems:'center', justifyContent:'center', fontSize:17, lineHeight:1 }}>
                 {selectedEventMeta.icon}
               </span>
               <span style={{ minWidth:0 }}>{selectedEventMeta.label}</span>
@@ -398,7 +399,8 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
                         alignItems:'center', minHeight:38, padding:'7px 10px', border:0, borderRadius:6,
                         background:selected?'#f0ebe4':'transparent', color:'#2c2416', cursor:'pointer',
                         textAlign:'left', fontFamily:"'Lato',sans-serif", fontSize:14 }}>
-                      <span aria-hidden="true" style={{ width:28, textAlign:'left', fontSize:17, lineHeight:1 }}>
+                      <span aria-hidden="true" style={{ width:28, height:24, display:'flex',
+                        alignItems:'center', justifyContent:'center', fontSize:17, lineHeight:1 }}>
                         {option.icon}
                       </span>
                       <span style={{ minWidth:0, fontWeight:selected?700:500 }}>{option.label}</span>
