@@ -101,6 +101,16 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile }) {
     } finally { setUploading(false) }
   }
 
+  const handleDelete = async (e) => {
+    e.stopPropagation()
+    if (!window.confirm('Delete this event?')) return
+    try {
+      await onDelete(event.id)
+    } catch (err) {
+      alert('Delete failed: ' + err.message)
+    }
+  }
+
   return (
     <div style={{ display:'flex', gap:0, position:'relative' }}>
       {/* Date column */}
@@ -213,7 +223,7 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile }) {
                         border:'1px solid #d0c4b0', color:'#5a3e1b', cursor:'pointer' }}>
                       ✏️ Edit
                     </button>
-                    <button onClick={(e)=>{ e.stopPropagation(); if(window.confirm('Delete this event?')) onDelete(event.id) }}
+                    <button onClick={handleDelete}
                       style={{ ...S.btn, padding:'5px 10px', fontSize:11, background:'none',
                         border:'1px solid #f5c6c6', color:'#c62828', cursor:'pointer' }}>
                       Delete

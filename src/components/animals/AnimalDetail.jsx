@@ -219,11 +219,11 @@ export function AnimalDetailPage() {
       ? latestProfilePhotoFromEvents(remainingEvents)
       : null
 
+    await deleteEvent(eventId)
     if (target?.event_type === 'photo_update') {
       await updateAnimal(id, { photo_url: nextProfilePhoto })
       setAnimal(prev => prev ? { ...prev, photo_url: nextProfilePhoto } : prev)
     }
-    await deleteEvent(eventId)
   }
 
   const offspring = useMemo(() => {

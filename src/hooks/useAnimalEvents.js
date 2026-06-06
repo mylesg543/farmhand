@@ -75,10 +75,14 @@ export function useAnimalEvents(animalId) {
   }
 
   const deleteEvent = async (id) => {
-    if (!canWrite) throw new Error('Read-only mode')
-    const { error } = await supabase.from('fh_animal_events')
+    if (!canWrite) throw new Error('You are viewing this farm in read-only mode. Switch to Write Mode in the admin banner to delete events.')
+    const { data, error } = await supabase.from('fh_animal_events')
       .delete().eq('id', id).eq('user_id', effectiveUid)
+      .select('id')
     if (error) throw error
+    if (!data?.length) {
+      throw new Error('The event was not deleted. Your account may not have permission to delete this farm\'s events.')
+    }
     setEvents(prev => prev.filter(e => e.id !== id))
   }
 
