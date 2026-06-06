@@ -108,7 +108,7 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
   const eweActive = active.filter(a => a.sex === 'ewe')
   const ramActive = active.filter(a => a.sex === 'ram')
   const wetherActive = active.filter(a => a.sex === 'wether')
-  const newbornIcon = species === 'chickens' ? '🐣' : meta.emoji
+  const newbornIcon = species === 'chickens' ? '🐣' : '🍼'
   const selectionGroups = [
     { key:'all', label:'Active', icon:'✓', animals:active },
     { key:'adults', label:'Adults', icon:meta.emoji, animals:adultActive },
