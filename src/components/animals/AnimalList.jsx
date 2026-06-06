@@ -103,7 +103,12 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
   const [selectionFilter, setSelectionFilter] = useState('all')
   const [formError, setFormError] = useState('')
   const newbornActive = active.filter(a => isNewbornAnimal(a))
-  const visibleAnimals = selectionFilter === 'newborn' ? newbornActive : active
+  const adultActive = active.filter(a => !isNewbornAnimal(a))
+  const visibleAnimals = selectionFilter === 'newborn'
+    ? newbornActive
+    : selectionFilter === 'adults'
+      ? adultActive
+      : active
   const visibleSelected = visibleAnimals.filter(a => picked.has(a.id)).length
 
   const toggle = (id) => setPicked(prev => {
@@ -203,6 +208,7 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
       <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
         {[
           { key:'all', label:`All active (${active.length})`, disabled:false },
+          { key:'adults', label:`Adults (${adultActive.length})`, disabled:adultActive.length===0 },
           { key:'newborn', label:`🐣 Newborn (${newbornActive.length})`, disabled:newbornActive.length===0 },
         ].map(btn => (
           <button key={btn.key} onClick={()=>!btn.disabled&&setSelectionFilter(btn.key)}
@@ -347,6 +353,7 @@ export function AnimalList({ species = 'sheep' }) {
   const deceasedAnimals = animals.filter(a => a.status === 'deceased')
   const expiredRented   = animals.filter(a => a.status === 'rented' && a.departure_date && a.departure_date < today)
   const newbornAnimals  = animals.filter(a => isNewbornAnimal(a))
+  const adultAnimals    = activeAnimals.filter(a => !isNewbornAnimal(a))
   const warningAnimals  = animals.filter(a => hasBreedingRestriction(a))
 
   const baseList = filter==='alive'    ? activeAnimals
@@ -354,6 +361,7 @@ export function AnimalList({ species = 'sheep' }) {
     : filter==='deceased' ? deceasedAnimals
     : filter==='rented'   ? expiredRented
     : filter==='newborn'  ? newbornAnimals
+    : filter==='adults'   ? adultAnimals
     : filter==='warnings' ? warningAnimals
     : animals
 
@@ -395,6 +403,7 @@ export function AnimalList({ species = 'sheep' }) {
   const filterBtns = [
     { key:'alive',    label:`Active (${activeAnimals.length})` },
     { key:'all',      label:`All (${animals.length})` },
+    ...(adultAnimals.length > 0 ? [{ key:'adults', label:`Adults (${adultAnimals.length})` }] : []),
     ...(warningAnimals.length > 0 ? [{ key:'warnings', label:`Warnings (${warningAnimals.length})` }] : []),
     ...(newbornAnimals.length  > 0 ? [{ key:'newborn',  label:`Newborn (${newbornAnimals.length})` }]      : []),
     ...(soldAnimals.length     > 0 ? [{ key:'sold',     label:`Sold (${soldAnimals.length})` }]           : []),
