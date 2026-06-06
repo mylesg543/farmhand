@@ -223,15 +223,16 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
           {picked.size} selected
         </span>
       </div>
-      <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:7, marginBottom:8,
-        WebkitOverflowScrolling:'touch', scrollbarWidth:'none' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))',
+        gap:7, marginBottom:10 }}>
         {selectionGroups.map(group => {
           const selected = selectionFilter === group.key
           const disabled = group.animals.length === 0
           return (
             <button key={group.key} onClick={()=>!disabled&&setSelectionFilter(group.key)}
               disabled={disabled}
-              style={{ ...S.btn, flexShrink:0, minHeight:34, fontSize:11, padding:'6px 10px',
+              style={{ ...S.btn, width:'100%', minHeight:36, fontSize:11, padding:'7px 8px',
+                justifyContent:'center',
                 borderRadius:18, background:selected?'#5a3e1b':'#fff',
                 color:selected?'#fff':disabled?'#c8b89a':'#7a6648',
                 border:selected?'1px solid #5a3e1b':'1px solid #d0c4b0',
