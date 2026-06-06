@@ -116,15 +116,17 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile, isFirst=fa
   }
 
   return (
-    <div style={{ display:'flex', gap:0, position:'relative', marginBottom:isLast?0:12 }}>
+    <div style={{ display:'grid',
+      gridTemplateColumns:isMobile?'40px 46px minmax(0, 1fr)':'48px 56px minmax(0, 1fr)',
+      columnGap:isMobile?6:8, alignItems:'start', position:'relative', marginBottom:isLast?0:12 }}>
       {/* Date column */}
-      <div style={{ width:isMobile?44:52, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', paddingTop:10 }}>
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', paddingTop:12 }}>
         <div style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?16:20, fontWeight:700, color:'#2c2416', lineHeight:1 }}>{day}</div>
         <div style={{ fontSize:9, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em' }}>{mon}</div>
       </div>
 
       {/* Icon / photo */}
-      <div style={{ width:isMobile?44:52, flexShrink:0, display:'flex', justifyContent:'center', paddingTop:7, position:'relative' }}>
+      <div style={{ display:'flex', justifyContent:'center', paddingTop:8, position:'relative', alignSelf:'stretch' }}>
         {!isFirst && (
           <span style={{ position:'absolute', left:'50%', top:-12, height:19, width:2,
             transform:'translateX(-50%)', background:'#e2d9cb', zIndex:0 }}/>
@@ -154,31 +156,35 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile, isFirst=fa
       </div>
 
       {/* Card body */}
-      <div style={{ flex:1, minWidth:0, paddingLeft:isMobile?10:14 }}>
+      <div style={{ minWidth:0 }}>
         <div onClick={()=>setExpanded(v=>!v)}
           style={{ cursor:'pointer', background:expanded?meta.bg:'#fff',
             border:`1px solid ${expanded?meta.border:'#e8e0d0'}`,
             borderRadius:8, padding:isMobile?'10px 11px':'11px 14px',
-            minHeight:isMobile?54:62, boxShadow:'0 1px 3px rgba(44,36,22,0.04)',
+            minHeight:64, boxShadow:'0 1px 3px rgba(44,36,22,0.04)',
             transition:'background 0.2s, border-color 0.2s, box-shadow 0.2s' }}>
 
           {/* Header row */}
-          <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-            <span style={{ fontSize:isMobile?12:13, fontWeight:700, color:meta.color }}>{meta.label}</span>
+          <div style={{ display:'flex', alignItems:'center', gap:7, minWidth:0 }}>
+            <span style={{ fontSize:isMobile?12:13, fontWeight:700, color:meta.color,
+              overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', minWidth:0 }}>
+              {meta.label}
+            </span>
             {isAlert && (
               <span style={{ fontSize:9, fontWeight:700, padding:'1px 6px', borderRadius:8,
-                background:'#c62828', color:'#fff', textTransform:'uppercase' }}>⚠ Alert</span>
+                background:'#c62828', color:'#fff', textTransform:'uppercase', flexShrink:0 }}>⚠ Alert</span>
             )}
-            <span style={{ fontSize:11, color:'#a08060', marginLeft:'auto' }}>
+            <span style={{ fontSize:11, color:'#a08060', marginLeft:'auto', flexShrink:0 }}>
               {expanded ? '▲' : '▾'}
             </span>
           </div>
 
           {/* Notes preview when collapsed */}
-          {!expanded && event.notes && (
-            <p style={{ fontSize:12, color:'#7a6648', margin:'3px 0 0', overflow:'hidden',
-              textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'100%' }}>
-              {event.notes}
+          {!expanded && (
+            <p style={{ fontSize:12, color:event.notes?'#7a6648':'#b8aa96', margin:'4px 0 0',
+              overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'100%',
+              fontStyle:event.notes?'normal':'italic' }}>
+              {event.notes || 'No notes recorded'}
             </p>
           )}
 
@@ -252,18 +258,6 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile, isFirst=fa
           )}
         </div>
 
-        {/* Add photo nudge */}
-        {!expanded && !hasPhoto && (
-          <label style={{ display:'inline-flex', alignItems:'center', gap:4, marginTop:5, marginLeft:2,
-            fontSize:10, color:'#a08060', cursor:'pointer',
-            opacity:0.8, transition:'opacity 0.15s' }}
-            onMouseEnter={e=>e.currentTarget.style.opacity='1'}
-            onMouseLeave={e=>e.currentTarget.style.opacity='0.7'}>
-            <span>📷</span> add photo
-            <input type="file" accept="image/*" style={{ display:'none' }}
-              onChange={handlePhotoUpload} disabled={uploading}/>
-          </label>
-        )}
       </div>
     </div>
   )
