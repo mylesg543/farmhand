@@ -281,9 +281,12 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
   const [createLambs, setCreateLambs] = useState(false)
   const [lambCount, setLambCount] = useState(1)
   const [lambs, setLambs] = useState(newLambRows(1))
+  const [eventMenuOpen, setEventMenuOpen] = useState(false)
   const fileRef = useRef()
+  const eventMenuRef = useRef()
   const set = (k,v) => setForm(f=>({...f,[k]:v}))
   const eventOptions = getEventTypes(animal?.species).map(et => [et.value, EVENT_META[et.value] || { icon:'📝', label:et.label }])
+  const selectedEventMeta = eventOptions.find(([key]) => key === form.event_type)?.[1] || getMeta(form.event_type)
   const isBirthForSheep = animal?.species === 'sheep' && form.event_type === 'lambing'
   const isDoNotBreed = form.event_type === 'do_not_breed'
   const sireOptions = allAnimals.filter(a => a.species === 'sheep' && ['ram','male'].includes(a.sex) && a.id !== animal?.id)
@@ -295,6 +298,21 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
   useEffect(() => {
     if (!isBirthForSheep) setCreateLambs(false)
   }, [isBirthForSheep])
+
+  useEffect(() => {
+    const closeMenu = (event) => {
+      if (!eventMenuRef.current?.contains(event.target)) setEventMenuOpen(false)
+    }
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setEventMenuOpen(false)
+    }
+    document.addEventListener('mousedown', closeMenu)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('mousedown', closeMenu)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [])
 
   const setLamb = (idx, key, value) => {
     setLambs(prev => prev.map((row, i) => i === idx ? { ...row, [key]: value } : row))
@@ -354,12 +372,42 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
       <div style={{ display:'grid', gridTemplateColumns:isMobile?'1fr':'1fr 1fr', gap:12, marginBottom:12 }}>
         <div>
           <label style={S.label}>What happened?</label>
-          <select style={{ ...S.input, cursor:'pointer' }} value={form.event_type}
-            onChange={e=>set('event_type', e.target.value)}>
-            {eventOptions.map(([k,v])=>(
-              <option key={k} value={k}>{v.icon} {v.label}</option>
-            ))}
-          </select>
+          <div ref={eventMenuRef} style={{ position:'relative' }}>
+            <button type="button" onClick={()=>setEventMenuOpen(open=>!open)}
+              aria-haspopup="listbox" aria-expanded={eventMenuOpen}
+              style={{ ...S.input, cursor:'pointer', display:'grid',
+                gridTemplateColumns:'28px minmax(0, 1fr) 16px', alignItems:'center',
+                textAlign:'left', fontFamily:"'Lato',sans-serif" }}>
+              <span aria-hidden="true" style={{ width:28, textAlign:'left', fontSize:17, lineHeight:1 }}>
+                {selectedEventMeta.icon}
+              </span>
+              <span style={{ minWidth:0 }}>{selectedEventMeta.label}</span>
+              <span aria-hidden="true" style={{ textAlign:'right', color:'#7a6648', fontSize:11 }}>▾</span>
+            </button>
+            {eventMenuOpen && (
+              <div role="listbox" aria-label="Event type"
+                style={{ position:'absolute', zIndex:200, top:'calc(100% + 5px)', left:0, right:0,
+                  maxHeight:360, overflowY:'auto', background:'#fff', border:'1px solid #d0c4b0',
+                  borderRadius:8, padding:5, boxShadow:'0 12px 30px rgba(44,36,22,0.18)' }}>
+                {eventOptions.map(([key, option]) => {
+                  const selected = key === form.event_type
+                  return (
+                    <button type="button" role="option" aria-selected={selected} key={key}
+                      onClick={()=>{ set('event_type', key); setEventMenuOpen(false) }}
+                      style={{ width:'100%', display:'grid', gridTemplateColumns:'28px minmax(0, 1fr)',
+                        alignItems:'center', minHeight:38, padding:'7px 10px', border:0, borderRadius:6,
+                        background:selected?'#f0ebe4':'transparent', color:'#2c2416', cursor:'pointer',
+                        textAlign:'left', fontFamily:"'Lato',sans-serif", fontSize:14 }}>
+                      <span aria-hidden="true" style={{ width:28, textAlign:'left', fontSize:17, lineHeight:1 }}>
+                        {option.icon}
+                      </span>
+                      <span style={{ minWidth:0, fontWeight:selected?700:500 }}>{option.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
         <div>
           <label style={S.label}>Date</label>
