@@ -4,6 +4,7 @@ import { getEmulated, useAnimals } from '../../hooks/useAnimals'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
+import { addBatchId, createEventBatchId, isBatchSchemaUnavailable, removeBatchId } from '../../lib/eventBatches'
 import { S, AnimalAvatar, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS, NEWBORN_DAYS, isNewbornAnimal, getEventTypes, getEventMeta, statusFromEventType, animalNewPath, animalBulkPath, animalDetailPath, animalBulkEventPath, BREEDING_RESTRICTION_REASONS, breedingRestrictionPayload, hasBreedingRestriction, DoNotBreedBadge } from '../ui/shared'
 
 const SPECIES_META = {
@@ -149,24 +150,36 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
     setSaving(true)
     setFormError('')
     try {
-      const rows = [...picked].map(animal_id => ({
+      const baseRows = [...picked].map(animal_id => ({
         animal_id, event_type: eventType, event_date: eventDate,
         notes: eventType === 'do_not_breed'
           ? [`Reason: ${breedingReason}`, notes.trim()].filter(Boolean).join('\n')
           : notes || null,
         user_id: effectiveUid,
       }))
+      const rows = addBatchId(baseRows, createEventBatchId(baseRows.length))
       if (emulated) {
-        for (const row of rows) {
-          const { error } = await supabase.rpc('add_event_admin', {
-            target_user_id: effectiveUid,
-            payload: row,
-          })
-          if (error) throw error
+        const batchResult = await supabase.rpc('add_event_batch_admin', {
+          target_user_id: effectiveUid,
+          payload: rows,
+        })
+        if (batchResult.error && !isBatchSchemaUnavailable(batchResult.error)) throw batchResult.error
+        if (batchResult.error) {
+          for (const row of removeBatchId(rows)) {
+            const { error } = await supabase.rpc('add_event_admin', {
+              target_user_id: effectiveUid,
+              payload: row,
+            })
+            if (error) throw error
+          }
         }
       } else {
         const { error } = await supabase.from('fh_animal_events').insert(rows)
-        if (error) throw error
+        if (error && !isBatchSchemaUnavailable(error)) throw error
+        if (error) {
+          const fallback = await supabase.from('fh_animal_events').insert(removeBatchId(rows))
+          if (fallback.error) throw fallback.error
+        }
       }
       const nextStatus = statusFromEventType(eventType)
       if (nextStatus && onStatusUpdate) {

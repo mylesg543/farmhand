@@ -60,7 +60,7 @@ function groupByMonth(events) {
 }
 
 // ─── Single event card ─────────────────────────────────────────────────────────
-function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile, isFirst=false, isLast=false }) {
+function EventCard({ event, onAddPhoto, onDelete, onUpdate, onUpdateBatch, isMobile, isFirst=false, isLast=false }) {
   const [expanded,   setExpanded]   = useState(false)
   const [uploading,  setUploading]  = useState(false)
   const [photoErr,   setPhotoErr]   = useState(false)
@@ -73,18 +73,24 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile, isFirst=fa
   const mon         = new Date(event.event_date+'T00:00:00').toLocaleDateString('en-US',{month:'short'})
 
   const [uploadErrMsg, setUploadErrMsg] = useState('')
-  const [editing,      setEditing]      = useState(false)
+  const [editScope,    setEditScope]    = useState(null)
   const [editNotes,    setEditNotes]    = useState(event.notes || '')
   const [editDate,     setEditDate]     = useState(event.event_date || '')
   const [saving,       setSaving]       = useState(false)
   const [deleting,     setDeleting]     = useState(false)
+  const editing = editScope !== null
+  const batchSize = event.batch_size || 1
+  const canEditBatch = !!event.batch_id && batchSize > 1 && !!onUpdateBatch
 
   const handleSaveEdit = async (e) => {
     e.stopPropagation()
+    if (editScope === 'batch' && !window.confirm(`Update this event for all ${batchSize} animals in the original bulk update?`)) return
     setSaving(true)
     try {
-      await onUpdate(event.id, { notes: editNotes, event_date: editDate })
-      setEditing(false)
+      const payload = { notes: editNotes, event_date: editDate }
+      if (editScope === 'batch') await onUpdateBatch(event, payload)
+      else await onUpdate(event.id, payload)
+      setEditScope(null)
     } catch (err) { alert('Save failed: ' + err.message) }
     finally { setSaving(false) }
   }
@@ -195,6 +201,12 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile, isFirst=fa
               {editing ? (
                 /* ── Inline edit form ── */
                 <div onClick={e=>e.stopPropagation()}>
+                  {editScope === 'batch' && (
+                    <div style={{ background:'#fff8e8', border:'1px solid #e8c980', color:'#6f4b16',
+                      borderRadius:7, padding:'8px 10px', marginBottom:10, fontSize:12, lineHeight:1.45 }}>
+                      Editing the original bulk event for <strong>{batchSize} animals</strong>.
+                    </div>
+                  )}
                   <div style={{ marginBottom:8 }}>
                     <label style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.05em', display:'block', marginBottom:4 }}>Date</label>
                     <input type="date" value={editDate} onChange={e=>setEditDate(e.target.value)}
@@ -209,9 +221,9 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile, isFirst=fa
                   <div style={{ display:'flex', gap:8 }}>
                     <button onClick={handleSaveEdit} disabled={saving}
                       style={{ ...S.btn, ...S.btnPrimary, padding:'6px 14px', fontSize:12, opacity:saving?0.6:1 }}>
-                      {saving ? 'Saving…' : '✓ Save'}
+                      {saving ? 'Saving…' : editScope === 'batch' ? `Update All ${batchSize}` : '✓ Save'}
                     </button>
-                    <button onClick={e=>{ e.stopPropagation(); setEditing(false) }}
+                    <button onClick={e=>{ e.stopPropagation(); setEditScope(null) }}
                       style={{ ...S.btn, ...S.btnSecondary, padding:'6px 12px', fontSize:12 }}>
                       Cancel
                     </button>
@@ -240,11 +252,19 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile, isFirst=fa
                       <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }}
                         onChange={handlePhotoUpload} disabled={uploading}/>
                     </label>
-                    <button onClick={e=>{ e.stopPropagation(); setEditing(true) }}
+                    <button onClick={e=>{ e.stopPropagation(); setEditScope('single') }}
                       style={{ ...S.btn, padding:'5px 10px', fontSize:11, background:'none',
                         border:'1px solid #d0c4b0', color:'#5a3e1b', cursor:'pointer' }}>
                       ✏️ Edit
                     </button>
+                    {canEditBatch && (
+                      <button onClick={e=>{ e.stopPropagation(); setEditScope('batch') }}
+                        style={{ ...S.btn, padding:'5px 10px', fontSize:11,
+                          background:'#fff8e8', border:'1px solid #e8c980',
+                          color:'#6f4b16', cursor:'pointer' }}>
+                        Edit All {batchSize}
+                      </button>
+                    )}
                     <button onClick={handleDelete} disabled={deleting}
                       style={{ ...S.btn, padding:'5px 10px', fontSize:11, background:'none',
                         border:'1px solid #f5c6c6', color:'#c62828',
@@ -531,7 +551,7 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
 }
 
 // ─── Main Timeline ─────────────────────────────────────────────────────────────
-export function EventTimeline({ events=[], loading=false, onAddEvent, onCreateLamb, onAddPhoto, onDelete, onUpdate, isMobile, animal, allAnimals=[], openSignal=0 }) {
+export function EventTimeline({ events=[], loading=false, onAddEvent, onCreateLamb, onAddPhoto, onDelete, onUpdate, onUpdateBatch, isMobile, animal, allAnimals=[], openSignal=0 }) {
   const [showForm, setShowForm] = useState(false)
   // Debug: log raw event_date values so we can see what Supabase returns
 
@@ -631,6 +651,7 @@ export function EventTimeline({ events=[], loading=false, onAddEvent, onCreateLa
                 onAddPhoto={onAddPhoto}
                 onDelete={onDelete}
                 onUpdate={onUpdate}
+                onUpdateBatch={onUpdateBatch}
                 isMobile={isMobile}
                 isFirst={idx===0}
                 isLast={idx===group.events.length-1}

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getEmulated, useAnimals } from '../../hooks/useAnimals'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
+import { addBatchId, createEventBatchId, isBatchSchemaUnavailable, removeBatchId } from '../../lib/eventBatches'
 import { S, getEventTypes, getEventMeta, statusFromEventType, speciesBasePath, BREEDING_RESTRICTION_REASONS, breedingRestrictionPayload } from '../ui/shared'
 
 const SPECIES_META = {
@@ -47,7 +48,7 @@ export function BulkEventPage({ species = 'sheep' }) {
     setSaving(true)
     setFormError('')
     try {
-      const rows = ids.map(animal_id => ({
+      const baseRows = ids.map(animal_id => ({
         animal_id,
         event_type: eventType,
         event_date: eventDate,
@@ -56,17 +57,29 @@ export function BulkEventPage({ species = 'sheep' }) {
           : notes || null,
         user_id: effectiveUid,
       }))
+      const rows = addBatchId(baseRows, createEventBatchId(baseRows.length))
       if (emulated) {
-        for (const row of rows) {
-          const { error } = await supabase.rpc('add_event_admin', {
-            target_user_id: effectiveUid,
-            payload: row,
-          })
-          if (error) throw error
+        const batchResult = await supabase.rpc('add_event_batch_admin', {
+          target_user_id: effectiveUid,
+          payload: rows,
+        })
+        if (batchResult.error && !isBatchSchemaUnavailable(batchResult.error)) throw batchResult.error
+        if (batchResult.error) {
+          for (const row of removeBatchId(rows)) {
+            const { error } = await supabase.rpc('add_event_admin', {
+              target_user_id: effectiveUid,
+              payload: row,
+            })
+            if (error) throw error
+          }
         }
       } else {
         const { error } = await supabase.from('fh_animal_events').insert(rows)
-        if (error) throw error
+        if (error && !isBatchSchemaUnavailable(error)) throw error
+        if (error) {
+          const fallback = await supabase.from('fh_animal_events').insert(removeBatchId(rows))
+          if (fallback.error) throw fallback.error
+        }
       }
       const nextStatus = statusFromEventType(eventType)
       if (nextStatus) {

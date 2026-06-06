@@ -140,7 +140,7 @@ export function AnimalDetailPage() {
   const offspringSectionRef = useRef()
   const { animal, setAnimal, loading, error } = useSingleAnimal(id)
   const { animals: allAnimals, addAnimal, deleteAnimal, updateAnimal } = useAnimals(animal?.species || 'sheep')
-  const { events, loading:evLoading, addEvent: _addEvent, addPhotoToEvent, deleteEvent, updateEvent } = useAnimalEvents(id)
+  const { events, loading:evLoading, addEvent: _addEvent, addPhotoToEvent, deleteEvent, updateEvent, updateEventBatch } = useAnimalEvents(id)
 
   // Auto-update animal status when certain events are logged
   const addEvent = async (payload) => {
@@ -267,6 +267,32 @@ export function AnimalDetailPage() {
       await updateAnimal(id, { photo_url: nextProfilePhoto })
       setAnimal(prev => prev ? { ...prev, photo_url: nextProfilePhoto } : prev)
     }
+  }
+
+  const handleUpdateEventBatch = async (event, payload) => {
+    const updatedEvents = await updateEventBatch(event.batch_id, payload)
+    const animalIds = [...new Set(updatedEvents.map(item => item.animal_id).filter(Boolean))]
+    let animalPayload = null
+
+    if (event.event_type === 'do_not_breed') {
+      const notes = payload.notes ?? event.notes ?? ''
+      const reason = String(notes).match(/^Reason:\s*(.+)$/im)?.[1]?.trim() || null
+      animalPayload = breedingRestrictionPayload(reason, payload.event_date || event.event_date)
+    } else {
+      const nextStatus = statusFromEventType(event.event_type)
+      if (nextStatus) animalPayload = { status: nextStatus }
+    }
+
+    if (animalPayload) {
+      const updates = await Promise.allSettled(animalIds.map(animalId => updateAnimal(animalId, animalPayload)))
+      updates.filter(result => result.status === 'rejected')
+        .forEach(result => console.warn('Bulk event saved, but an animal status field did not synchronize:', result.reason))
+      if (animalIds.includes(id)) {
+        setAnimal(prev => prev ? { ...prev, ...animalPayload } : prev)
+      }
+    }
+
+    return updatedEvents
   }
 
   const offspring = useMemo(() => {
@@ -546,6 +572,7 @@ export function AnimalDetailPage() {
               onAddPhoto={addPhotoToEvent}
               onDelete={handleDeleteEvent}
               onUpdate={updateEvent}
+              onUpdateBatch={handleUpdateEventBatch}
               isMobile={isMobile}
               openSignal={logEventSignal}
             />

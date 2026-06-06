@@ -54,6 +54,7 @@ create table if not exists fh_animal_events (
   event_type  fh_event_type not null,
   event_date  date not null default current_date,
   notes       text,
+  batch_id    uuid,
   created_at  timestamptz not null default now()
 );
 
@@ -74,6 +75,7 @@ create index if not exists idx_fh_animals_sire          on fh_animals(sire_id);
 create index if not exists idx_fh_animals_dam           on fh_animals(dam_id);
 create index if not exists idx_fh_events_animal         on fh_animal_events(animal_id);
 create index if not exists idx_fh_events_date           on fh_animal_events(event_date);
+create index if not exists idx_fh_events_batch          on fh_animal_events(batch_id) where batch_id is not null;
 create index if not exists idx_fh_costs_species         on fh_feed_costs(species);
 create index if not exists idx_fh_costs_date            on fh_feed_costs(date);
 

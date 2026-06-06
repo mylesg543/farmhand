@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
+import { addBatchSizes, isBatchSchemaUnavailable } from '../lib/eventBatches'
 
 const EMULATION_KEY = 'fh_emulated_user'
 function getEmulated() {
@@ -23,15 +24,30 @@ export function useAnimalEvents(animalId) {
     try {
       let data, err
       if (emulated) {
-        const res = await supabase.rpc('get_user_events_admin', { target_user_id: effectiveUid })
-        data = (res.data || []).filter(e => e.animal_id === animalId)
+        let res = await supabase.rpc('get_user_events_with_batches_admin', { target_user_id: effectiveUid })
+        if (res.error && isBatchSchemaUnavailable(res.error)) {
+          res = await supabase.rpc('get_user_events_admin', { target_user_id: effectiveUid })
+        }
+        const allEvents = res.data || []
+        data = addBatchSizes(allEvents.filter(e => e.animal_id === animalId), allEvents)
         err  = res.error
       } else {
         const res = await supabase.from('fh_animal_events')
           .select('*').eq('animal_id', animalId).eq('user_id', effectiveUid)
           .order('event_date', { ascending: false })
-        data = res.data
+        data = res.data || []
         err  = res.error
+        const batchIds = [...new Set(data.map(event => event.batch_id).filter(Boolean))]
+        if (!err && batchIds.length > 0) {
+          const batchRes = await supabase.from('fh_animal_events')
+            .select('id,batch_id')
+            .eq('user_id', effectiveUid)
+            .in('batch_id', batchIds)
+          if (batchRes.error) throw batchRes.error
+          data = addBatchSizes(data, batchRes.data || [])
+        } else {
+          data = addBatchSizes(data)
+        }
       }
       if (err) throw err
       setEvents(data || [])
@@ -74,7 +90,7 @@ export function useAnimalEvents(animalId) {
       if (error) throw error
       const row = Array.isArray(data) ? data[0] : data
       if (!row) throw new Error('The event was not updated.')
-      setEvents(prev => prev.map(e => e.id === id ? row : e))
+      setEvents(prev => prev.map(e => e.id === id ? { ...e, ...row } : e))
       return row
     }
     const { data, error } = await supabase.from('fh_animal_events')
@@ -82,8 +98,39 @@ export function useAnimalEvents(animalId) {
       .select()
     if (error) throw error
     const row = Array.isArray(data) ? data[0] : data
-    setEvents(prev => prev.map(e => e.id === id ? row : e))
+    setEvents(prev => prev.map(e => e.id === id ? { ...e, ...row } : e))
     return row
+  }
+
+  const updateEventBatch = async (batchId, payload) => {
+    if (!canWrite) throw new Error('Read-only mode')
+    if (!batchId) throw new Error('This event is not part of a bulk event.')
+    let rows, error
+    if (emulated) {
+      const result = await supabase.rpc('update_event_batch_admin', {
+        target_batch_id: batchId,
+        target_user_id: effectiveUid,
+        payload,
+      })
+      rows = result.data
+      error = result.error
+    } else {
+      const result = await supabase.from('fh_animal_events')
+        .update(payload)
+        .eq('batch_id', batchId)
+        .eq('user_id', effectiveUid)
+        .select()
+      rows = result.data
+      error = result.error
+    }
+    if (error) throw error
+    if (!rows?.length) throw new Error('No events in this bulk update were changed.')
+    const updatedById = new Map(rows.map(row => [row.id, row]))
+    setEvents(prev => prev.map(event => {
+      const updated = updatedById.get(event.id)
+      return updated ? { ...updated, batch_size: rows.length } : event
+    }))
+    return rows
   }
 
   const deleteEvent = async (id) => {
@@ -112,7 +159,7 @@ export function useAnimalEvents(animalId) {
     return updateEvent(id, { photo_url: photoUrl })
   }
 
-  return { events, loading, error, refetch: fetch, addEvent, updateEvent, deleteEvent, addPhotoToEvent }
+  return { events, loading, error, refetch: fetch, addEvent, updateEvent, updateEventBatch, deleteEvent, addPhotoToEvent }
 }
 
 export function useRecentAnimalEvents(animals = []) {
