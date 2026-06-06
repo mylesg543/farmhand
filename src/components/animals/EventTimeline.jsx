@@ -59,7 +59,7 @@ function groupByMonth(events) {
 }
 
 // ─── Single event card ─────────────────────────────────────────────────────────
-function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile }) {
+function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile, isFirst=false, isLast=false }) {
   const [expanded,   setExpanded]   = useState(false)
   const [uploading,  setUploading]  = useState(false)
   const [photoErr,   setPhotoErr]   = useState(false)
@@ -76,6 +76,7 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile }) {
   const [editNotes,    setEditNotes]    = useState(event.notes || '')
   const [editDate,     setEditDate]     = useState(event.event_date || '')
   const [saving,       setSaving]       = useState(false)
+  const [deleting,     setDeleting]     = useState(false)
 
   const handleSaveEdit = async (e) => {
     e.stopPropagation()
@@ -104,25 +105,37 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile }) {
   const handleDelete = async (e) => {
     e.stopPropagation()
     if (!window.confirm('Delete this event?')) return
+    setDeleting(true)
     try {
       await onDelete(event.id)
     } catch (err) {
       alert('Delete failed: ' + err.message)
+    } finally {
+      setDeleting(false)
     }
   }
 
   return (
-    <div style={{ display:'flex', gap:0, position:'relative' }}>
+    <div style={{ display:'flex', gap:0, position:'relative', marginBottom:isLast?0:12 }}>
       {/* Date column */}
-      <div style={{ width:isMobile?44:52, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', paddingTop:4 }}>
+      <div style={{ width:isMobile?44:52, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', paddingTop:10 }}>
         <div style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?16:20, fontWeight:700, color:'#2c2416', lineHeight:1 }}>{day}</div>
         <div style={{ fontSize:9, fontWeight:700, color:'#a08060', textTransform:'uppercase', letterSpacing:'0.06em' }}>{mon}</div>
       </div>
 
       {/* Icon / photo */}
-      <div style={{ width:isMobile?44:52, flexShrink:0, display:'flex', justifyContent:'center', paddingTop:2, position:'relative', zIndex:1 }}>
+      <div style={{ width:isMobile?44:52, flexShrink:0, display:'flex', justifyContent:'center', paddingTop:7, position:'relative' }}>
+        {!isFirst && (
+          <span style={{ position:'absolute', left:'50%', top:-12, height:19, width:2,
+            transform:'translateX(-50%)', background:'#e2d9cb', zIndex:0 }}/>
+        )}
+        {!isLast && (
+          <span style={{ position:'absolute', left:'50%', top:isMobile?47:55, bottom:-12, width:2,
+            transform:'translateX(-50%)', background:'#e2d9cb', zIndex:0 }}/>
+        )}
         {hasPhoto ? (
-          <div style={{ width:isMobile?40:48, height:isMobile?40:48, borderRadius:10, overflow:'hidden', border:`2px solid ${meta.border}`, cursor:'pointer' }}
+          <div style={{ width:isMobile?40:48, height:isMobile?40:48, borderRadius:10, overflow:'hidden',
+            border:`2px solid ${meta.border}`, cursor:'pointer', background:'#fff', position:'relative', zIndex:1 }}
             onClick={()=>setExpanded(v=>!v)}>
             <img src={event.photo_url} alt={meta.label}
               style={{ width:'100%', height:'100%', objectFit:'cover' }}
@@ -133,19 +146,21 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile }) {
             style={{ width:isMobile?40:48, height:isMobile?40:48, borderRadius:10, background:meta.bg,
               border:`2px solid ${meta.border}`, display:'flex', alignItems:'center',
               justifyContent:'center', fontSize:isMobile?18:22, cursor:'pointer',
-              boxShadow: isAlert ? '0 0 0 3px rgba(198,40,40,0.2)' : 'none' }}>
+              boxShadow: isAlert ? '0 0 0 3px rgba(198,40,40,0.2)' : '0 0 0 4px #fff',
+              position:'relative', zIndex:1 }}>
             {meta.icon}
           </div>
         )}
       </div>
 
       {/* Card body */}
-      <div style={{ flex:1, minWidth:0, paddingBottom:16, paddingLeft:isMobile?10:14 }}>
+      <div style={{ flex:1, minWidth:0, paddingLeft:isMobile?10:14 }}>
         <div onClick={()=>setExpanded(v=>!v)}
-          style={{ cursor:'pointer', background:expanded?meta.bg:'transparent',
-            border:expanded?`1px solid ${meta.border}`:'1px solid transparent',
-            borderRadius:10, padding:expanded?(isMobile?'10px 12px':'12px 16px'):'4px 0',
-            transition:'all 0.2s' }}>
+          style={{ cursor:'pointer', background:expanded?meta.bg:'#fff',
+            border:`1px solid ${expanded?meta.border:'#e8e0d0'}`,
+            borderRadius:8, padding:isMobile?'10px 11px':'11px 14px',
+            minHeight:isMobile?54:62, boxShadow:'0 1px 3px rgba(44,36,22,0.04)',
+            transition:'background 0.2s, border-color 0.2s, box-shadow 0.2s' }}>
 
           {/* Header row */}
           <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
@@ -223,10 +238,11 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile }) {
                         border:'1px solid #d0c4b0', color:'#5a3e1b', cursor:'pointer' }}>
                       ✏️ Edit
                     </button>
-                    <button onClick={handleDelete}
+                    <button onClick={handleDelete} disabled={deleting}
                       style={{ ...S.btn, padding:'5px 10px', fontSize:11, background:'none',
-                        border:'1px solid #f5c6c6', color:'#c62828', cursor:'pointer' }}>
-                      Delete
+                        border:'1px solid #f5c6c6', color:'#c62828',
+                        cursor:deleting?'wait':'pointer', opacity:deleting?0.6:1 }}>
+                      {deleting ? 'Deleting…' : 'Delete'}
                     </button>
                   </div>
                   {uploadErrMsg && <p style={{ fontSize:11, color:'#c62828', margin:'6px 0 0' }}>{uploadErrMsg}</p>}
@@ -236,11 +252,11 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile }) {
           )}
         </div>
 
-        {/* Add photo nudge — subtle, only when collapsed and no photo */}
+        {/* Add photo nudge */}
         {!expanded && !hasPhoto && (
-          <label style={{ display:'inline-flex', alignItems:'center', gap:4, marginTop:4,
-            fontSize:10, color:'#c8b89a', cursor:'pointer', fontStyle:'italic',
-            opacity:0.7, transition:'opacity 0.15s' }}
+          <label style={{ display:'inline-flex', alignItems:'center', gap:4, marginTop:5, marginLeft:2,
+            fontSize:10, color:'#a08060', cursor:'pointer',
+            opacity:0.8, transition:'opacity 0.15s' }}
             onMouseEnter={e=>e.currentTarget.style.opacity='1'}
             onMouseLeave={e=>e.currentTarget.style.opacity='0.7'}>
             <span>📷</span> add photo
@@ -525,10 +541,9 @@ export function EventTimeline({ events=[], loading=false, onAddEvent, onCreateLa
 
       {/* Timeline groups */}
       {groups.map((group, gi) => (
-        <div key={group.key} style={{ marginBottom:8 }}>
+        <div key={group.key} style={{ marginBottom:gi===groups.length-1?0:20 }}>
           {/* Month header */}
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12,
-            position:'sticky', top:0, background:'#f7f4ef', zIndex:10, padding:'6px 0' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12, padding:'4px 0' }}>
             <span style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase',
               letterSpacing:'0.08em', whiteSpace:'nowrap' }}>{group.label}</span>
             <div style={{ flex:1, height:1, background:'#e8e0d0' }}/>
@@ -536,12 +551,7 @@ export function EventTimeline({ events=[], loading=false, onAddEvent, onCreateLa
           </div>
 
           {/* Events in group */}
-          <div style={{ position:'relative' }}>
-            {/* Vertical timeline line */}
-            <div style={{ position:'absolute', left:isMobile?66:78, top:0, bottom:0,
-              width:2, background:'linear-gradient(to bottom, #e8e0d0, #f7f4ef)',
-              borderRadius:1, zIndex:0 }}/>
-
+          <div>
             {group.events.map((ev, idx) => (
               <EventCard
                 key={ev.id}
@@ -550,6 +560,8 @@ export function EventTimeline({ events=[], loading=false, onAddEvent, onCreateLa
                 onDelete={onDelete}
                 onUpdate={onUpdate}
                 isMobile={isMobile}
+                isFirst={idx===0}
+                isLast={idx===group.events.length-1}
               />
             ))}
           </div>
