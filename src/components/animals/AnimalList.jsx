@@ -235,9 +235,12 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
             style={{ ...S.btn, fontSize:12, padding:'5px 11px',
               background:picked.has(a.id)?'#5a3e1b':'#f7f4ef',
               color:picked.has(a.id)?'#fff':'#2c2416',
-              border:picked.has(a.id)?'none':'1px solid #d0c4b0',
-              borderRadius:20, fontWeight:picked.has(a.id)?700:400 }}>
-            {picked.has(a.id)?'✓ ':''}{a.name}
+              border:picked.has(a.id)?'1px solid #5a3e1b':'1px solid #d0c4b0',
+              borderRadius:20, fontWeight:picked.has(a.id)?700:400,
+              display:'inline-grid', gridTemplateColumns:'14px auto', alignItems:'center', gap:4 }}>
+            <span aria-hidden="true" style={{ width:14, textAlign:'center',
+              visibility:picked.has(a.id)?'visible':'hidden' }}>✓</span>
+            <span>{a.name}</span>
           </button>
         ))}
       </div>
