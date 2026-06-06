@@ -51,6 +51,37 @@ function mergeEventProfilePhotos(animals = [], events = []) {
   })
 }
 
+function latestBreedingRestrictionsByAnimal(events = []) {
+  const latest = new Map()
+  ;(events || [])
+    .filter(e => e.event_type === 'do_not_breed')
+    .sort((a, b) => {
+      const bd = b.event_date || b.created_at || ''
+      const ad = a.event_date || a.created_at || ''
+      return bd.localeCompare(ad)
+    })
+    .forEach(e => {
+      if (latest.has(e.animal_id)) return
+      const reasonMatch = String(e.notes || '').match(/^Reason:\s*(.+)$/im)
+      latest.set(e.animal_id, {
+        breeding_status: 'do_not_breed',
+        breeding_restriction_reason: reasonMatch?.[1]?.trim() || null,
+        breeding_restriction_date: e.event_date || null,
+      })
+    })
+  return latest
+}
+
+function mergeAnimalEventData(animals = [], events = []) {
+  const withPhotos = mergeEventProfilePhotos(animals, events)
+  const eventRestrictions = latestBreedingRestrictionsByAnimal(events)
+  return withPhotos.map(animal => {
+    if (animal.breeding_status) return animal
+    const eventRestriction = eventRestrictions.get(animal.id)
+    return eventRestriction ? { ...animal, ...eventRestriction } : animal
+  })
+}
+
 export function useAnimals(species) {
   const { user } = useAuth()
   const [animals, setAnimals] = useState([])
@@ -91,11 +122,11 @@ export function useAnimals(species) {
         const eventsRes = await supabase.from('fh_animal_events')
           .select('animal_id,event_type,event_date,photo_url,created_at')
           .eq('user_id', effectiveUid)
-          .eq('event_type', 'photo_update')
+          .in('event_type', ['photo_update', 'do_not_breed'])
         if (!eventsRes.error) eventsData = eventsRes.data || []
       }
-      const withPhotos = mergeEventProfilePhotos(data || [], eventsData)
-      const filtered = species ? withPhotos.filter(a => a.species === species) : withPhotos
+      const hydratedAnimals = mergeAnimalEventData(data || [], eventsData)
+      const filtered = species ? hydratedAnimals.filter(a => a.species === species) : hydratedAnimals
       setAnimals(filtered.sort((a,b) => a.name.localeCompare(b.name)))
     } catch (err) { setError(err.message) }
     finally { setLoading(false) }
@@ -135,8 +166,9 @@ export function useAnimals(species) {
       })
       if (error) throw error
       const row = Array.isArray(data) ? data[0] : data
-      setAnimals(prev => prev.map(a => a.id === id ? row : a))
-      return row
+      const mergedRow = { ...(animals.find(a => a.id === id) || {}), ...(row || {}), ...payload }
+      setAnimals(prev => prev.map(a => a.id === id ? mergedRow : a))
+      return mergedRow
     }
     const { data, error } = await supabase.from('fh_animals')
       .update(payload).eq('id', id).eq('user_id', effectiveUid)
@@ -179,7 +211,7 @@ export function useSingleAnimal(id) {
           const found = (data||[]).find(a => a.id === id)
           if (!found) throw new Error('Animal not found')
           const eventsRes = await supabase.rpc('get_user_events_admin', { target_user_id: effectiveUid })
-          const hydrated = mergeEventProfilePhotos([found], eventsRes.error ? [] : eventsRes.data || [])[0]
+          const hydrated = mergeAnimalEventData([found], eventsRes.error ? [] : eventsRes.data || [])[0]
           setAnimal(hydrated)
         } else {
           const { data, error } = await supabase.from('fh_animals')
@@ -189,8 +221,8 @@ export function useSingleAnimal(id) {
             .select('animal_id,event_type,event_date,photo_url,created_at')
             .eq('animal_id', id)
             .eq('user_id', effectiveUid)
-            .eq('event_type', 'photo_update')
-          setAnimal(mergeEventProfilePhotos([data], eventsRes.error ? [] : eventsRes.data || [])[0])
+            .in('event_type', ['photo_update', 'do_not_breed'])
+          setAnimal(mergeAnimalEventData([data], eventsRes.error ? [] : eventsRes.data || [])[0])
         }
       } catch (err) { setError(err.message) }
       finally { setLoading(false) }

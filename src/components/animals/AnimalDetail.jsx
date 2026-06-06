@@ -220,7 +220,7 @@ export function AnimalDetailPage() {
     setClearingBreedingFlag(true)
     try {
       const cleared = {
-        breeding_status: null,
+        breeding_status: 'cleared',
         breeding_restriction_reason: null,
         breeding_restriction_date: null,
       }
