@@ -108,15 +108,16 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
   const eweActive = active.filter(a => a.sex === 'ewe')
   const ramActive = active.filter(a => a.sex === 'ram')
   const wetherActive = active.filter(a => a.sex === 'wether')
+  const newbornIcon = species === 'chickens' ? '🐣' : meta.emoji
   const selectionGroups = [
-    { key:'all', label:'Active', animals:active },
-    { key:'adults', label:'Adults', animals:adultActive },
-    { key:'newborn', label:'Newborns', animals:newbornActive },
-    { key:'warnings', label:'Warnings', animals:warningActive },
+    { key:'all', label:'Active', icon:'✓', animals:active },
+    { key:'adults', label:'Adults', icon:meta.emoji, animals:adultActive },
+    { key:'newborn', label:'Newborns', icon:newbornIcon, animals:newbornActive },
+    { key:'warnings', label:'Warnings', icon:'⚠️', animals:warningActive },
     ...(species === 'sheep' ? [
-      { key:'ewes', label:'Ewes', animals:eweActive },
-      { key:'rams', label:'Rams', animals:ramActive },
-      { key:'wethers', label:'Wethers', animals:wetherActive },
+      { key:'ewes', label:'Ewes', icon:'♀', animals:eweActive },
+      { key:'rams', label:'Rams', icon:'🐏', animals:ramActive },
+      { key:'wethers', label:'Wethers', icon:'🐑', animals:wetherActive },
     ] : []),
   ]
   const activeSelectionGroup = selectionGroups.find(group => group.key === selectionFilter) || selectionGroups[0]
@@ -237,8 +238,11 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
                 color:selected?'#fff':disabled?'#c8b89a':'#7a6648',
                 border:selected?'1px solid #5a3e1b':'1px solid #d0c4b0',
                 opacity:disabled?0.5:1, cursor:disabled?'default':'pointer' }}>
-              {group.key==='newborn'?'🐣 ':group.key==='warnings'?'⚠️ ':''}
-              {group.label} ({group.animals.length})
+              <span aria-hidden="true" style={{ width:18, display:'inline-flex',
+                alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                {group.icon}
+              </span>
+              <span>{group.label} ({group.animals.length})</span>
             </button>
           )
         })}
