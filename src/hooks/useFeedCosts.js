@@ -52,10 +52,23 @@ export function useFeedCosts() {
 
   const updateCost = async (id, payload) => {
     if (!canWrite) throw new Error('Read-only mode')
+    if (emulated) {
+      const { data, error } = await supabase.rpc('update_cost_admin', {
+        target_cost_id: id,
+        target_user_id: effectiveUid,
+        payload,
+      })
+      if (error) throw error
+      const row = Array.isArray(data) ? data[0] : data
+      if (!row) throw new Error('The expense was not updated.')
+      setCosts(prev => prev.map(c => c.id === id ? row : c))
+      return row
+    }
     const { data, error } = await supabase.from('fh_feed_costs')
       .update(payload).eq('id', id).eq('user_id', effectiveUid).select()
     if (error) throw error
     const row = Array.isArray(data) ? data[0] : data
+    if (!row) throw new Error('The expense was not updated.')
     setCosts(prev => prev.map(c => c.id === id ? row : c))
     return row
   }

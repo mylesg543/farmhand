@@ -191,10 +191,13 @@ function IncomeForm({ customers, onSave, onCancel }) {
 }
 
 // ─── Expense Form ──────────────────────────────────────────────────────────────
-function ExpenseForm({ onSave, onCancel }) {
+function ExpenseForm({ expense = null, onSave, onCancel }) {
   const [form, setForm] = useState({
-    species:'sheep', category:'hay', description:'', amount:'',
-    date: new Date().toISOString().split('T')[0],
+    species:expense?.species || 'sheep',
+    category:expense?.category || 'hay',
+    description:expense?.description || '',
+    amount:expense?.amount ?? '',
+    date:expense?.date || new Date().toISOString().split('T')[0],
   })
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState('')
@@ -223,7 +226,7 @@ function ExpenseForm({ onSave, onCancel }) {
   return (
     <div style={{ ...S.card, padding:22, marginBottom:16, border:'1px dashed #f5c6c6', background:'#fff8f8' }}>
       <style>{`@media(max-width:767px){.exp-form-grid{grid-template-columns:1fr!important;}}`}</style>
-      <span style={S.sectionLabel}>New Expense</span>
+      <span style={S.sectionLabel}>{expense ? 'Edit Expense' : 'New Expense'}</span>
       {error && <p style={{ color:'#c62828', fontSize:13, marginBottom:10 }}>{error}</p>}
       <div className="exp-form-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
         <div>
@@ -257,7 +260,7 @@ function ExpenseForm({ onSave, onCancel }) {
       </div>
       <div style={{ display:'flex', gap:10 }}>
         <button onClick={handleSave} disabled={saving} style={{ ...S.btn,...S.btnPrimary, opacity:saving?0.7:1 }}>
-          {saving?'Saving…':'Save Expense'}
+          {saving?'Saving…':expense?'Save Changes':'Save Expense'}
         </button>
         <button onClick={onCancel} style={{ ...S.btn,...S.btnSecondary }}>Cancel</button>
       </div>
@@ -267,12 +270,13 @@ function ExpenseForm({ onSave, onCancel }) {
 
 // ─── P&L Page ──────────────────────────────────────────────────────────────────
 export function PnLPage() {
-  const { costs,  loading:lc, error:ec, addCost,   deleteCost }   = useFeedCosts()
+  const { costs, loading:lc, error:ec, addCost, updateCost, deleteCost } = useFeedCosts()
   const { income, loading:li, error:ei, addIncome, deleteIncome } = useIncome()
   const { customers }    = useCustomers()
   const isMobile         = useIsMobile()
   const [showInc,  setShowInc]  = useState(false)
   const [showExp,  setShowExp]  = useState(false)
+  const [editingExpense, setEditingExpense] = useState(null)
   const [speciesFilter, setSpeciesFilter] = useState('all')
   const [view,     setView]     = useState('overview') // overview | income | expenses
 
@@ -284,6 +288,10 @@ export function PnLPage() {
 
   const handleAddIncome  = async(p)=>{ await addIncome(p);  setShowInc(false) }
   const handleAddExpense = async(p)=>{ await addCost(p);    setShowExp(false) }
+  const handleUpdateExpense = async(p)=>{
+    await updateCost(editingExpense.id, p)
+    setEditingExpense(null)
+  }
 
   if (lc||li) return <div style={S.page}><Spinner/></div>
   if (ec||ei) return <div style={S.page}><ErrorMsg message={ec||ei}/></div>
@@ -299,11 +307,11 @@ export function PnLPage() {
           <p style={{ fontSize:13, color:'#a08060', margin:0 }}>Track income and expenses across your farm</p>
         </div>
         <div style={{ display:'flex', gap:8 }}>
-          <button onClick={()=>{ setShowInc(v=>!v); setShowExp(false) }}
+          <button onClick={()=>{ setShowInc(v=>!v); setShowExp(false); setEditingExpense(null) }}
             style={{ ...S.btn, background:showInc?'#2e7d32':'#e8f5e9', color:showInc?'#fff':'#2e7d32', border:'1px solid #c8e6c9', fontWeight:600 }}>
             {showInc?'✕ Cancel':'+ Income'}
           </button>
-          <button onClick={()=>{ setShowExp(v=>!v); setShowInc(false) }}
+          <button onClick={()=>{ setShowExp(v=>!v); setShowInc(false); setEditingExpense(null) }}
             style={{ ...S.btn, ...S.btnPrimary }}>
             {showExp?'✕ Cancel':'+ Expense'}
           </button>
@@ -312,6 +320,14 @@ export function PnLPage() {
 
       {showInc && <IncomeForm  customers={customers} onSave={handleAddIncome}  onCancel={()=>setShowInc(false)}/>}
       {showExp && <ExpenseForm                        onSave={handleAddExpense} onCancel={()=>setShowExp(false)}/>}
+      {editingExpense && (
+        <ExpenseForm
+          key={editingExpense.id}
+          expense={editingExpense}
+          onSave={handleUpdateExpense}
+          onCancel={()=>setEditingExpense(null)}
+        />
+      )}
 
       {/* Species filter tiles */}
       <div style={{ display:'grid', gridTemplateColumns:isMobile?'repeat(2,1fr)':'repeat(4,1fr)', gap:10, marginBottom:16 }}>
@@ -415,6 +431,19 @@ export function PnLPage() {
                   <p style={{ fontSize:11, color:'#a08060', margin:0 }}>{catLabel} · {formatDate(c.date)}</p>
                 </div>
                 <span style={{ fontWeight:700, fontSize:13, color:'#c62828', flexShrink:0 }}>−{fmt(Number(c.amount))}</span>
+                <button
+                  onClick={()=>{
+                    setEditingExpense(c)
+                    setShowExp(false)
+                    setShowInc(false)
+                    window.scrollTo({ top:0, behavior:'smooth' })
+                  }}
+                  aria-label={`Edit ${c.description || catLabel}`}
+                  style={{ background:'none', border:'1px solid #d0c4b0', borderRadius:6,
+                    color:'#5a3e1b', cursor:'pointer', fontSize:12, padding:'4px 7px',
+                    flexShrink:0 }}>
+                  Edit
+                </button>
                 <button onClick={()=>deleteCost(c.id)} style={{ background:'none', border:'none', color:'#c0a080', cursor:'pointer', fontSize:16, padding:'0 4px', flexShrink:0 }}>×</button>
               </div>
             )
