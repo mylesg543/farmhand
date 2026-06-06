@@ -442,6 +442,13 @@ export function AnimalList({ species = 'sheep' }) {
             {/* ── Desktop buttons ── */}
             {!selecting && !isMobile && (
               <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+                {species === 'sheep' && (
+                  <button onClick={()=>navigate('/lineage?species=sheep')}
+                    style={{ ...S.btn, background:'rgba(255,255,255,0.12)', color:'#f0e6cc',
+                      border:'1px solid rgba(255,255,255,0.25)', padding:'8px 14px', fontSize:13 }}>
+                    Lineage
+                  </button>
+                )}
                 {/* Add Event dropdown */}
                 <div style={{ position:'relative' }} ref={bulkMenuRef}>
                   <button onClick={()=>setShowBulkMenu(v=>!v)}
@@ -538,6 +545,15 @@ export function AnimalList({ species = 'sheep' }) {
               </button>
             )}
           </div>
+
+          {isMobile && !selecting && species === 'sheep' && (
+            <button onClick={()=>navigate('/lineage?species=sheep')}
+              style={{ ...S.btn, width:'100%', justifyContent:'center', marginBottom:14,
+                background:'rgba(255,255,255,0.1)', color:'#f0e6cc',
+                border:'1px solid rgba(255,255,255,0.22)', padding:'8px 12px', fontSize:12 }}>
+              Lineage
+            </button>
+          )}
 
           {/* Avatar strip */}
           <div className="animal-avatar-strip" style={{ display:'flex', gap:isMobile?8:12, paddingBottom:16,
