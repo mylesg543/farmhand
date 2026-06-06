@@ -4,7 +4,7 @@ import { useAnimals, useSingleAnimal } from '../../hooks/useAnimals'
 import { useAnimalEvents } from '../../hooks/useAnimalEvents'
 import { usePhotoUpload } from '../../hooks/usePhotoUpload'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { S, AnimalAvatar, STATUS_DOT, SEX_LABELS, formatDate, calcAge, Spinner, ErrorMsg, ANIMAL_META, speciesBasePath, animalEditPath, animalDetailPath, statusFromEventType } from '../ui/shared'
+import { S, AnimalAvatar, STATUS_DOT, SEX_LABELS, formatDate, calcAge, Spinner, ErrorMsg, ANIMAL_META, speciesBasePath, animalEditPath, animalDetailPath, statusFromEventType, breedingRestrictionPayload, hasBreedingRestriction, DoNotBreedBadge } from '../ui/shared'
 import { EventTimeline } from './EventTimeline'
 import { PhotoGallery } from './PhotoGallery'
 
@@ -143,11 +143,21 @@ export function AnimalDetailPage() {
 
   // Auto-update animal status when certain events are logged
   const addEvent = async (payload) => {
-    await _addEvent(payload)
-    const nextStatus = statusFromEventType(payload.event_type)
+    const {
+      breedingRestrictionReason,
+      breeding_restriction_reason: _formReason,
+      ...eventPayload
+    } = payload
+    await _addEvent(eventPayload)
+    const nextStatus = statusFromEventType(eventPayload.event_type)
     if (nextStatus) {
       await updateAnimal(id, { status: nextStatus })
       setAnimal(prev => prev ? { ...prev, status: nextStatus } : prev)
+    }
+    if (eventPayload.event_type === 'do_not_breed') {
+      const restriction = breedingRestrictionPayload(breedingRestrictionReason, eventPayload.event_date)
+      await updateAnimal(id, restriction)
+      setAnimal(prev => prev ? { ...prev, ...restriction } : prev)
     }
   }
   const { upload, uploading } = usePhotoUpload()
@@ -157,6 +167,7 @@ export function AnimalDetailPage() {
   const [caption,       setCaption]       = useState('')
   const [savingPhoto,   setSavingPhoto]   = useState(false)
   const [logEventSignal, setLogEventSignal] = useState(0)
+  const [clearingBreedingFlag, setClearingBreedingFlag] = useState(false)
 
   const handleDelete = async () => {
     if (!window.confirm(`Delete ${animal.name}? This also deletes all their events.`)) return
@@ -202,6 +213,24 @@ export function AnimalDetailPage() {
     window.setTimeout(() => {
       eventSectionRef.current?.scrollIntoView({ behavior:'smooth', block:'start' })
     }, 0)
+  }
+
+  const handleClearBreedingFlag = async () => {
+    if (!window.confirm(`Remove the Do Not Breed flag from ${animal.name}? The original event will remain in the timeline.`)) return
+    setClearingBreedingFlag(true)
+    try {
+      const cleared = {
+        breeding_status: null,
+        breeding_restriction_reason: null,
+        breeding_restriction_date: null,
+      }
+      await updateAnimal(id, cleared)
+      setAnimal(prev => prev ? { ...prev, ...cleared } : prev)
+    } catch (err) {
+      alert('Could not remove the flag: ' + err.message)
+    } finally {
+      setClearingBreedingFlag(false)
+    }
   }
 
   const latestProfilePhotoFromEvents = (eventList) => [...eventList]
@@ -295,6 +324,9 @@ export function AnimalDetailPage() {
                   background:STATUS_DOT[animal.status]||'#9e9e9e', color:'#fff', textTransform:'uppercase' }}>
                   {animal.status}
                 </span>
+                {hasBreedingRestriction(animal) && (
+                  <DoNotBreedBadge reason={animal.breeding_restriction_reason}/>
+                )}
               </div>
               <p style={{ fontSize:12, color:'#c8a878', margin:'0 0 2px', fontStyle:'italic' }}>
                 {animal.breed||'Unknown breed'} · {SEX_LABELS[animal.sex]||animal.sex}
@@ -432,6 +464,31 @@ export function AnimalDetailPage() {
 
       {/* ── Body ──────────────────────────────────────────────────────────── */}
       <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'12px 12px':'16px 24px' }}>
+
+        {hasBreedingRestriction(animal) && (
+          <div style={{ ...S.card, padding:isMobile?'15px 14px':'18px 20px', marginBottom:14,
+            background:'#fff5f5', border:'1px solid #ef9a9a',
+            display:'flex', alignItems:isMobile?'stretch':'center', justifyContent:'space-between',
+            gap:14, flexDirection:isMobile?'column':'row' }}>
+            <div>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
+                <DoNotBreedBadge reason={animal.breeding_restriction_reason}/>
+                <strong style={{ color:'#8e1515', fontSize:14 }}>This animal has been marked Do Not Breed.</strong>
+              </div>
+              <p style={{ margin:0, color:'#6d2424', fontSize:13, lineHeight:1.55 }}>
+                {animal.breeding_restriction_reason && <>Reason: <strong>{animal.breeding_restriction_reason}</strong></>}
+                {animal.breeding_restriction_reason && animal.breeding_restriction_date && <span> &middot; </span>}
+                {animal.breeding_restriction_date && <>Marked: <strong>{formatDate(animal.breeding_restriction_date)}</strong></>}
+              </p>
+            </div>
+            <button onClick={handleClearBreedingFlag} disabled={clearingBreedingFlag}
+              style={{ ...S.btn, background:'#fff', color:'#a51d1d', border:'1px solid #d96b6b',
+                padding:'8px 12px', fontSize:12, fontWeight:700, whiteSpace:'nowrap',
+                justifyContent:'center', opacity:clearingBreedingFlag?0.6:1 }}>
+              {clearingBreedingFlag ? 'Removing...' : 'Remove Do Not Breed Flag'}
+            </button>
+          </div>
+        )}
 
         {/* Notes */}
         {animal.notes && (

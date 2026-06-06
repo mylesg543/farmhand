@@ -23,7 +23,7 @@ exception when duplicate_object then null; end $$;
 do $$ begin
   create type fh_event_type as enum (
     'hoof_trimming', 'vaccination', 'sickness',
-    'lambing', 'tail_banding', 'sale', 'death', 'custom'
+    'do_not_breed', 'lambing', 'tail_banding', 'sale', 'death', 'custom'
   );
 exception when duplicate_object then null; end $$;
 
@@ -38,6 +38,9 @@ create table if not exists fh_animals (
   status      fh_animal_status not null default 'alive',
   notes       text,
   photo_url   text,
+  breeding_status text,
+  breeding_restriction_reason text,
+  breeding_restriction_date date,
   sire_id     uuid references fh_animals(id) on delete set null,
   dam_id      uuid references fh_animals(id) on delete set null,
   created_at  timestamptz not null default now(),

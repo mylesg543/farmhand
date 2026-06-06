@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getEmulated, useAnimals } from '../../hooks/useAnimals'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
-import { S, getEventTypes, getEventMeta, statusFromEventType, speciesBasePath } from '../ui/shared'
+import { S, getEventTypes, getEventMeta, statusFromEventType, speciesBasePath, BREEDING_RESTRICTION_REASONS, breedingRestrictionPayload } from '../ui/shared'
 
 const SPECIES_META = {
   sheep:    { emoji:'🐑', singular:'Sheep',   plural:'Sheep',    label:'Flock' },
@@ -27,6 +27,7 @@ export function BulkEventPage({ species = 'sheep' }) {
   const [eventType, setEventType] = useState('')
   const [eventDate, setEventDate] = useState(today)
   const [notes,     setNotes]     = useState('')
+  const [breedingReason, setBreedingReason] = useState('')
   const [saving,    setSaving]    = useState(false)
   const [done,      setDone]      = useState(false)
   const [formError, setFormError] = useState('')
@@ -39,6 +40,7 @@ export function BulkEventPage({ species = 'sheep' }) {
   const handleSave = async () => {
     if (ids.length === 0) { setFormError(`Select at least one ${meta.singular.toLowerCase()} before logging an event.`); return }
     if (!eventType) { setFormError('Please select an event type.'); return }
+    if (eventType === 'do_not_breed' && !breedingReason) { setFormError('Please select a reason for the Do Not Breed flag.'); return }
     if (!eventDate) { setFormError('Please select a date.'); return }
     if (!effectiveUid) { setFormError('Not logged in.'); return }
     if (!canWrite) { setFormError('Read-only mode - switch to write mode to make changes.'); return }
@@ -49,7 +51,9 @@ export function BulkEventPage({ species = 'sheep' }) {
         animal_id,
         event_type: eventType,
         event_date: eventDate,
-        notes: notes || null,
+        notes: eventType === 'do_not_breed'
+          ? [`Reason: ${breedingReason}`, notes.trim()].filter(Boolean).join('\n')
+          : notes || null,
         user_id: effectiveUid,
       }))
       if (emulated) {
@@ -67,6 +71,10 @@ export function BulkEventPage({ species = 'sheep' }) {
       const nextStatus = statusFromEventType(eventType)
       if (nextStatus) {
         await Promise.all(ids.map(animalId => updateAnimal(animalId, { status: nextStatus })))
+      }
+      if (eventType === 'do_not_breed') {
+        const restriction = breedingRestrictionPayload(breedingReason, eventDate)
+        await Promise.all(ids.map(animalId => updateAnimal(animalId, restriction)))
       }
       setDone(true)
       setTimeout(() => navigate(backPath), 1200)
@@ -159,6 +167,24 @@ export function BulkEventPage({ species = 'sheep' }) {
           })}
         </div>
       </div>
+
+      {eventType === 'do_not_breed' && (
+        <div style={{ background:'#fff', border:'1px solid #ef9a9a', borderRadius:12,
+          padding:'18px 20px', marginBottom:20 }}>
+          <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#a51d1d',
+            textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8 }}>
+            Reason *
+          </label>
+          <select value={breedingReason} onChange={e=>setBreedingReason(e.target.value)}
+            style={{ width:'100%', padding:'10px 12px', border:'1px solid #d96b6b',
+              borderRadius:8, fontSize:14, fontFamily:"'Lato',sans-serif", boxSizing:'border-box' }}>
+            <option value="">Select a reason</option>
+            {BREEDING_RESTRICTION_REASONS.map(reason => (
+              <option key={reason} value={reason}>{reason}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Date + Notes */}
       <div style={{ background: '#fff', border: '1px solid #e8e0d0', borderRadius: 12, padding: '20px 20px', marginBottom: 24 }}>

@@ -44,6 +44,7 @@ export const EVENT_TYPES_BY_SPECIES = {
     { value: 'hoof_trimming', label: 'Hoof Trimming' },
     { value: 'vaccination',   label: 'Vaccination'   },
     { value: 'sickness',      label: 'Sickness'      },
+    { value: 'do_not_breed',  label: 'Do Not Breed'  },
     { value: 'lambing',       label: 'Birth'         },
     { value: 'tail_banding',  label: '⭕ Tail Banding' },
     { value: 'shearing',      label: 'Shearing'      },
@@ -92,6 +93,43 @@ export function getEventTypes(species) {
   return EVENT_TYPES_BY_SPECIES[species] || EVENT_TYPES_BY_SPECIES.default
 }
 
+export const BREEDING_RESTRICTION_REASONS = [
+  'No milk',
+  'Prolapse',
+  'Damaged udder',
+  'Age',
+  'Poor mothering',
+  'Difficult lambing',
+  'Genetic concern',
+  'Vet recommendation',
+  'Other',
+]
+
+export function breedingRestrictionPayload(reason, date) {
+  return {
+    breeding_status: 'do_not_breed',
+    breeding_restriction_reason: reason,
+    breeding_restriction_date: date,
+  }
+}
+
+export function hasBreedingRestriction(animal) {
+  return animal?.breeding_status === 'do_not_breed'
+}
+
+export function DoNotBreedBadge({ compact=false, reason }) {
+  return (
+    <span title={reason ? `Do Not Breed: ${reason}` : 'Do Not Breed'}
+      style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+        padding:compact?'2px 5px':'3px 8px', borderRadius:6,
+        background:'#c62828', color:'#fff', border:'1px solid #b71c1c',
+        fontSize:compact?8:10, fontWeight:800, lineHeight:1.15,
+        textTransform:'uppercase', whiteSpace:'nowrap' }}>
+      {compact ? 'DNB' : 'Do Not Breed'}
+    </span>
+  )
+}
+
 export const EVENT_TYPE_META = {
   vaccination:      { icon:'💉', label:'Vaccination',      color:'#1565c0', bg:'#e3f2fd', border:'#90caf9' },
   worming:          { icon:'💊', label:'Worming',           color:'#6a1b9a', bg:'#f3e5f5', border:'#ce93d8' },
@@ -110,6 +148,7 @@ export const EVENT_TYPE_META = {
   weaning:          { icon:'🍼', label:'Weaning',           color:'#f57f17', bg:'#fff9e6', border:'#ffe082' },
   sickness:         { icon:'🤒', label:'Sickness',          color:'#c62828', bg:'#fff3f3', border:'#f5c6c6' },
   injury:           { icon:'🩹', label:'Injury Check',      color:'#c62828', bg:'#fff3f3', border:'#f5c6c6' },
+  do_not_breed:     { icon:'!',  label:'Do Not Breed',      color:'#b71c1c', bg:'#ffebee', border:'#ef9a9a' },
   death:            { icon:'•',  label:'Death',             color:'#424242', bg:'#fafafa', border:'#bdbdbd' },
   weight_check:     { icon:'⚖️', label:'Weight Check',      color:'#00695c', bg:'#e0f2f1', border:'#80cbc4' },
   pregnancy_check:  { icon:'🔍', label:'Pregnancy Check',   color:'#ad1457', bg:'#fce4ec', border:'#f48fb1' },

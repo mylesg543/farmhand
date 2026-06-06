@@ -4,7 +4,7 @@ import { getEmulated, useAnimals } from '../../hooks/useAnimals'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
-import { S, AnimalAvatar, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS, NEWBORN_DAYS, isNewbornAnimal, getEventTypes, getEventMeta, statusFromEventType, animalNewPath, animalBulkPath, animalDetailPath, animalBulkEventPath, speciesBasePath } from '../ui/shared'
+import { S, AnimalAvatar, STATUS_STYLES, STATUS_DOT, calcAge, SEX_LABELS, NEWBORN_DAYS, isNewbornAnimal, getEventTypes, getEventMeta, statusFromEventType, animalNewPath, animalBulkPath, animalDetailPath, animalBulkEventPath, speciesBasePath, BREEDING_RESTRICTION_REASONS, breedingRestrictionPayload, hasBreedingRestriction, DoNotBreedBadge } from '../ui/shared'
 
 const SPECIES_META = {
   sheep:    { emoji:'🐑', singular:'Sheep',   plural:'Sheep',    label:'Flock' },
@@ -97,6 +97,7 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
   const [eventType,   setEventType] = useState('')
   const [eventDate,   setEventDate] = useState(new Date().toISOString().split('T')[0])
   const [notes,       setNotes]     = useState('')
+  const [breedingReason, setBreedingReason] = useState('')
   const [saving,      setSaving]    = useState(false)
   const [done,        setDone]      = useState(false)
   const [selectionFilter, setSelectionFilter] = useState('all')
@@ -123,6 +124,7 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
     const canWrite = !emulated || emulated.writeMode
     if (picked.size===0) { setFormError(`Select at least one ${meta.singular.toLowerCase()}.`); return }
     if (!eventType)      { setFormError('Select an event type.'); return }
+    if (eventType === 'do_not_breed' && !breedingReason) { setFormError('Select a reason for the Do Not Breed flag.'); return }
     if (!effectiveUid)   { setFormError('Not logged in.'); return }
     if (!canWrite)       { setFormError('Read-only mode - switch to write mode to make changes.'); return }
     setSaving(true)
@@ -130,7 +132,10 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
     try {
       const rows = [...picked].map(animal_id => ({
         animal_id, event_type: eventType, event_date: eventDate,
-        notes: notes || null, user_id: effectiveUid,
+        notes: eventType === 'do_not_breed'
+          ? [`Reason: ${breedingReason}`, notes.trim()].filter(Boolean).join('\n')
+          : notes || null,
+        user_id: effectiveUid,
       }))
       if (emulated) {
         for (const row of rows) {
@@ -147,6 +152,10 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
       const nextStatus = statusFromEventType(eventType)
       if (nextStatus && onStatusUpdate) {
         await Promise.all([...picked].map(animalId => onStatusUpdate(animalId, { status: nextStatus })))
+      }
+      if (eventType === 'do_not_breed' && onStatusUpdate) {
+        const restriction = breedingRestrictionPayload(breedingReason, eventDate)
+        await Promise.all([...picked].map(animalId => onStatusUpdate(animalId, restriction)))
       }
       setDone(true)
       setTimeout(() => onDone(), 1000)
@@ -262,6 +271,20 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
           )
         })}
       </div>
+
+      {eventType === 'do_not_breed' && (
+        <>
+          <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase',
+            letterSpacing:'0.06em', margin:'0 0 6px' }}>Reason *</p>
+          <select style={{ ...S.input, marginBottom:10 }} value={breedingReason}
+            onChange={e=>setBreedingReason(e.target.value)}>
+            <option value="">Select a reason</option>
+            {BREEDING_RESTRICTION_REASONS.map(reason => (
+              <option key={reason} value={reason}>{reason}</option>
+            ))}
+          </select>
+        </>
+      )}
 
       {/* Step 3: date + notes */}
       <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase',
@@ -446,7 +469,7 @@ export function AnimalList({ species = 'sheep' }) {
                   <button onClick={()=>navigate('/lineage?species=sheep')}
                     style={{ ...S.btn, background:'rgba(255,255,255,0.12)', color:'#f0e6cc',
                       border:'1px solid rgba(255,255,255,0.25)', padding:'8px 14px', fontSize:13 }}>
-                    Lineage
+                    🌳 Lineage
                   </button>
                 )}
                 {/* Add Event dropdown */}
@@ -551,7 +574,7 @@ export function AnimalList({ species = 'sheep' }) {
               style={{ ...S.btn, width:'100%', justifyContent:'center', marginBottom:14,
                 background:'rgba(255,255,255,0.1)', color:'#f0e6cc',
                 border:'1px solid rgba(255,255,255,0.22)', padding:'8px 12px', fontSize:12 }}>
-              Lineage
+              🌳 Lineage
             </button>
           )}
 
@@ -784,6 +807,9 @@ export function AnimalList({ species = 'sheep' }) {
                       border:'1px solid #f0c16e', textTransform:'uppercase' }}>
                       🐣 Newborn
                     </span>
+                  )}
+                  {hasBreedingRestriction(a) && (
+                    <DoNotBreedBadge compact reason={a.breeding_restriction_reason}/>
                   )}
                   {a.tag_number&&!a.tag_number.startsWith('AUTO-')&&(
                     <span style={{ fontSize:10, color:'#a08060', fontFamily:'monospace' }}>{a.tag_number}</span>

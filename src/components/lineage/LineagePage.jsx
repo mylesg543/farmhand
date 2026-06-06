@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAnimals } from '../../hooks/useAnimals'
 import { useIsMobile } from '../../hooks/useIsMobile'
-import { S, AnimalAvatar, AnimalIllustration, STATUS_STYLES, calcAge, ANIMAL_META, animalEditPath, animalDetailPath } from '../ui/shared'
+import { S, AnimalAvatar, AnimalIllustration, STATUS_STYLES, calcAge, ANIMAL_META, animalEditPath, animalDetailPath, hasBreedingRestriction, DoNotBreedBadge } from '../ui/shared'
 
 // ─── Build ancestor tree ───────────────────────────────────────────────────────
 function buildTree(animalId, allAnimals, depth=4, visited=new Set()) {
@@ -59,7 +59,10 @@ function AnimalChip({ a, selectedId, onSelect, hasWarning=false }) {
         <p style={{ display:'flex', alignItems:'center', gap:5, fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:13, margin:'0 0 1px', whiteSpace:'nowrap' }}>
           <span style={{ overflow:'hidden', textOverflow:'ellipsis' }}>{a.name}</span>
         </p>
-        <span style={{ fontSize:9, fontWeight:700, padding:'1px 5px', borderRadius:6, background:st.bg, color:st.text, textTransform:'uppercase' }}>{a.status}</span>
+        <div style={{ display:'flex', alignItems:'center', gap:4, flexWrap:'wrap' }}>
+          <span style={{ fontSize:9, fontWeight:700, padding:'1px 5px', borderRadius:6, background:st.bg, color:st.text, textTransform:'uppercase' }}>{a.status}</span>
+          {hasBreedingRestriction(a) && <DoNotBreedBadge compact reason={a.breeding_restriction_reason}/>}
+        </div>
       </div>
       <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'flex-end', minWidth:18, justifySelf:'end' }}>
         {hasWarning ? <WarningBadge prominent /> : (
@@ -97,6 +100,11 @@ function NodeCard({ animal, isRoot=false, size, onClick, hasWarning=false }) {
         {hasWarning && (
           <span style={{ position:'absolute', top:-5, right:-7 }}>
             <WarningBadge compact={size < 50}/>
+          </span>
+        )}
+        {hasBreedingRestriction(animal) && (
+          <span style={{ position:'absolute', top:-5, left:-7 }}>
+            <DoNotBreedBadge compact reason={animal.breeding_restriction_reason}/>
           </span>
         )}
       </div>

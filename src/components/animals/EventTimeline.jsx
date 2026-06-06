@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { usePhotoUpload } from '../../hooks/usePhotoUpload'
-import { S, Badge, formatDate, getEventTypes, getEventMeta } from '../ui/shared'
+import { S, Badge, formatDate, getEventTypes, getEventMeta, BREEDING_RESTRICTION_REASONS } from '../ui/shared'
 
 // ─── Event type metadata ───────────────────────────────────────────────────────
 const EVENT_META = {
@@ -21,6 +21,7 @@ const EVENT_META = {
   weaning:         { icon:'🍼', label:'Weaning',           color:'#f57f17', bg:'#fff9e6', border:'#ffe082' },
   sickness:        { icon:'🤒', label:'Illness',           color:'#c62828', bg:'#fff3f3', border:'#f5c6c6' },
   injury:          { icon:'🩹', label:'Injury',            color:'#c62828', bg:'#fff3f3', border:'#f5c6c6' },
+  do_not_breed:    { icon:'!',  label:'Do Not Breed',       color:'#b71c1c', bg:'#ffebee', border:'#ef9a9a' },
   weight_check:    { icon:'⚖️',  label:'Weight Check',     color:'#00695c', bg:'#e0f2f1', border:'#80cbc4' },
   pregnancy_check: { icon:'🔍', label:'Pregnancy Check',  color:'#ad1457', bg:'#fce4ec', border:'#f48fb1' },
   egg_production:  { icon:'🥚', label:'Egg Production',   color:'#f57f17', bg:'#fff9e6', border:'#ffe082' },
@@ -66,7 +67,7 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, isMobile, isFirst=fa
   const { upload }  = usePhotoUpload()
   const fileRef     = useRef()
   const meta        = getMeta(event.event_type)
-  const isAlert     = event.event_type==='sickness' || event.event_type==='injury'
+  const isAlert     = event.event_type==='sickness' || event.event_type==='injury' || event.event_type==='do_not_breed'
   const hasPhoto    = !!event.photo_url && !photoErr
   const day         = new Date(event.event_date+'T00:00:00').getDate()
   const mon         = new Date(event.event_date+'T00:00:00').toLocaleDateString('en-US',{month:'short'})
@@ -273,6 +274,7 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
     event_date: new Date().toISOString().split('T')[0],
     notes: '',
     photo_url: null,
+    breeding_restriction_reason: '',
   })
   const [saving,   setSaving]   = useState(false)
   const [preview,  setPreview]  = useState(null)
@@ -283,6 +285,7 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
   const set = (k,v) => setForm(f=>({...f,[k]:v}))
   const eventOptions = getEventTypes(animal?.species).map(et => [et.value, EVENT_META[et.value] || { icon:'📝', label:et.label }])
   const isBirthForSheep = animal?.species === 'sheep' && form.event_type === 'lambing'
+  const isDoNotBreed = form.event_type === 'do_not_breed'
   const sireOptions = allAnimals.filter(a => a.species === 'sheep' && ['ram','male'].includes(a.sex) && a.id !== animal?.id)
 
   useEffect(() => {
@@ -308,6 +311,10 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
   }
 
   const handleSave = async () => {
+    if (isDoNotBreed && !form.breeding_restriction_reason) {
+      alert('Select a reason for the Do Not Breed flag.')
+      return
+    }
     if (isBirthForSheep && createLambs) {
       const missingName = lambs.some(l => !l.name.trim())
       if (missingName) {
@@ -319,6 +326,10 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
     try {
       await onSave({
         ...form,
+        notes: isDoNotBreed
+          ? [`Reason: ${form.breeding_restriction_reason}`, form.notes.trim()].filter(Boolean).join('\n')
+          : form.notes,
+        breedingRestrictionReason: isDoNotBreed ? form.breeding_restriction_reason : null,
         lambsToCreate: isBirthForSheep && createLambs ? lambs.map(l => ({
           name: l.name.trim(),
           sire_id: l.sire_id || null,
@@ -356,6 +367,21 @@ function LogEventForm({ onSave, onCancel, isMobile, animal, allAnimals=[] }) {
             onChange={e=>set('event_date', e.target.value)}/>
         </div>
       </div>
+
+      {isDoNotBreed && (
+        <div style={{ marginBottom:12 }}>
+          <label style={S.label}>Reason *</label>
+          <select style={{ ...S.input, cursor:'pointer' }}
+            value={form.breeding_restriction_reason}
+            onChange={e=>set('breeding_restriction_reason', e.target.value)}
+            required>
+            <option value="">Select a reason</option>
+            {BREEDING_RESTRICTION_REASONS.map(reason => (
+              <option key={reason} value={reason}>{reason}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div style={{ marginBottom:12 }}>
         <label style={S.label}>Notes (optional)</label>

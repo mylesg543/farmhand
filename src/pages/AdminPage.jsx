@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
-import { S, AnimalAvatar, fmt, formatDate } from '../components/ui/shared'
+import { S, AnimalAvatar, fmt, formatDate, hasBreedingRestriction, DoNotBreedBadge } from '../components/ui/shared'
 
 // ─── Auth guard — only your UID gets in ───────────────────────────────────────
 const ADMIN_UIDS = ['d1b58a87-b815-47aa-8d8d-33c3eedb1e57']
@@ -93,9 +93,10 @@ function AnimalDetailPanel({ animal, events, animals, onOpenAnimal }) {
           <AnimalAvatar animal={animal} size={44}/>
         </div>
         <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:2 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:2, flexWrap:'wrap' }}>
             <span style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:16, color:'#f0e6cc' }}>{animal.name}</span>
             <span style={{ fontSize:9, padding:'2px 7px', borderRadius:8, background:st[animal.status]||'#9e9e9e', color:'#fff', fontWeight:700, textTransform:'uppercase' }}>{animal.status}</span>
+            {hasBreedingRestriction(animal) && <DoNotBreedBadge compact reason={animal.breeding_restriction_reason}/>}
           </div>
           <span style={{ fontSize:11, color:'#c8a878' }}>
             {animal.breed||'Unknown breed'} · {animal.sex} · {animal.tag_number&&!animal.tag_number.startsWith('AUTO-')?animal.tag_number:'No tag'}
@@ -513,7 +514,7 @@ export function AdminPage() {
       // ── Fetch all users from auth (via a service-role workaround using public profiles)
       // We use fh_animals grouped by user_id to infer users + activity
       const [animals, events, income, costs, emailsRes] = await Promise.all([
-        supabase.from('fh_animals').select('id, user_id, species, status, created_at, name, breed, sex, tag_number, birth_date, photo_url, sire_id, dam_id'),
+        supabase.from('fh_animals').select('*'),
         supabase.from('fh_animal_events').select('id, user_id, animal_id, event_type, event_date, notes, photo_url, created_at'),
         supabase.from('fh_income').select('id, user_id, amount, date, created_at'),
         supabase.from('fh_feed_costs').select('id, user_id, amount, date, created_at'),
