@@ -104,12 +104,25 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
   const [formError, setFormError] = useState('')
   const newbornActive = active.filter(a => isNewbornAnimal(a))
   const adultActive = active.filter(a => !isNewbornAnimal(a))
-  const visibleAnimals = selectionFilter === 'newborn'
-    ? newbornActive
-    : selectionFilter === 'adults'
-      ? adultActive
-      : active
+  const warningActive = active.filter(a => hasBreedingRestriction(a))
+  const eweActive = active.filter(a => a.sex === 'ewe')
+  const ramActive = active.filter(a => a.sex === 'ram')
+  const wetherActive = active.filter(a => a.sex === 'wether')
+  const selectionGroups = [
+    { key:'all', label:'Active', animals:active },
+    { key:'adults', label:'Adults', animals:adultActive },
+    { key:'newborn', label:'Newborns', animals:newbornActive },
+    { key:'warnings', label:'Warnings', animals:warningActive },
+    ...(species === 'sheep' ? [
+      { key:'ewes', label:'Ewes', animals:eweActive },
+      { key:'rams', label:'Rams', animals:ramActive },
+      { key:'wethers', label:'Wethers', animals:wetherActive },
+    ] : []),
+  ]
+  const activeSelectionGroup = selectionGroups.find(group => group.key === selectionFilter) || selectionGroups[0]
+  const visibleAnimals = activeSelectionGroup.animals
   const visibleSelected = visibleAnimals.filter(a => picked.has(a.id)).length
+  const allVisibleSelected = visibleAnimals.length > 0 && visibleSelected === visibleAnimals.length
 
   const toggle = (id) => setPicked(prev => {
     const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n
@@ -203,44 +216,77 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
       )}
 
       {/* Step 1: pick animals */}
-      <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase',
-        letterSpacing:'0.06em', margin:'0 0 8px' }}>1. Select {meta.plural}</p>
-      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
-        {[
-          { key:'all', label:`All active (${active.length})`, disabled:false },
-          { key:'adults', label:`Adults (${adultActive.length})`, disabled:adultActive.length===0 },
-          { key:'newborn', label:`🐣 Newborn (${newbornActive.length})`, disabled:newbornActive.length===0 },
-        ].map(btn => (
-          <button key={btn.key} onClick={()=>!btn.disabled&&setSelectionFilter(btn.key)}
-            disabled={btn.disabled}
-            style={{ ...S.btn, fontSize:11, padding:'5px 10px', borderRadius:20,
-              background:selectionFilter===btn.key?'#5a3e1b':btn.key==='newborn'?'#fff9e6':'#fff',
-              color:selectionFilter===btn.key?'#fff':btn.disabled?'#c8b89a':btn.key==='newborn'?'#ad6500':'#7a6648',
-              border:selectionFilter===btn.key?'none':btn.key==='newborn'?'1px solid #f0c16e':'1px solid #d0c4b0',
-              opacity:btn.disabled?0.55:1, cursor:btn.disabled?'not-allowed':'pointer' }}>
-            {btn.label}
-          </button>
-        ))}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, marginBottom:8 }}>
+        <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase',
+          letterSpacing:'0.06em', margin:0 }}>1. Select {meta.plural}</p>
+        <span style={{ fontSize:11, color:picked.size?'#5a3e1b':'#a08060', fontWeight:700 }}>
+          {picked.size} selected
+        </span>
       </div>
-      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:4 }}>
+      <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:7, marginBottom:8,
+        WebkitOverflowScrolling:'touch', scrollbarWidth:'none' }}>
+        {selectionGroups.map(group => {
+          const selected = selectionFilter === group.key
+          const disabled = group.animals.length === 0
+          return (
+            <button key={group.key} onClick={()=>!disabled&&setSelectionFilter(group.key)}
+              disabled={disabled}
+              style={{ ...S.btn, flexShrink:0, minHeight:34, fontSize:11, padding:'6px 10px',
+                borderRadius:18, background:selected?'#5a3e1b':'#fff',
+                color:selected?'#fff':disabled?'#c8b89a':'#7a6648',
+                border:selected?'1px solid #5a3e1b':'1px solid #d0c4b0',
+                opacity:disabled?0.5:1, cursor:disabled?'default':'pointer' }}>
+              {group.key==='newborn'?'🐣 ':group.key==='warnings'?'⚠️ ':''}
+              {group.label} ({group.animals.length})
+            </button>
+          )
+        })}
+      </div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+        gap:10, padding:'8px 10px', marginBottom:8, background:'#f7f4ef',
+        border:'1px solid #e8e0d0', borderRadius:8 }}>
+        <div style={{ minWidth:0 }}>
+          <p style={{ fontSize:12, fontWeight:800, color:'#2c2416', margin:0 }}>
+            {activeSelectionGroup.label}
+          </p>
+          <p style={{ fontSize:10, color:'#a08060', margin:'2px 0 0' }}>
+            {visibleSelected} of {visibleAnimals.length} selected
+          </p>
+        </div>
         <button onClick={toggleAll}
-          style={{ ...S.btn, fontSize:11, padding:'4px 10px',
-            background:visibleAnimals.length>0&&visibleSelected===visibleAnimals.length?'#5a3e1b':'#f0ebe4',
-            color:visibleAnimals.length>0&&visibleSelected===visibleAnimals.length?'#fff':'#5a3e1b',
-            border:'1px solid #d0c4b0', borderRadius:20 }}>
-          {visibleAnimals.length>0&&visibleSelected===visibleAnimals.length?'✓ Visible selected':'Select visible'}
+          disabled={visibleAnimals.length===0}
+          style={{ ...S.btn, fontSize:11, padding:'7px 10px', flexShrink:0,
+            background:allVisibleSelected?'#5a3e1b':'#fff',
+            color:allVisibleSelected?'#fff':'#5a3e1b',
+            border:`1px solid ${allVisibleSelected?'#5a3e1b':'#d0c4b0'}`, borderRadius:7,
+            opacity:visibleAnimals.length===0?0.5:1 }}>
+          {allVisibleSelected?'✓ Selected':'Select all'}
         </button>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))',
+        gap:7, marginBottom:4 }}>
         {visibleAnimals.map(a => (
           <button key={a.id} onClick={()=>toggle(a.id)}
-            style={{ ...S.btn, fontSize:12, padding:'5px 11px',
+            style={{ fontFamily:"'Lato',sans-serif", fontSize:12, minWidth:0, minHeight:42,
+              padding:'7px 8px', cursor:'pointer',
               background:picked.has(a.id)?'#5a3e1b':'#f7f4ef',
               color:picked.has(a.id)?'#fff':'#2c2416',
               border:picked.has(a.id)?'1px solid #5a3e1b':'1px solid #d0c4b0',
-              borderRadius:20, fontWeight:picked.has(a.id)?700:400,
-              display:'inline-grid', gridTemplateColumns:'14px auto', alignItems:'center', gap:4 }}>
-            <span aria-hidden="true" style={{ width:14, textAlign:'center',
-              visibility:picked.has(a.id)?'visible':'hidden' }}>✓</span>
-            <span>{a.name}</span>
+              borderRadius:8, fontWeight:picked.has(a.id)?700:600,
+              display:'grid', gridTemplateColumns:'18px minmax(0, 1fr) 12px',
+              alignItems:'center', gap:5, textAlign:'left' }}>
+            <span aria-hidden="true" style={{ width:18, height:18, borderRadius:5,
+              display:'flex', alignItems:'center', justifyContent:'center',
+              background:picked.has(a.id)?'rgba(255,255,255,0.16)':'#fff',
+              border:`1px solid ${picked.has(a.id)?'rgba(255,255,255,0.45)':'#d0c4b0'}`,
+              color:'#fff', fontSize:11, lineHeight:1 }}>
+              {picked.has(a.id)?'✓':''}
+            </span>
+            <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{a.name}</span>
+            <span aria-hidden="true" style={{ color:picked.has(a.id)?'#f0e6cc':'#c8b89a',
+              fontSize:10, textAlign:'center' }}>
+              {hasBreedingRestriction(a)?'!':''}
+            </span>
           </button>
         ))}
       </div>
@@ -249,11 +295,7 @@ function MobileEventPanel({ animals, species, user, onDone, onCancel, onStatusUp
           No {selectionFilter} {meta.plural.toLowerCase()} to select.
         </p>
       )}
-      {picked.size>0 && (
-        <p style={{ fontSize:11, color:'#5a3e1b', margin:'4px 0 12px', fontWeight:600 }}>
-          {picked.size} {picked.size===1?meta.singular.toLowerCase():meta.plural.toLowerCase()} selected
-        </p>
-      )}
+      <div style={{ marginBottom:12 }}/>
 
       {/* Step 2: event type */}
       <p style={{ fontSize:11, fontWeight:700, color:'#a08060', textTransform:'uppercase',
