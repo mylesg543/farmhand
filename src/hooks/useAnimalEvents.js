@@ -76,6 +76,16 @@ export function useAnimalEvents(animalId) {
 
   const deleteEvent = async (id) => {
     if (!canWrite) throw new Error('You are viewing this farm in read-only mode. Switch to Write Mode in the admin banner to delete events.')
+    if (emulated) {
+      const { data, error } = await supabase.rpc('delete_event_admin', {
+        target_event_id: id,
+        target_user_id: effectiveUid,
+      })
+      if (error) throw error
+      if (!data) throw new Error('The event was not deleted.')
+      setEvents(prev => prev.filter(e => e.id !== id))
+      return
+    }
     const { data, error } = await supabase.from('fh_animal_events')
       .delete().eq('id', id).eq('user_id', effectiveUid)
       .select('id')
