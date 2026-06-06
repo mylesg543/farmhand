@@ -7,6 +7,11 @@ function getEmulated() {
   try { return JSON.parse(localStorage.getItem(EMULATION_KEY)) } catch { return null }
 }
 
+function isMissingUpdateCostAdmin(error) {
+  const message = String(error?.message || error || '').toLowerCase()
+  return message.includes('update_cost_admin') && message.includes('schema cache')
+}
+
 export function useFeedCosts() {
   const { user } = useAuth()
   const [costs,   setCosts]   = useState([])
@@ -53,12 +58,22 @@ export function useFeedCosts() {
   const updateCost = async (id, payload) => {
     if (!canWrite) throw new Error('Read-only mode')
     if (emulated) {
-      const { data, error } = await supabase.rpc('update_cost_admin', {
+      const rpcResult = await supabase.rpc('update_cost_admin', {
         target_cost_id: id,
         target_user_id: effectiveUid,
         payload,
       })
-      if (error) throw error
+      let data = rpcResult.data
+      if (rpcResult.error && isMissingUpdateCostAdmin(rpcResult.error)) {
+        const fallback = await supabase.from('fh_feed_costs')
+          .update(payload).eq('id', id).eq('user_id', effectiveUid).select()
+        if (fallback.error || !fallback.data?.length) {
+          throw new Error('Admin expense editing needs the Supabase migration admin-cost-update-migration.sql.')
+        }
+        data = fallback.data
+      } else if (rpcResult.error) {
+        throw rpcResult.error
+      }
       const row = Array.isArray(data) ? data[0] : data
       if (!row) throw new Error('The expense was not updated.')
       setCosts(prev => prev.map(c => c.id === id ? row : c))
