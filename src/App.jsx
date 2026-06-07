@@ -85,18 +85,18 @@ function DesktopNav({ user, isAdmin, navigate, location, signOut }) {
 
   const tabStyle = active => ({
     background: 'none', border: 'none', cursor: 'pointer',
-    padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 6,
+    padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 7,
     fontSize: 13, fontWeight: 600,
-    color: active ? '#f0e6cc' : '#6a5040',
-    borderBottom: active ? '2px solid #c8a060' : '2px solid transparent',
-    transition: 'all 0.15s', fontFamily: "'Lato',sans-serif", whiteSpace: 'nowrap',
+    color: active ? '#fff' : '#91a49a',
+    borderBottom: active ? '2px solid #5bc08a' : '2px solid transparent',
+    transition: 'all 0.15s', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap',
   })
 
   const dropItemStyle = {
     display: 'flex', alignItems: 'center', gap: 10,
     padding: '10px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600,
-    color: '#2c2416', width: '100%', border: 'none',
-    background: 'none', fontFamily: "'Lato',sans-serif", textAlign: 'left',
+    color: '#17211c', width: '100%', border: 'none',
+    background: 'none', fontFamily: "'DM Sans',sans-serif", textAlign: 'left',
   }
 
   return (
@@ -107,19 +107,25 @@ function DesktopNav({ user, isAdmin, navigate, location, signOut }) {
           <button onClick={() => setToast(null)} style={{ background: 'none', border: 'none', color: '#a08060', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
         </div>
       )}
-      <nav style={{ background: '#2c2416', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ display: 'flex', alignItems: 'center', padding: '0 24px', height: 52, gap: 12 }}>
-          <span onClick={() => navigate('/')} style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 700, color: '#f0e6cc', cursor: 'pointer', letterSpacing: '0.01em' }}>
-            🌾 FarmHand
+      <nav style={{ background: '#12251c', position: 'sticky', top: 0, zIndex: 100,
+        boxShadow:'0 1px 0 rgba(255,255,255,0.06), 0 8px 24px rgba(10,28,19,0.12)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '0 24px', height: 56, gap: 12 }}>
+          <span onClick={() => navigate('/')} style={{ display:'inline-flex', alignItems:'center',
+            gap:9, fontFamily: "'Manrope',sans-serif", fontSize: 18, fontWeight: 800,
+            color: '#fff', cursor: 'pointer' }}>
+            <span style={{ width:30, height:30, borderRadius:8, background:'#2f9e68',
+              display:'inline-flex', alignItems:'center', justifyContent:'center',
+              color:'#fff', fontSize:12, fontWeight:800, boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.16)' }}>FH</span>
+            FarmHand
           </span>
-          <span style={{ fontSize: 11, color: '#6a5040', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Farm Management</span>
+          <span style={{ fontSize: 10, color: '#789084', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Farm OS</span>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4caf50' }} />
-              <span style={{ fontSize: 12, color: '#a08060' }}>{user?.email?.split('@')[0]}</span>
+              <span style={{ fontSize: 12, color: '#b7c6be' }}>{user?.email?.split('@')[0]}</span>
               {isAdmin && <span style={{ fontSize: 9, fontWeight: 700, background: '#fff3e0', color: '#e65100', padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Admin</span>}
             </div>
-            <button onClick={signOut} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#a08060', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontSize: 12, fontFamily: "'Lato',sans-serif", fontWeight: 600 }}>Sign Out</button>
+            <button onClick={signOut} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: '#d7e1dc', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontFamily: "'DM Sans',sans-serif", fontWeight: 700 }}>Sign Out</button>
           </div>
         </div>
         <div style={{ display: 'flex', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '0 16px' }}>
@@ -201,18 +207,18 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
     <button onClick={onClick} style={{
       flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
       background: 'none', border: 'none', cursor: 'pointer', padding: '8px 4px', minHeight: 54,
-      fontFamily: "'Lato',sans-serif",
+      fontFamily: "'DM Sans',sans-serif",
     }}>
       <span style={{ fontSize: 22 }}>{emoji}</span>
-      <span style={{ fontSize: 10, fontWeight: 700, color: active ? '#c8a060' : '#6a5040', letterSpacing: '0.03em' }}>{label}</span>
-      {active && <div style={{ width: 20, height: 2, borderRadius: 1, background: '#c8a060' }} />}
+      <span style={{ fontSize: 10, fontWeight: 700, color: active ? '#70d29d' : '#8da098', letterSpacing: '0.03em' }}>{label}</span>
+      {active && <div style={{ width: 20, height: 2, borderRadius: 1, background: '#70d29d' }} />}
     </button>
   )
 
   const sheetItem = (emoji, label, sub, onClick, badge) => (
     <button onClick={onClick} style={{
       display: 'flex', alignItems: 'center', gap: 14, width: '100%', border: 'none',
-      background: 'none', padding: '14px 20px', cursor: 'pointer', fontFamily: "'Lato',sans-serif",
+      background: 'none', padding: '14px 20px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
       borderBottom: '1px solid #f7f4ef', textAlign: 'left',
     }}>
       <span style={{ fontSize: 26, flexShrink: 0 }}>{emoji}</span>
@@ -234,18 +240,27 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
       )}
 
       {/* Mobile top header */}
-      <div style={{ background: '#2c2416', padding: '0 16px', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
-        <span onClick={() => navigate('/')} style={{ fontFamily: "'Playfair Display',serif", fontSize: 17, fontWeight: 700, color: '#f0e6cc', cursor: 'pointer' }}>
-          🌾 FarmHand
+      <div style={{ background: '#12251c', padding: '0 14px', height: 52, display: 'flex',
+        alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100,
+        boxShadow:'0 6px 18px rgba(10,28,19,0.14)' }}>
+        <span onClick={() => navigate('/')} style={{ display:'inline-flex', alignItems:'center',
+          gap:8, fontFamily: "'Manrope',sans-serif", fontSize: 16, fontWeight: 800, color: '#fff', cursor: 'pointer' }}>
+          <span style={{ width:28, height:28, borderRadius:8, background:'#2f9e68',
+            display:'inline-flex', alignItems:'center', justifyContent:'center',
+            fontSize:10, fontWeight:800 }}>FH</span>
+          FarmHand
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 12, color: '#a08060' }}>{user?.email?.split('@')[0]}</span>
+          <span style={{ fontSize: 12, color: '#b7c6be' }}>{user?.email?.split('@')[0]}</span>
           {isAdmin && <span style={{ fontSize: 9, fontWeight: 700, background: '#fff3e0', color: '#e65100', padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Admin</span>}
         </div>
       </div>
 
       {/* Bottom tab bar */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200, background: '#2c2416', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
+        background: 'rgba(18,37,28,0.98)', backdropFilter:'blur(16px)',
+        borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex',
+        paddingBottom: 'env(safe-area-inset-bottom)', boxShadow:'0 -8px 24px rgba(10,28,19,0.12)' }}>
         {tabBtn(isAnimals, '🐾', 'Animals', () => setSheet('animals'))}
         {tabBtn(isPlants,  '🌱', 'Plants',  () => setSheet('plants'))}
         {tabBtn(isDash,    '💰', 'P & L', () => navigate('/dashboard'))}
@@ -307,7 +322,9 @@ function Nav() {
 function FarmApp() {
   const isMobile = useIsMobile()
   return (
-    <div style={{ minHeight: '100vh', background: '#f7f4ef', fontFamily: "'Lato',sans-serif", color: '#2c2416', paddingBottom: isMobile ? 'var(--fh-mobile-page-bottom)' : 0 }}>
+    <div className="fh-app-shell" style={{ minHeight: '100vh', background: '#f5f7f6',
+      fontFamily: "'DM Sans',sans-serif", color: '#17211c',
+      paddingBottom: isMobile ? 'var(--fh-mobile-page-bottom)' : 0 }}>
       <style>{`:root{--fh-mobile-nav-height:64px;--fh-mobile-float-bottom:calc(86px + env(safe-area-inset-bottom));--fh-mobile-page-bottom:calc(112px + env(safe-area-inset-bottom));}@media (max-width:767px){input,select,textarea{font-size:16px!important;}button{touch-action:manipulation;}}`}</style>
       <EmulationBanner />
       <Nav />

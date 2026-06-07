@@ -89,7 +89,7 @@ function AnimalDetailPanel({ animal, events, animals, onOpenAnimal }) {
   return (
     <div className="admin-animal-detail-panel" style={{ background:'#fdfaf6', borderRadius:10, border:'1px solid #e8e0d0', overflow:'hidden', marginTop:6 }}>
       {/* Animal header */}
-      <div style={{ background:'linear-gradient(135deg,#2c2416,#4a3520)', padding:'14px 16px', display:'flex', alignItems:'center', gap:12 }}>
+      <div style={{ background:'#12251c', padding:'14px 16px', display:'flex', alignItems:'center', gap:12 }}>
         <div style={{ width:44, height:44, borderRadius:'50%', overflow:'hidden', border:'2px solid rgba(255,255,255,0.25)', background:'rgba(255,255,255,0.1)', flexShrink:0 }}>
           <AnimalAvatar animal={animal} size={44}/>
         </div>
@@ -273,10 +273,10 @@ export function EmulationBanner() {
         className="admin-emulation-pill"
         style={{ position:'fixed', right:12, bottom:'var(--fh-mobile-float-bottom)',
           zIndex:9999, maxWidth:'calc(100vw - 20px)', display:'flex', alignItems:'center', gap:7,
-          background:eu.writeMode ? '#b71c1c' : '#1a237e', color:'#fff',
+          background:eu.writeMode ? '#9f2d2d' : '#244f87', color:'#fff',
           border:'1px solid rgba(255,255,255,0.28)', borderRadius:999,
-          padding:'8px 11px', boxShadow:'0 4px 18px rgba(0,0,0,0.28)',
-          cursor:'pointer', fontFamily:"'Lato',sans-serif" }}>
+          padding:'8px 11px', boxShadow:'0 8px 24px rgba(10,32,22,0.24)',
+          cursor:'pointer', fontFamily:"'DM Sans',sans-serif" }}>
         <span style={{ fontSize:13 }}>{eu.writeMode ? '✏️' : '👁'}</span>
         <span style={{ fontSize:11, fontWeight:800, textTransform:'uppercase', letterSpacing:'0.04em' }}>
           {eu.writeMode ? 'Editing' : 'Viewing'}
@@ -293,10 +293,10 @@ export function EmulationBanner() {
   return (
     <div className="admin-emulation-banner" style={{ position:'fixed', top:0, left:0, right:0, zIndex:9999,
       ...(isMobile ? { top:'auto', bottom:'var(--fh-mobile-float-bottom)', left:'auto', right:10, width:'calc(100vw - 20px)', maxWidth:340, borderRadius:14 } : {}),
-      background: eu.writeMode ? '#b71c1c' : '#1a237e',
+      background: eu.writeMode ? '#9f2d2d' : '#244f87',
       color:'#fff', padding:isMobile?'8px 10px':'8px 16px', display:'flex', alignItems:'center',
-      flexWrap:isMobile?'wrap':'nowrap', gap:isMobile?6:12, fontSize:isMobile?11:13, fontFamily:"'Lato',sans-serif",
-      boxShadow:isMobile?'0 8px 26px rgba(0,0,0,0.30)':'0 2px 8px rgba(0,0,0,0.3)' }}>
+      flexWrap:isMobile?'wrap':'nowrap', gap:isMobile?6:12, fontSize:isMobile?11:13, fontFamily:"'DM Sans',sans-serif",
+      boxShadow:isMobile?'0 8px 26px rgba(10,32,22,0.26)':'0 2px 10px rgba(10,32,22,0.22)' }}>
       <span className="admin-emulation-icon" style={{ fontSize:isMobile?13:16 }}>{eu.writeMode ? '✏️' : '👁'}</span>
       <span className="admin-emulation-label" style={{ fontWeight:700, fontSize:isMobile?10:13 }}>{eu.writeMode ? 'EDITING AS' : 'VIEWING AS'}:</span>
       <span className="admin-emulation-email" style={{ opacity:0.9, flex:isMobile?'1 1 130px':'0 1 auto', minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{eu.email}</span>

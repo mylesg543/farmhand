@@ -331,7 +331,7 @@ export function AnimalDetailPage() {
   return (
     <div>
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <div style={{ background:'linear-gradient(160deg,#2c2416 0%,#4a3520 60%,#6b4f2e 100%)', width:'100%' }}>
+      <div style={{ background:'#12251c', width:'100%', boxShadow:'inset 0 -1px 0 rgba(255,255,255,0.06)' }}>
         <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'14px 14px 20px':'22px 24px 28px' }}>
           <button onClick={()=>navigate(backPath)}
             style={{ ...S.btn, background:'rgba(255,255,255,0.1)', color:'#f0e6cc',
@@ -357,7 +357,7 @@ export function AnimalDetailPage() {
             </div>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, flexWrap:'wrap' }}>
-                <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?20:28, fontWeight:700, color:'#f0e6cc', margin:0 }}>
+                <h1 style={{ fontFamily:"'Manrope',sans-serif", fontSize:isMobile?21:28, fontWeight:800, color:'#fff', margin:0 }}>
                   {animal.name}
                 </h1>
                 <span style={{ padding:'3px 10px', borderRadius:20, fontSize:10, fontWeight:700,
@@ -390,7 +390,7 @@ export function AnimalDetailPage() {
               <div style={{ display:'flex', gap:8, flexShrink:1, alignItems:'center',
                 flexWrap:'wrap', justifyContent:'flex-end', maxWidth:620 }}>
                 <button onClick={handleLogEventClick}
-                  style={{ ...S.btn, background:'#c8a060', color:'#2c2416',
+                  style={{ ...S.btn, background:'#2f9e68', color:'#fff',
                     border:'1px solid rgba(255,255,255,0.18)', padding:'7px 14px',
                     fontSize:13, fontWeight:800, whiteSpace:'nowrap',
                     boxShadow:'0 4px 14px rgba(0,0,0,0.18)' }}>
@@ -440,8 +440,8 @@ export function AnimalDetailPage() {
             <div style={{ marginTop:14 }}>
               <button onClick={handleLogEventClick}
                 style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-                  background:'#c8a060', border:'1px solid rgba(255,255,255,0.18)',
-                  borderRadius:10, padding:'12px', cursor:'pointer', color:'#2c2416',
+                  background:'#2f9e68', border:'1px solid rgba(255,255,255,0.18)',
+                  borderRadius:9, padding:'12px', cursor:'pointer', color:'#fff',
                   fontFamily:"'Lato',sans-serif", fontSize:14, fontWeight:800,
                   boxShadow:'0 4px 14px rgba(0,0,0,0.18)', marginBottom:8 }}>
                 <span style={{ fontSize:16, lineHeight:1 }}>+</span> Log Event

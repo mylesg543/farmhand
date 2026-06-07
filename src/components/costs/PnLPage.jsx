@@ -85,7 +85,7 @@ function IncomeForm({ customers, onSave, onCancel }) {
   }
 
   return (
-    <div style={{ ...S.card, padding:22, marginBottom:16, border:'1px dashed #c8b89a', background:'#fdfaf6' }}>
+    <div style={{ ...S.card, padding:22, marginBottom:16, border:'1px solid #b9ddcc', background:'#f5fbf8' }}>
       <style>{`@media(max-width:767px){.pnl-form-grid{grid-template-columns:1fr!important;}}`}</style>
       <span style={S.sectionLabel}>New Income</span>
       {error && <p style={{ color:'#c62828', fontSize:13, marginBottom:10 }}>{error}</p>}
@@ -127,7 +127,7 @@ function IncomeForm({ customers, onSave, onCancel }) {
                   </div>
                 ) : (
                   <button onClick={()=>setEditPrice(true)}
-                    style={{ ...S.btn, background:'#f0ebe4', color:'#5a3e1b', border:'1px solid #d0c4b0', padding:'4px 10px', fontSize:11, fontWeight:600 }}>
+                    style={{ ...S.btn, background:'#eef5f1', color:'#176b47', border:'1px solid #cfe1d8', padding:'4px 10px', fontSize:11, fontWeight:700 }}>
                     ${eggPrice.toFixed(2)}/doz ✎
                   </button>
                 )}
@@ -137,9 +137,9 @@ function IncomeForm({ customers, onSave, onCancel }) {
               {DOZEN_OPTIONS.map(n=>(
                 <button key={n} onClick={()=>handleDozens(n)}
                   style={{ ...S.btn, padding:'8px 14px', fontSize:14, fontWeight:700,
-                    background: form.quantity===n?'#c8a060':'#fff',
-                    color:      form.quantity===n?'#2c2416':'#7a6648',
-                    border:     form.quantity===n?'2px solid #c8a060':'1px solid #d0c4b0' }}>
+                    background: form.quantity===n?'#176b47':'#fff',
+                    color:      form.quantity===n?'#fff':'#43534a',
+                    border:     form.quantity===n?'2px solid #176b47':'1px solid #d5ded9' }}>
                   {n===0.5?'½':n}
                 </button>
               ))}
@@ -313,8 +313,8 @@ export function PnLPage({ embedded = false, onViewCharts = null }) {
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:12 }}>
         <div>
-          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:30, fontWeight:700, margin:'0 0 4px' }}>
-            {embedded ? 'Income & Expenses' : '💰 Profit & Loss'}
+          <h1 style={{ fontFamily:"'Manrope',sans-serif", fontSize:isMobile?24:30, fontWeight:750, margin:'0 0 4px', letterSpacing:0 }}>
+            {embedded ? 'Income & Expenses' : 'Profit & Loss'}
           </h1>
           <p style={{ fontSize:13, color:'#a08060', margin:0 }}>
             {embedded ? 'Add, review, and correct financial records.' : 'Track income and expenses across your farm'}
@@ -437,7 +437,7 @@ export function PnLPage({ embedded = false, onViewCharts = null }) {
           {['overview','income','expenses'].map(v=>(
             <button key={v} onClick={()=>setView(v)}
               style={{ ...S.btn, padding:'6px 14px', fontSize:13,
-                background:view===v?'#5a3e1b':'#fff', color:view===v?'#fff':'#7a6648',
+                background:view===v?'#176b47':'#fff', color:view===v?'#fff':'#43534a',
                 border:'1px solid #d0c4b0' }}>
               {v.charAt(0).toUpperCase()+v.slice(1)}
             </button>

@@ -301,15 +301,15 @@ export function animalEditPath(species, id) {
 
 // ─── Shared Styles ────────────────────────────────────────────────────────────
 export const S = {
-  card: { background: '#fff', borderRadius: 12, border: '1px solid #e8e0d0', boxShadow: '0 1px 4px rgba(44,36,22,0.06)' },
-  btn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: "'Lato', sans-serif", fontSize: 14, fontWeight: 600, transition: 'all 0.15s' },
-  btnPrimary:   { background: '#5a3e1b', color: '#fff' },
-  btnSecondary: { background: '#fff', color: '#5a3e1b', border: '1px solid #c8b89a' },
-  btnDanger:    { background: '#fff', color: '#c62828', border: '1px solid #ef9a9a' },
-  input: { width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #d0c4b0', background: '#fdfaf6', fontFamily: "'Lato', sans-serif", fontSize: 14, color: '#2c2416', outline: 'none', boxSizing: 'border-box' },
-  label: { fontSize: 12, fontWeight: 700, color: '#7a6648', marginBottom: 6, display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  sectionLabel: { fontSize: 11, fontWeight: 700, color: '#a08060', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16, display: 'block' },
-  page: { maxWidth: 1100, margin: '0 auto', padding: '32px 24px' },
+  card: { background: '#fff', borderRadius: 10, border: '1px solid #dfe6e2', boxShadow: '0 1px 2px rgba(18,38,27,0.04), 0 4px 12px rgba(18,38,27,0.04)' },
+  btn: { display: 'inline-flex', alignItems: 'center', justifyContent:'center', gap: 7, padding: '9px 16px', minHeight:40, borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 700, transition: 'transform 0.14s ease, box-shadow 0.16s ease, background-color 0.16s ease, border-color 0.16s ease' },
+  btnPrimary:   { background: '#176b47', color: '#fff', boxShadow:'0 1px 2px rgba(18,38,27,0.08), 0 5px 14px rgba(23,107,71,0.16)' },
+  btnSecondary: { background: '#fff', color: '#26352d', border: '1px solid #cbd6d0', boxShadow:'0 1px 2px rgba(18,38,27,0.03)' },
+  btnDanger:    { background: '#fff', color: '#b52f2f', border: '1px solid #edc8c8' },
+  input: { width: '100%', minHeight:42, padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd6d0', background: '#fff', fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: '#17211c', outline: 'none', boxSizing: 'border-box', transition:'border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease' },
+  label: { fontSize: 12, fontWeight: 700, color: '#536259', marginBottom: 6, display: 'block', letterSpacing: '0' },
+  sectionLabel: { fontSize: 11, fontWeight: 800, color: '#6f7c75', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14, display: 'block' },
+  page: { maxWidth: 1180, margin: '0 auto', padding: '32px 24px' },
 }
 
 // ─── Reusable Components ──────────────────────────────────────────────────────
@@ -320,8 +320,7 @@ export function Badge({ children, bg, color, style }) {
 export function Spinner() {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
-      <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #e8e0d0', borderTopColor: '#5a3e1b', animation: 'spin 0.7s linear infinite' }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div style={{ width: 30, height: 30, borderRadius: '50%', border: '3px solid #dfe6e2', borderTopColor: '#176b47', animation: 'spin 0.7s linear infinite' }} />
     </div>
   )
 }

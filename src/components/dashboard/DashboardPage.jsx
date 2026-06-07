@@ -69,7 +69,7 @@ function DonutChart({ segments, centerLabel, centerValue }) {
           }
           <circle cx={cx} cy={cy} r={38} fill="#fff"/>
           <text x={cx} y={cy-5} textAnchor="middle" fontSize={11} fill="#a08060" fontWeight={600}>{centerLabel}</text>
-          <text x={cx} y={cy+12} textAnchor="middle" fontSize={14} fill="#2c2416" fontWeight={700} style={{ fontFamily:"'Playfair Display',serif" }}>{centerValue}</text>
+          <text x={cx} y={cy+12} textAnchor="middle" fontSize={14} fill="#17211c" fontWeight={700} style={{ fontFamily:"'Manrope',sans-serif" }}>{centerValue}</text>
         </svg>
       </div>
       <div style={{ flex:1, minWidth:140 }}>
@@ -108,13 +108,13 @@ function RecentEventsDrawer({ open, onClose, events, loading, error, animals, is
   })
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(44,36,22,0.42)', display:'flex', justifyContent:isMobile?'stretch':'flex-end', alignItems:'stretch' }}>
+    <div style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(10,27,19,0.48)', display:'flex', justifyContent:isMobile?'stretch':'flex-end', alignItems:'stretch', backdropFilter:'blur(3px)' }}>
       <div onClick={onClose} style={{ position:'absolute', inset:0 }} />
-      <div style={{ position:'relative', width:isMobile?'100%':560, maxWidth:'100%', background:'#f7f4ef', boxShadow:'-12px 0 36px rgba(0,0,0,0.22)', display:'flex', flexDirection:'column' }}>
-        <div style={{ padding:isMobile?'16px 14px':'20px 22px', background:'#2c2416', color:'#f0e6cc', display:'flex', alignItems:'flex-start', gap:12 }}>
+      <div style={{ position:'relative', width:isMobile?'100%':560, maxWidth:'100%', background:'#f5f7f6', boxShadow:'-12px 0 36px rgba(8,28,18,0.24)', display:'flex', flexDirection:'column' }}>
+        <div style={{ padding:isMobile?'16px 14px':'20px 22px', background:'#12251c', color:'#fff', display:'flex', alignItems:'flex-start', gap:12 }}>
           <div style={{ flex:1 }}>
-            <p style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?20:24, fontWeight:700, margin:'0 0 4px' }}>Recent Events</p>
-            <p style={{ fontSize:13, color:'#c8a878', margin:0, lineHeight:1.45 }}>Review recent health, care, breeding, and management activity across your animals.</p>
+            <p style={{ fontFamily:"'Manrope',sans-serif", fontSize:isMobile?20:24, fontWeight:750, margin:'0 0 4px' }}>Recent Events</p>
+            <p style={{ fontSize:13, color:'#b9c9c0', margin:0, lineHeight:1.45 }}>Review recent health, care, breeding, and management activity across your animals.</p>
           </div>
           <button onClick={onClose} aria-label="Close recent events" style={{ background:'rgba(255,255,255,0.1)', color:'#f0e6cc', border:'1px solid rgba(255,255,255,0.18)', borderRadius:8, width:38, height:38, cursor:'pointer', fontSize:20, lineHeight:1 }}>×</button>
         </div>
@@ -256,7 +256,7 @@ export function DashboardPage() {
   const horseBreedSegs  = Object.entries(horseByBreed).map(([k,v],i)=>({ label:k, value:v, color:['#6d4c41','#8d6e63','#4e342e','#a1887f','#bcaaa4'][i%5], isCount:true })).sort((a,b)=>b.value-a.value)
 
   // ── Customer data ──────────────────────────────────────────────────────────────
-  const custColors=['#5a3e1b','#795548','#a1887f','#8d6e63','#6d4c41','#4e342e','#3e2723','#bcaaa4']
+  const custColors=['#176b47','#287d58','#4d9270','#6aa184','#2f6f59','#3f8067','#75aa91','#9bc1ae']
   const custStats=customers.map((c,i)=>({
     ...c,
     spent:  income.filter(i=>i.customer_id===c.id).reduce((s,i)=>s+Number(i.amount),0),
@@ -274,7 +274,7 @@ export function DashboardPage() {
 
   const card={ ...S.card, padding:isMobile?16:24, marginBottom:16 }
   const chartCard={ ...card, minHeight:isMobile?260:286, boxSizing:'border-box', transition:'box-shadow 0.2s ease, border-color 0.2s ease' }
-  const secTitle={ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, marginBottom:16, color:'#2c2416' }
+  const secTitle={ fontFamily:"'Manrope',sans-serif", fontSize:17, fontWeight:750, marginBottom:16, color:'#17211c' }
   return (
     <div style={{ ...S.page, padding:isMobile?'16px 12px':'32px 24px', scrollbarGutter:'stable' }}>
       <style>{`@media(max-width:767px){.dash-2col{grid-template-columns:1fr!important;}}`}</style>
@@ -282,7 +282,7 @@ export function DashboardPage() {
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:12 }}>
         <div>
-          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:30, fontWeight:700, margin:'0 0 4px' }}>Profit & Loss</h1>
+          <h1 style={{ fontFamily:"'Manrope',sans-serif", fontSize:isMobile?24:30, fontWeight:750, margin:'0 0 4px' }}>Profit & Loss</h1>
           <p style={{ fontSize:13, color:'#a08060', margin:0 }}>Enter farm income and expenses, then see where the money is going.</p>
         </div>
         <button onClick={()=>setShowRecentEvents(true)}
@@ -342,7 +342,7 @@ export function DashboardPage() {
           {[['animals','🐾 Animals'],['customers','👥 Customers']].map(([key,label])=>(
             <button key={key} onClick={()=>setView(key)}
               style={{ ...S.btn, justifyContent:'center', padding:'8px 12px', fontSize:12, borderRadius:6,
-                background:view===key?'#5a3e1b':'transparent', color:view===key?'#fff':'#7a6648',
+                background:view===key?'#176b47':'transparent', color:view===key?'#fff':'#43534a',
                 border:'none', fontWeight:800 }}>
               {label}
             </button>
@@ -378,7 +378,7 @@ export function DashboardPage() {
               {[['sheep','🐑 Sheep'],['chickens','🐔 Chickens'],['horses','🐴 Horses']].map(([k,l])=>(
                 <button key={k} onClick={()=>setAnimalSp(k)}
                   style={{ ...S.btn, padding:'6px 14px', fontSize:13, borderRadius:8,
-                    background:animalSp===k?'#5a3e1b':'transparent',
+                    background:animalSp===k?'#176b47':'transparent',
                     color:animalSp===k?'#fff':'#7a6648', border:'none', transition:'all 0.2s' }}>
                   {l}
                 </button>
@@ -388,7 +388,7 @@ export function DashboardPage() {
               {[['active','Active'],['all','All']].map(([k,l])=>(
                 <button key={k} onClick={()=>setAnimalFilter(k)}
                   style={{ ...S.btn, padding:'6px 14px', fontSize:13, borderRadius:8,
-                    background:animalFilter===k?'#5a3e1b':'transparent',
+                    background:animalFilter===k?'#176b47':'transparent',
                     color:animalFilter===k?'#fff':'#7a6648', border:'none', transition:'all 0.2s' }}>
                   {l}
                 </button>

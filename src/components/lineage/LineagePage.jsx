@@ -69,12 +69,12 @@ function AnimalChip({ a, selectedId, onSelect, hasLineageWarning=false }) {
   const st    = STATUS_STYLES[a.status]||STATUS_STYLES.alive
   const hasBreedingWarning = hasBreedingRestriction(a)
   return (
-    <button onClick={()=>onSelect(a.id)}
+    <button onClick={()=>onSelect(a.id)} className="fh-card-interactive"
       style={{ display:'grid', gridTemplateColumns:'34px minmax(0, 1fr) auto', alignItems:'center', gap:9,
         width:'100%', minHeight:60, padding:'10px 11px', borderRadius:10, cursor:'pointer',
-        border:isSel?'2px solid #c8a060':'1px solid #e8e0d0',
-        background:isSel?'#fdfaf0':'#fff',
-        boxShadow:isSel?'0 0 0 3px rgba(200,160,96,0.15)':'none',
+        border:isSel?'2px solid #2f9e68':'1px solid #dfe6e2',
+        background:isSel?'#eef8f2':'#fff',
+        boxShadow:isSel?'0 0 0 3px rgba(47,158,104,0.13)':'none',
         transition:'all 0.15s', fontFamily:"'Lato',sans-serif", textAlign:'left' }}>
       <div style={{ width:32, height:32, borderRadius:'50%', overflow:'hidden', border:'2px solid #e8e0d0', flexShrink:0, background:'#f0ebe4' }}>
         <AnimalAvatar animal={a} size={32}/>
@@ -337,8 +337,8 @@ export function LineagePage() {
       {/* Header */}
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:12 }}>
         <div>
-          <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?24:32, fontWeight:700, margin:'0 0 4px' }}>
-            🌳 Lineage & Bloodlines
+          <h1 style={{ fontFamily:"'Manrope',sans-serif", fontSize:isMobile?24:31, fontWeight:800, margin:'0 0 4px' }}>
+            Lineage & Bloodlines
           </h1>
           <p style={{ fontSize:13, color:'#a08060', margin:0 }}>
             4-generation family tree · Great-grandparents at top, your animal at bottom

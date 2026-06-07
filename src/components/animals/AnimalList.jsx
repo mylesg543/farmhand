@@ -516,29 +516,29 @@ export function AnimalList({ species = 'sheep' }) {
         }
       `}</style>
       {/* ── Hero header ─────────────────────────────────────────────────── */}
-      <div style={{ background:'linear-gradient(160deg,#2c2416 0%,#4a3520 40%,#6b4f2e 100%)', width:'100%' }}>
+      <div style={{ background:'#12251c', width:'100%', boxShadow:'inset 0 -1px 0 rgba(255,255,255,0.06)' }}>
         <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'16px 14px 0':'24px 24px 0' }}>
           {/* Title row */}
           <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between',
             flexDirection:isMobile?'column':'row', gap:isMobile?12:0, marginBottom:14 }}>
             <div style={{ display:'flex', alignItems:'center', gap:12 }}>
               <div>
-                <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?22:30,
-                  fontWeight:700, color:'#f0e6cc', margin:'0 0 2px' }}>
-                  {meta.emoji} Your {meta.label}
+                <h1 style={{ fontFamily:"'Manrope',sans-serif", fontSize:isMobile?22:29,
+                  fontWeight:800, color:'#fff', margin:'0 0 3px' }}>
+                  {meta.label}
                 </h1>
-                <p style={{ fontSize:11, color:'#a08060', margin:0 }}>
+                <p style={{ fontSize:12, color:'#91a49a', margin:0 }}>
                   {activeAnimals.length} active
                   {soldAnimals.length>0?` · ${soldAnimals.length} sold`:''}
                   {deceasedAnimals.length>0?` · ${deceasedAnimals.length} deceased`:''}
                   {warningAnimals.length>0?` · ${warningAnimals.length} warning${warningAnimals.length!==1?'s':''}`:''}
                 </p>
               </div>
-              <div style={{ background:'rgba(200,160,96,0.2)', border:'1px solid rgba(200,160,96,0.4)',
-                borderRadius:10, padding:isMobile?'6px 10px':'8px 14px', textAlign:'center', flexShrink:0 }}>
-                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?20:26,
-                  fontWeight:700, color:'#c8a060', lineHeight:1 }}>{activeAnimals.length}</div>
-                <div style={{ fontSize:8, color:'#a08060', fontWeight:700, textTransform:'uppercase',
+              <div style={{ background:'rgba(47,158,104,0.15)', border:'1px solid rgba(112,210,157,0.24)',
+                borderRadius:9, padding:isMobile?'7px 11px':'9px 15px', textAlign:'center', flexShrink:0 }}>
+                <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:isMobile?20:25,
+                  fontWeight:800, color:'#70d29d', lineHeight:1 }}>{activeAnimals.length}</div>
+                <div style={{ fontSize:8, color:'#91a49a', fontWeight:800, textTransform:'uppercase',
                   letterSpacing:'0.06em', marginTop:2 }}>Active</div>
               </div>
             </div>
@@ -584,7 +584,7 @@ export function AnimalList({ species = 'sheep' }) {
                 {/* Add Sheep button — same style as Add Event, with dropdown */}
                 <div style={{ position:'relative' }} ref={addMenuRef}>
                   <button onClick={()=>setShowAddMenu(v=>!v)}
-                    style={{ ...S.btn, background:'#c8a060', color:'#2c2416',
+                    style={{ ...S.btn, background:'#2f9e68', color:'#fff',
                       fontWeight:700, padding:'8px 12px', minHeight:36, fontSize:13,
                       display:'inline-flex', alignItems:'center', gap:6 }}>
                     <span aria-hidden="true" style={{ width:14, display:'flex', justifyContent:'center', lineHeight:1 }}>+</span>
@@ -638,7 +638,7 @@ export function AnimalList({ species = 'sheep' }) {
                   ☑ Add Event
                 </button>
                 <button onClick={()=>navigate(newPath)}
-                  style={{ ...S.btn, background:'#c8a060', color:'#2c2416',
+                  style={{ ...S.btn, background:'#2f9e68', color:'#fff',
                     fontWeight:700, padding:'9px 11px', fontSize:12, borderRadius:7,
                     flex:1, justifyContent:'center' }}>
                   ＋ Add
@@ -752,12 +752,12 @@ export function AnimalList({ species = 'sheep' }) {
 
         {/* Search and sort */}
         <div style={{ display:'flex', gap:isMobile?8:10, marginBottom:12, flexDirection:isMobile?'column':'row', alignItems:'stretch' }}>
-          <input style={{ ...S.input, flex:1 }}
+          <input aria-label={`Search ${meta.plural.toLowerCase()}`} style={{ ...S.input, flex:1 }}
             placeholder={`Search ${meta.plural.toLowerCase()}…`}
             value={search} onChange={e=>setSearch(e.target.value)}/>
           <div ref={sortMenuRef} style={{ position:'relative', display:isMobile?'grid':'flex', gridTemplateColumns:isMobile?'86px minmax(0, 1fr)':undefined,
             alignItems:'center', gap:isMobile?10:12, flexShrink:0,
-            background:'#fff', border:'1px solid #d8ccb8', borderRadius:8,
+            background:'#fff', border:'1px solid #dfe6e2', borderRadius:8,
             padding:isMobile?'8px 10px':'0 8px 0 12px', minHeight:38,
             boxShadow:'0 1px 3px rgba(44,36,22,0.04)', width:isMobile?'100%':undefined,
             boxSizing:'border-box' }}>
@@ -868,12 +868,13 @@ export function AnimalList({ species = 'sheep' }) {
 
           return (
             <div key={a.id}
+              className="fh-card-interactive"
               onClick={()=>selecting ? toggleSelect(a.id) : navigate(detailPath(a.id))}
               style={{ ...S.card, padding:isMobile?'10px 12px':'14px 18px', marginBottom:8,
                 display:'flex', gap:12, alignItems:'center', cursor:'pointer',
                 opacity:!isActive?0.65:1,
-                border:isSel?'2px solid #c8a060':'1px solid #e8e0d0',
-                background:isSel?'#fdfaf0':'#fff', transition:'all 0.15s' }}>
+                border:isSel?'2px solid #2f9e68':'1px solid #dfe6e2',
+                background:isSel?'#eef8f2':'#fff', transition:'all 0.15s' }}>
               {selecting && (
                 <div style={{ width:20, height:20, borderRadius:5,
                   border:`2px solid ${isSel?'#c8a060':'#d0c4b0'}`,
@@ -889,8 +890,8 @@ export function AnimalList({ species = 'sheep' }) {
               </div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:2, flexWrap:'wrap' }}>
-                  <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700,
-                    fontSize:isMobile?14:16, margin:0 }}>{a.name}</p>
+                  <p style={{ fontFamily:"'Manrope',sans-serif", fontWeight:800,
+                    fontSize:isMobile?14:16, margin:0, color:'#17211c' }}>{a.name}</p>
                   <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:10,
                     background:st.bg, color:st.text, textTransform:'uppercase' }}>{a.status}</span>
                   {isNewborn && (
@@ -907,7 +908,7 @@ export function AnimalList({ species = 'sheep' }) {
                     <span style={{ fontSize:10, color:'#a08060', fontFamily:'monospace' }}>{a.tag_number}</span>
                   )}
                 </div>
-                <p style={{ fontSize:11, color:'#a08060', margin:0 }}>
+                <p style={{ fontSize:12, color:'#66736c', margin:0 }}>
                   {[sexLabel,a.breed,age].filter(Boolean).join(' · ')}
                 </p>
                 {hasBreedingRestriction(a) && a.breeding_restriction_reason && (

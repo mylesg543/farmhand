@@ -42,38 +42,42 @@ export function LoginPage() {
   }
 
   const inp = {
-    width: '100%', padding: '10px 13px', borderRadius: 8,
-    border: '1px solid #d0c4b0', background: '#fdfaf6',
-    fontFamily: "'Lato',sans-serif", fontSize: 16, color: '#2c2416',
+    width: '100%', padding: '11px 13px', borderRadius: 8,
+    border: '1px solid #cbd6d0', background: '#fff',
+    fontFamily: "'DM Sans',sans-serif", fontSize: 16, color: '#17211c',
     outline: 'none', boxSizing: 'border-box', marginBottom: 10,
   }
   const lbl = {
-    fontSize: 11, fontWeight: 700, color: '#7a6648',
+    fontSize: 12, fontWeight: 700, color: '#536259',
     display: 'block', marginBottom: 4,
-    textTransform: 'uppercase', letterSpacing: '0.05em',
+    letterSpacing: '0',
   }
   const link = {
-    background: 'none', border: 'none', color: '#5a3e1b',
+    background: 'none', border: 'none', color: '#176b47',
     cursor: 'pointer', fontSize: 13, fontWeight: 700,
-    fontFamily: "'Lato',sans-serif", textDecoration: 'underline', padding: 0,
+    fontFamily: "'DM Sans',sans-serif", textDecoration: 'none', padding: 0,
   }
 
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(160deg,#2c2416 0%,#4a3520 50%,#6b4f2e 100%)',
+      background: '#12251c',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: "'Lato',sans-serif", padding: 16,
+      fontFamily: "'DM Sans',sans-serif", padding: 16,
     }}>
       <div style={{ width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 10 }}>
 
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 4 }}>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 700, color: '#f0e6cc' }}>
-            🌾 FarmHand
+        <div style={{ textAlign: 'center', marginBottom: 8 }}>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:10,
+            fontFamily: "'Manrope',sans-serif", fontSize: 27, fontWeight: 800, color: '#fff' }}>
+            <span style={{ width:38, height:38, borderRadius:10, background:'#2f9e68',
+              display:'inline-flex', alignItems:'center', justifyContent:'center',
+              fontSize:13, fontWeight:800, boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.15)' }}>FH</span>
+            FarmHand
           </div>
-          <div style={{ fontSize: 11, color: '#a08060', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 2 }}>
-            Farm Management
+          <div style={{ fontSize: 12, color: '#91a49a', marginTop: 7 }}>
+            Clear records. Healthier animals. Better decisions.
           </div>
         </div>
 
@@ -83,28 +87,30 @@ export function LoginPage() {
             onClick={() => window.location.href = '/demo'}
             style={{
               width: '100%', padding: '15px 20px',
-              borderRadius: 12,
-              border: '2px solid rgba(200,160,96,0.6)',
-              background: 'rgba(200,160,96,0.13)',
-              cursor: 'pointer', fontFamily: "'Lato',sans-serif",
+              borderRadius: 10,
+              border: '1px solid rgba(112,210,157,0.32)',
+              background: 'rgba(47,158,104,0.12)',
+              cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
               display: 'flex', alignItems: 'center', gap: 14,
               textAlign: 'left', transition: 'all 0.2s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.background='rgba(200,160,96,0.22)'; e.currentTarget.style.borderColor='rgba(200,160,96,0.9)' }}
-            onMouseLeave={e => { e.currentTarget.style.background='rgba(200,160,96,0.13)'; e.currentTarget.style.borderColor='rgba(200,160,96,0.6)' }}
+            onMouseEnter={e => { e.currentTarget.style.background='rgba(47,158,104,0.2)'; e.currentTarget.style.borderColor='rgba(112,210,157,0.55)' }}
+            onMouseLeave={e => { e.currentTarget.style.background='rgba(47,158,104,0.12)'; e.currentTarget.style.borderColor='rgba(112,210,157,0.32)' }}
           >
-            <div style={{ width: 44, height: 44, borderRadius: 10, background: '#c8a060', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-              🌾
+            <div style={{ width: 44, height: 44, borderRadius: 9, background: '#2f9e68',
+              color:'#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 13, fontWeight:800, flexShrink: 0 }}>
+              DEMO
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#f0e6cc', marginBottom: 2 }}>
-                Take a Tour — See a Demo Farm
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
+                Explore a working demo farm
               </div>
-              <div style={{ fontSize: 12, color: '#c8a878' }}>
-                No account needed · 2 min walkthrough
+              <div style={{ fontSize: 12, color: '#a9bbb1' }}>
+                No account needed · Guided product tour
               </div>
             </div>
-            <div style={{ fontSize: 18, color: '#c8a060' }}>→</div>
+            <div style={{ fontSize: 18, color: '#70d29d' }}>→</div>
           </button>
         )}
 
@@ -112,7 +118,7 @@ export function LoginPage() {
         {mode === 'login' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.1)' }}/>
-            <span style={{ fontSize: 11, color: '#6a5040', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <span style={{ fontSize: 11, color: '#789084', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
               or sign in
             </span>
             <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.1)' }}/>
@@ -120,11 +126,12 @@ export function LoginPage() {
         )}
 
         {/* ── Sign in card ── */}
-        <div style={{ background: '#fff', borderRadius: 14, padding: isMobile ? '22px 20px' : '28px 32px', boxShadow: '0 20px 50px rgba(0,0,0,0.35)' }}>
-          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 700, color: '#2c2416', margin: '0 0 4px', textAlign: 'center' }}>
+        <div style={{ background: '#fff', borderRadius: 12, padding: isMobile ? '22px 20px' : '28px 32px',
+          border:'1px solid rgba(255,255,255,0.35)', boxShadow: '0 24px 70px rgba(4,18,11,0.32)' }}>
+          <h2 style={{ fontFamily: "'Manrope',sans-serif", fontSize: 19, fontWeight: 800, color: '#17211c', margin: '0 0 4px', textAlign: 'center' }}>
             {mode === 'login' ? 'Sign in to your farm' : mode === 'signup' ? 'Create your account' : 'Reset password'}
           </h2>
-          <p style={{ fontSize: 12, color: '#a08060', textAlign: 'center', margin: '0 0 18px' }}>
+          <p style={{ fontSize: 12, color: '#66736c', textAlign: 'center', margin: '0 0 18px' }}>
             {mode === 'login' ? 'Welcome back' : mode === 'signup' ? "Get started — it's free" : "We'll send you a reset link"}
           </p>
 
@@ -157,32 +164,32 @@ export function LoginPage() {
 
           <button onClick={handleSubmit} disabled={loading}
             style={{ width:'100%', padding:'11px', borderRadius:8, border:'none', cursor:'pointer',
-              fontFamily:"'Lato',sans-serif", fontSize:15, fontWeight:700,
-              background:'#5a3e1b', color:'#f0e6cc', opacity:loading?0.7:1,
+              fontFamily:"'DM Sans',sans-serif", fontSize:15, fontWeight:700,
+              background:'#176b47', color:'#fff', opacity:loading?0.7:1,
               transition:'background 0.15s', marginTop:4, marginBottom:16 }}
-            onMouseEnter={e=>{ if(!loading) e.currentTarget.style.background='#3d2910' }}
-            onMouseLeave={e=>{ e.currentTarget.style.background='#5a3e1b' }}>
+            onMouseEnter={e=>{ if(!loading) e.currentTarget.style.background='#12563a' }}
+            onMouseLeave={e=>{ e.currentTarget.style.background='#176b47' }}>
             {loading ? 'Please wait…' : mode==='login' ? 'Sign In' : mode==='signup' ? 'Create Account' : 'Send Reset Link'}
           </button>
 
           {mode === 'login' && (
             <div style={{ display:'flex', flexDirection:'column', gap:7, textAlign:'center' }}>
-              <div style={{ fontSize:13, color:'#7a6648' }}>
+              <div style={{ fontSize:13, color:'#536259' }}>
                 No account?{' '}<button onClick={()=>switchMode('signup')} style={link}>Create one free</button>
               </div>
-              <button onClick={()=>switchMode('forgot')} style={{ background:'none', border:'none', color:'#a08060', cursor:'pointer', fontSize:12, fontFamily:"'Lato',sans-serif", padding:0 }}>
+              <button onClick={()=>switchMode('forgot')} style={{ background:'none', border:'none', color:'#66736c', cursor:'pointer', fontSize:12, fontFamily:"'DM Sans',sans-serif", padding:0 }}>
                 Forgot password?
               </button>
             </div>
           )}
           {mode === 'signup' && (
-            <div style={{ textAlign:'center', fontSize:13, color:'#7a6648' }}>
+            <div style={{ textAlign:'center', fontSize:13, color:'#536259' }}>
               Already have an account?{' '}<button onClick={()=>switchMode('login')} style={link}>Sign in</button>
             </div>
           )}
           {mode === 'forgot' && (
             <div style={{ textAlign:'center' }}>
-              <button onClick={()=>switchMode('login')} style={{ background:'none', border:'none', color:'#a08060', cursor:'pointer', fontSize:13, fontFamily:"'Lato',sans-serif", padding:0 }}>← Back to sign in</button>
+              <button onClick={()=>switchMode('login')} style={{ background:'none', border:'none', color:'#66736c', cursor:'pointer', fontSize:13, fontFamily:"'DM Sans',sans-serif", padding:0 }}>← Back to sign in</button>
             </div>
           )}
         </div>

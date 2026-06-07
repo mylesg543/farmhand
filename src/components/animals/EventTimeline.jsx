@@ -165,8 +165,9 @@ function EventCard({ event, onAddPhoto, onDelete, onUpdate, onUpdateBatch, isMob
       {/* Card body */}
       <div style={{ minWidth:0 }}>
         <div onClick={()=>setExpanded(v=>!v)}
+          className="fh-card-interactive"
           style={{ cursor:'pointer', background:expanded?meta.bg:'#fff',
-            border:`1px solid ${expanded?meta.border:'#e8e0d0'}`,
+            border:`1px solid ${expanded?meta.border:'#dfe6e2'}`,
             borderRadius:8, padding:isMobile?'10px 11px':'11px 14px',
             minHeight:64, boxShadow:'0 1px 3px rgba(44,36,22,0.04)',
             transition:'background 0.2s, border-color 0.2s, box-shadow 0.2s' }}>
@@ -590,7 +591,7 @@ export function EventTimeline({ events=[], loading=false, onAddEvent, onCreateLa
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', marginBottom:16 }}>
         <div>
-          <p style={{ fontFamily:"'Playfair Display',serif", fontWeight:700, fontSize:16, margin:'0 0 1px' }}>
+          <p style={{ fontFamily:"'Manrope',sans-serif", fontWeight:800, fontSize:16, margin:'0 0 1px' }}>
             Health Timeline
           </p>
           <p style={{ fontSize:12, color:'#a08060', margin:0 }}>
