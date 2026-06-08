@@ -89,7 +89,7 @@ function AnimalDetailPanel({ animal, events, animals, onOpenAnimal }) {
   return (
     <div className="admin-animal-detail-panel" style={{ background:'#fdfaf6', borderRadius:10, border:'1px solid #e8e0d0', overflow:'hidden', marginTop:6 }}>
       {/* Animal header */}
-      <div style={{ background:'#12251c', padding:'14px 16px', display:'flex', alignItems:'center', gap:12 }}>
+      <div style={{ background:'#202326', padding:'14px 16px', display:'flex', alignItems:'center', gap:12 }}>
         <div style={{ width:44, height:44, borderRadius:'50%', overflow:'hidden', border:'2px solid rgba(255,255,255,0.25)', background:'rgba(255,255,255,0.1)', flexShrink:0 }}>
           <AnimalAvatar animal={animal} size={44}/>
         </div>

@@ -516,7 +516,7 @@ export function AnimalList({ species = 'sheep' }) {
         }
       `}</style>
       {/* ── Hero header ─────────────────────────────────────────────────── */}
-      <div style={{ background:'#12251c', width:'100%', boxShadow:'inset 0 -1px 0 rgba(255,255,255,0.06)' }}>
+      <div style={{ background:'#202326', width:'100%', boxShadow:'inset 0 -1px 0 rgba(255,255,255,0.06)' }}>
         <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'16px 14px 0':'24px 24px 0' }}>
           {/* Title row */}
           <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between',

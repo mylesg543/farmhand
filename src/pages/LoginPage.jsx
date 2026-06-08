@@ -61,7 +61,7 @@ export function LoginPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#12251c',
+      background: '#191c1f',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontFamily: "'DM Sans',sans-serif", padding: 16,
     }}>

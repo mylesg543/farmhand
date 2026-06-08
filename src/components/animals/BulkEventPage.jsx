@@ -116,7 +116,7 @@ export function BulkEventPage({ species = 'sheep' }) {
   return (
     <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 16px 40px' }}>
       {/* Dark hero header */}
-      <div style={{ background: '#12251c', margin: '0 -16px 28px', padding: '24px 24px 28px' }}>
+      <div style={{ background: '#202326', margin: '0 -16px 28px', padding: '24px 24px 28px' }}>
         <button onClick={() => navigate(backPath)}
           style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#f0e6cc', borderRadius: 7, padding: '7px 14px', cursor: 'pointer', fontSize: 13, marginBottom: 16, fontFamily: "'Lato',sans-serif", fontWeight: 600 }}>
           ← {meta.label}

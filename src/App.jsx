@@ -107,8 +107,8 @@ function DesktopNav({ user, isAdmin, navigate, location, signOut }) {
           <button onClick={() => setToast(null)} style={{ background: 'none', border: 'none', color: '#a08060', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
         </div>
       )}
-      <nav style={{ background: '#12251c', position: 'sticky', top: 0, zIndex: 100,
-        boxShadow:'0 1px 0 rgba(255,255,255,0.06), 0 8px 24px rgba(10,28,19,0.12)' }}>
+      <nav style={{ background: '#202326', position: 'sticky', top: 0, zIndex: 100,
+        boxShadow:'0 1px 0 rgba(255,255,255,0.06), 0 8px 24px rgba(18,20,22,0.14)' }}>
         <div style={{ display: 'flex', alignItems: 'center', padding: '0 24px', height: 56, gap: 12 }}>
           <span onClick={() => navigate('/')} style={{ display:'inline-flex', alignItems:'center',
             gap:9, fontFamily: "'Manrope',sans-serif", fontSize: 18, fontWeight: 800,
@@ -240,9 +240,9 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
       )}
 
       {/* Mobile top header */}
-      <div style={{ background: '#12251c', padding: '0 14px', height: 52, display: 'flex',
+      <div style={{ background: '#202326', padding: '0 14px', height: 52, display: 'flex',
         alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100,
-        boxShadow:'0 6px 18px rgba(10,28,19,0.14)' }}>
+        boxShadow:'0 6px 18px rgba(18,20,22,0.16)' }}>
         <span onClick={() => navigate('/')} style={{ display:'inline-flex', alignItems:'center',
           gap:8, fontFamily: "'Manrope',sans-serif", fontSize: 16, fontWeight: 800, color: '#fff', cursor: 'pointer' }}>
           <span style={{ width:28, height:28, borderRadius:8, background:'#2f9e68',
@@ -258,9 +258,9 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
 
       {/* Bottom tab bar */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
-        background: 'rgba(18,37,28,0.98)', backdropFilter:'blur(16px)',
+        background: 'rgba(32,35,38,0.98)', backdropFilter:'blur(16px)',
         borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex',
-        paddingBottom: 'env(safe-area-inset-bottom)', boxShadow:'0 -8px 24px rgba(10,28,19,0.12)' }}>
+        paddingBottom: 'env(safe-area-inset-bottom)', boxShadow:'0 -8px 24px rgba(18,20,22,0.14)' }}>
         {tabBtn(isAnimals, '🐾', 'Animals', () => setSheet('animals'))}
         {tabBtn(isPlants,  '🌱', 'Plants',  () => setSheet('plants'))}
         {tabBtn(isDash,    '💰', 'P & L', () => navigate('/dashboard'))}

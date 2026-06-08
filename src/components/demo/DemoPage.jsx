@@ -104,7 +104,7 @@ function Nav({ screen, species, isMobile, onExit, name }) {
   }
   const activeLabel = labels[screen] || '🌾 FarmHand'
   return (
-    <div style={{ background:'#12251c', height:isMobile?38:42,
+    <div style={{ background:'#202326', height:isMobile?38:42,
       display:'flex', alignItems:'center', justifyContent:'space-between',
       padding:'0 16px', flexShrink:0, position:'sticky', top:0, zIndex:200 }}>
       <span style={{ fontFamily:"'Playfair Display',serif", fontSize:isMobile?14:16,
@@ -150,8 +150,8 @@ function Tip({ step, stepIdx, total, onNext, onSkip, name, isMobile }) {
       {/* Tooltip card */}
       <div style={{ position:isMobile?'fixed':'sticky', bottom:isMobile?'calc(14px + env(safe-area-inset-bottom))':undefined,
         top:isMobile?undefined:72, left:isMobile?'50%':undefined, transform:isMobile?'translateX(-50%)':undefined,
-        width:isMobile?'calc(100% - 24px)':'340px', maxWidth:'95vw', background:'#12251c',
-        borderRadius:12, padding:isMobile?'14px 16px':'18px 18px', boxShadow:'0 12px 34px rgba(8,28,18,0.3)',
+        width:isMobile?'calc(100% - 24px)':'340px', maxWidth:'95vw', background:'#202326',
+        borderRadius:12, padding:isMobile?'14px 16px':'18px 18px', boxShadow:'0 12px 34px rgba(18,20,22,0.3)',
         zIndex:1000, border:`1px solid ${pulse?'rgba(91,190,139,0.7)':'rgba(255,255,255,0.1)'}`,
         transition:'border-color 0.3s',
         animation: pulse ? 'tipPulse 1.8s ease-in-out infinite' : 'none',
@@ -329,7 +329,7 @@ function FlockScreen({ name, species, highlight, isMobile }) {
 
   return (
     <div>
-      <div style={{ background:'#12251c', width:'100%' }}>
+      <div style={{ background:'#202326', width:'100%' }}>
         <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'18px 14px 0':'28px 24px 0' }}>
           <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:16 }}>
             <div style={{ display:'flex', alignItems:'center', gap:14 }}>
@@ -494,7 +494,7 @@ function ProfileScreen({ name, species, highlight, isMobile }) {
 
   return (
     <div>
-      <div style={{ background:'#12251c', width:'100%' }}>
+      <div style={{ background:'#202326', width:'100%' }}>
         <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'14px 14px 20px':'22px 24px 28px' }}>
           <button style={{ ...S.btn,background:'rgba(255,255,255,0.1)',color:'#f0e6cc',border:'1px solid rgba(255,255,255,0.2)',padding:'6px 12px',fontSize:12,marginBottom:14 }}>
             ← {isSheep?'Flock':'Chickens'}
@@ -601,7 +601,7 @@ function EventScreen({ name, species, step, highlight, isMobile }) {
   const [saved,setSaved]=useState(false)
   return (
     <div>
-      <div style={{ background:'#12251c',width:'100%' }}>
+      <div style={{ background:'#202326',width:'100%' }}>
         <div style={{ maxWidth:1100,margin:'0 auto',padding:isMobile?'14px 14px 20px':'22px 24px 28px' }}>
           <button style={{ ...S.btn,background:'rgba(255,255,255,0.1)',color:'#f0e6cc',border:'1px solid rgba(255,255,255,0.2)',padding:'6px 12px',fontSize:12,marginBottom:14 }}>← {name}</button>
           <div style={{ display:'flex',gap:12,alignItems:'center' }}>
@@ -1435,7 +1435,7 @@ function HeroEvents({ name, species, isMobile }) {
       <div style={{ background:'#fff', border:'1px solid #e8e0d0', borderRadius:14,
         boxShadow:'0 4px 24px rgba(44,36,22,0.08)', overflow:'hidden' }}>
         <div style={{ display:'flex', alignItems:'center', gap:12, padding:isMobile?'12px 14px':'14px 18px',
-          background:'#12251c' }}>
+          background:'#202326' }}>
           <Avatar animal={animal} size={isMobile?46:54}/>
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
@@ -2036,7 +2036,7 @@ export function DemoPage() {
   }
 
   if(phase==='name') return (
-    <div style={{ minHeight:'100vh', background:'#10251b', fontFamily:"'DM Sans',sans-serif" }}>
+    <div style={{ minHeight:'100vh', background:'#191c1f', fontFamily:"'DM Sans',sans-serif" }}>
       <div style={{ padding:'12px 20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <span style={{ fontFamily:"'Manrope',sans-serif", fontSize:16, fontWeight:750, color:'#fff', display:'flex', alignItems:'center', gap:8 }}><span style={{ width:28, height:28, borderRadius:7, background:'#21845a', display:'grid', placeItems:'center', fontSize:11 }}>FH</span>FarmHand</span>
         <button onClick={skip} style={{ background:'none', border:'1px solid rgba(255,255,255,0.15)', color:'rgba(255,255,255,0.5)', borderRadius:6, padding:'5px 12px', cursor:'pointer', fontSize:12, fontFamily:"'Lato',sans-serif" }}>Skip</button>

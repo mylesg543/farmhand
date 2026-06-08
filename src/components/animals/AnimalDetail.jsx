@@ -331,7 +331,7 @@ export function AnimalDetailPage() {
   return (
     <div>
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <div style={{ background:'#12251c', width:'100%', boxShadow:'inset 0 -1px 0 rgba(255,255,255,0.06)' }}>
+      <div style={{ background:'#202326', width:'100%', boxShadow:'inset 0 -1px 0 rgba(255,255,255,0.06)' }}>
         <div style={{ maxWidth:1100, margin:'0 auto', padding:isMobile?'14px 14px 20px':'22px 24px 28px' }}>
           <button onClick={()=>navigate(backPath)}
             style={{ ...S.btn, background:'rgba(255,255,255,0.1)', color:'#f0e6cc',
