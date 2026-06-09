@@ -735,9 +735,10 @@ export function AdminPage() {
           .admin-user-arrow{position:absolute!important;top:12px!important;right:12px!important;}
           .admin-user-actions{grid-column:1 / -1!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;width:100%!important;}
           .admin-user-action-btn{width:100%!important;justify-content:center!important;padding:9px 10px!important;font-size:12px!important;}
-          .admin-user-expanded{padding:12px!important;padding-bottom:calc(22px + env(safe-area-inset-bottom))!important;max-height:calc(100vh - 190px)!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;}
+          .admin-user-expanded{padding:12px!important;padding-bottom:calc(22px + env(safe-area-inset-bottom))!important;max-height:none!important;overflow:visible!important;}
           .admin-user-animal-list{padding-bottom:calc(88px + env(safe-area-inset-bottom))!important;}
-          .admin-animal-detail-panel{max-height:calc(100vh - 260px)!important;overflow-y:auto!important;}
+          .admin-animal-detail-panel{max-height:none!important;overflow:visible!important;}
+          .admin-recent-events{max-height:none!important;overflow:visible!important;}
           .admin-recent-events button{grid-template-columns:38px minmax(0,1fr) auto!important;gap:9px!important;padding:11px 2px!important;}
           .admin-recent-events button > span:nth-child(3){grid-column:2 / -1!important;}
           .admin-recent-events button > span:nth-child(4){grid-column:3!important;grid-row:1!important;font-size:10px!important;}

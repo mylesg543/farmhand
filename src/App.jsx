@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, useNavigationType } from 'react-router-dom'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import { useAdminStatus } from './hooks/useAdmin'
 import { LoginPage } from './pages/LoginPage'
@@ -59,10 +59,16 @@ function Dropdown({ trigger, children }) {
 
 // ─── Mobile sheet ────────────────────────────────────────────────────────────
 function MobileSheet({ title, children, onClose }) {
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = previousOverflow }
+  }, [])
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 800, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)' }} onClick={onClose} />
-      <div style={{ position: 'relative', background: '#fff', borderRadius: '20px 20px 0 0', padding: '0 0 calc(40px + env(safe-area-inset-bottom))', maxHeight: '80vh', overflowY: 'auto' }}>
+      <div style={{ position: 'relative', background: '#fff', borderRadius: '20px 20px 0 0', padding: '0 0 calc(40px + env(safe-area-inset-bottom))', maxHeight: '80vh', overflowY: 'auto', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 12px', borderBottom: '1px solid #f0ebe4' }}>
           <span style={{ fontSize: 15, fontWeight: 700, color: '#2c2416', fontFamily: "'Lato',sans-serif" }}>{title}</span>
           <button onClick={onClose} aria-label="Close menu" style={{ background: 'none', border: 'none', fontSize: 22, color: '#a08060', cursor: 'pointer', lineHeight: 1, padding: 0, width: 44, height: 44, margin: '-10px -12px -10px 0' }}>×</button>
@@ -258,7 +264,7 @@ function MobileNav({ user, isAdmin, navigate, location, signOut }) {
 
       {/* Bottom tab bar */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
-        background: 'rgba(32,35,38,0.98)', backdropFilter:'blur(16px)',
+        background: 'rgba(32,35,38,0.99)',
         borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex',
         paddingBottom: 'env(safe-area-inset-bottom)', boxShadow:'0 -8px 24px rgba(18,20,22,0.14)' }}>
         {tabBtn(isAnimals, '🐾', 'Animals', () => setSheet('animals'))}
@@ -318,6 +324,17 @@ function Nav() {
   return <DesktopNav user={user} isAdmin={isAdmin} navigate={navigate} location={location} signOut={handleSignOut} />
 }
 
+function RouteScrollManager() {
+  const { pathname } = useLocation()
+  const navigationType = useNavigationType()
+
+  useEffect(() => {
+    if (navigationType !== 'POP') window.scrollTo({ top:0, left:0, behavior:'auto' })
+  }, [pathname, navigationType])
+
+  return null
+}
+
 // ─── Farm App ─────────────────────────────────────────────────────────────────
 function FarmApp() {
   const isMobile = useIsMobile()
@@ -326,6 +343,7 @@ function FarmApp() {
       fontFamily: "'DM Sans',sans-serif", color: '#17211c',
       paddingBottom: isMobile ? 'var(--fh-mobile-page-bottom)' : 0 }}>
       <style>{`:root{--fh-mobile-nav-height:64px;--fh-mobile-float-bottom:calc(86px + env(safe-area-inset-bottom));--fh-mobile-page-bottom:calc(112px + env(safe-area-inset-bottom));}@media (max-width:767px){input,select,textarea{font-size:16px!important;}button{touch-action:manipulation;}}`}</style>
+      <RouteScrollManager />
       <EmulationBanner />
       <Nav />
       <Routes>

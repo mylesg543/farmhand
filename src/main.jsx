@@ -27,11 +27,18 @@ style.textContent = `
     --fh-focus: 0 0 0 3px rgba(23,107,71,0.18);
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  html {
+    -webkit-text-size-adjust: 100%;
+    min-height: 100%;
+    scroll-behavior: auto;
+    overscroll-behavior-x: none;
+  }
   body {
+    min-height: 100%;
     background: var(--fh-bg);
     color: var(--fh-text);
     overflow-x: hidden;
+    overscroll-behavior-x: none;
     font-family: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -78,10 +85,12 @@ style.textContent = `
   .fh-card-interactive {
     transition: transform 160ms ease, box-shadow 180ms ease, border-color 160ms ease;
   }
-  .fh-card-interactive:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--fh-shadow-md) !important;
-    border-color: var(--fh-border-strong) !important;
+  @media (hover: hover) and (pointer: fine) {
+    .fh-card-interactive:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--fh-shadow-md) !important;
+      border-color: var(--fh-border-strong) !important;
+    }
   }
   .fh-skeleton {
     background: linear-gradient(90deg, #edf1ef 25%, #f8faf9 45%, #edf1ef 65%);
@@ -100,9 +109,12 @@ style.textContent = `
   }
   @media (max-width: 767px) {
     input, select, textarea { font-size: 16px !important; }
-    * { -webkit-overflow-scrolling: touch; }
     button { min-height: 40px; }
     body { background: #f3f6f4; }
+    .fh-card-interactive {
+      transform: none !important;
+      transition: border-color 120ms ease, background-color 120ms ease;
+    }
   }
 `
 document.head.appendChild(style)

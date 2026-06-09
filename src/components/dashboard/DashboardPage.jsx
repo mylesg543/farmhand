@@ -108,7 +108,7 @@ function RecentEventsDrawer({ open, onClose, events, loading, error, animals, is
   })
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(10,27,19,0.48)', display:'flex', justifyContent:isMobile?'stretch':'flex-end', alignItems:'stretch', backdropFilter:'blur(3px)' }}>
+    <div style={{ position:'fixed', inset:0, zIndex:5000, background:'rgba(10,27,19,0.48)', display:'flex', justifyContent:isMobile?'stretch':'flex-end', alignItems:'stretch' }}>
       <div onClick={onClose} style={{ position:'absolute', inset:0 }} />
       <div style={{ position:'relative', width:isMobile?'100%':560, maxWidth:'100%', background:'#f5f7f6', boxShadow:'-12px 0 36px rgba(18,20,22,0.24)', display:'flex', flexDirection:'column' }}>
         <div style={{ padding:isMobile?'16px 14px':'20px 22px', background:'#202326', color:'#fff', display:'flex', alignItems:'flex-start', gap:12 }}>
