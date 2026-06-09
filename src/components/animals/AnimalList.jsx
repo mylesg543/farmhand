@@ -730,66 +730,56 @@ export function AnimalList({ species = 'sheep' }) {
           </div>
         )}
 
-        {/* Filters */}
-        <div style={{ display:'flex', gap:6, marginBottom:10, flexWrap:'wrap' }}>
-          {filterBtns.map(btn=>(
-            <button key={btn.key} onClick={()=>setFilter(btn.key)}
-              style={{ ...S.btn, padding:isMobile?'5px 10px':'6px 14px', fontSize:isMobile?12:13,
-                background:filter===btn.key?'#5a3e1b':btn.key==='newborn'?'#fff9e6':'#fff',
-                color:filter===btn.key?'#fff':btn.key==='newborn'?'#ad6500':'#7a6648',
-                border:filter===btn.key?'none':btn.key==='newborn'?'1px solid #f0c16e':'1px solid #d0c4b0' }}>
-              {btn.key==='newborn' ? '🐣 ' : btn.key==='warnings' ? '⚠️ ' : ''}{btn.label}
-            </button>
-          ))}
-          {selecting && (
-            <button onClick={()=>setSelected(allFilteredSelected
-              ? new Set() : new Set(filteredList.map(a=>a.id)))}
-              style={{ ...S.btn, ...S.btnSecondary, padding:'5px 10px', fontSize:12, marginLeft:'auto' }}>
-              {allFilteredSelected?'Deselect All':'Select All'}
-            </button>
-          )}
-        </div>
+        {/* Filter, sort, and search */}
+        <div style={{ display:'grid',
+          gridTemplateColumns:isMobile?'minmax(0, 1fr) minmax(0, 1fr)':'190px minmax(260px, 1fr) 220px',
+          gap:isMobile?8:10, marginBottom:12, alignItems:'stretch' }}>
+          <div style={{ position:'relative', minWidth:0 }}>
+            <select aria-label={`Filter ${meta.plural.toLowerCase()}`}
+              value={filter} onChange={e=>setFilter(e.target.value)}
+              style={{ ...S.input, width:'100%', height:'100%', minHeight:44,
+                padding:isMobile?'10px 34px 10px 12px':'10px 38px 10px 13px',
+                fontWeight:800, color:'#26352d', cursor:'pointer',
+                background:'#fff', border:'1px solid #cbd6d0' }}>
+              {filterBtns.map(btn=>(
+                <option key={btn.key} value={btn.key}>{btn.label}</option>
+              ))}
+            </select>
+            <span aria-hidden="true" style={{ position:'absolute', right:12, top:'50%',
+              transform:'translateY(-50%)', color:'#66736c', fontSize:11, pointerEvents:'none' }}>▼</span>
+          </div>
 
-        {/* Search and sort */}
-        <div style={{ display:'flex', gap:isMobile?8:10, marginBottom:12, flexDirection:isMobile?'column':'row', alignItems:'stretch' }}>
-          <input aria-label={`Search ${meta.plural.toLowerCase()}`} style={{ ...S.input, flex:1 }}
+          <input aria-label={`Search ${meta.plural.toLowerCase()}`}
+            style={{ ...S.input, minWidth:0, gridColumn:isMobile?'1 / -1':'auto',
+              gridRow:isMobile?'2':'auto', minHeight:44 }}
             placeholder={`Search ${meta.plural.toLowerCase()}…`}
             value={search} onChange={e=>setSearch(e.target.value)}/>
-          <div ref={sortMenuRef} style={{ position:'relative', display:isMobile?'grid':'flex', gridTemplateColumns:isMobile?'86px minmax(0, 1fr)':undefined,
-            alignItems:'center', gap:isMobile?10:12, flexShrink:0,
-            background:'#fff', border:'1px solid #dfe6e2', borderRadius:8,
-            padding:isMobile?'8px 10px':'0 8px 0 12px', minHeight:38,
-            boxShadow:'0 1px 3px rgba(44,36,22,0.04)', width:isMobile?'100%':undefined,
-            boxSizing:'border-box' }}>
-            <span style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:11,
-              fontWeight:800, color:'#7a6648', whiteSpace:'nowrap',
-              textTransform:'uppercase', letterSpacing:'0.04em', paddingRight:isMobile?0:2 }}>
-              <span aria-hidden="true" style={{ fontSize:13, color:'#a08060', lineHeight:1 }}>↕</span>
-              Sort by
-            </span>
+
+          <div ref={sortMenuRef} style={{ position:'relative', minWidth:0 }}>
             <button type="button" onClick={()=>setShowSortMenu(v=>!v)}
               aria-haspopup="listbox"
               aria-expanded={showSortMenu}
-              style={{ display:'grid', gridTemplateColumns:'34px minmax(0, 1fr) auto',
-                alignItems:'center', gap:8, border:'1px solid #efe7d8', borderRadius:7,
-                background:'#fdfaf6', color:'#2c2416', fontFamily:"'Lato',sans-serif",
-                fontSize:13, width:isMobile?'100%':220, minWidth:0, cursor:'pointer',
-                padding:'5px 9px', minHeight:32, textAlign:'left' }}>
+              style={{ display:'grid', gridTemplateColumns:'30px minmax(0, 1fr) auto',
+                alignItems:'center', gap:7, border:'1px solid #cbd6d0', borderRadius:8,
+                background:'#fff', color:'#26352d', fontFamily:"'DM Sans',sans-serif",
+                fontSize:isMobile?12:13, width:'100%', minWidth:0, cursor:'pointer',
+                padding:'7px 10px', minHeight:44, textAlign:'left' }}>
               <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
-                width:28, height:22, borderRadius:6, background:'#f0e8d8', color:'#5a3e1b',
+                width:28, height:26, borderRadius:6, background:'#eef3f0', color:'#176b47',
                 fontSize:10, fontWeight:900, letterSpacing:'0.01em' }}>
                 <SortIcon type={currentSort.icon} />
               </span>
               <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight:700 }}>
-                {currentSort.label}
+                {isMobile ? `Sort: ${currentSort.label}` : currentSort.label}
               </span>
-              <span style={{ color:'#a08060', fontSize:10 }}>{showSortMenu?'▲':'▼'}</span>
+              <span style={{ color:'#66736c', fontSize:10 }}>{showSortMenu?'▲':'▼'}</span>
             </button>
             {showSortMenu && (
               <div role="listbox" aria-label="Sort animals"
                 style={{ position:'absolute', top:'calc(100% + 6px)', right:0, zIndex:80,
-                  width:isMobile?'100%':220, background:'#fff', border:'1px solid #d8ccb8',
-                  borderRadius:9, boxShadow:'0 8px 28px rgba(44,36,22,0.16)', padding:5 }}>
+                  width:isMobile?'min(280px, calc(100vw - 24px))':220, background:'#fff',
+                  border:'1px solid #d5ded9', borderRadius:9,
+                  boxShadow:'0 10px 30px rgba(18,38,27,0.14)', padding:5 }}>
                 {SORT_OPTIONS.map(opt => {
                   const selectedOpt = sortBy === opt.value
                   return (
@@ -819,6 +809,16 @@ export function AnimalList({ species = 'sheep' }) {
             )}
           </div>
         </div>
+
+        {selecting && (
+          <div style={{ display:'flex', justifyContent:'flex-end', margin:'-4px 0 12px' }}>
+            <button onClick={()=>setSelected(allFilteredSelected
+              ? new Set() : new Set(filteredList.map(a=>a.id)))}
+              style={{ ...S.btn, ...S.btnSecondary, padding:'6px 12px', fontSize:12 }}>
+              {allFilteredSelected?'Deselect All':'Select All'}
+            </button>
+          </div>
+        )}
 
         {/* Empty state */}
         {animals.length===0 && (
