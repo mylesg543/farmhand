@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { mergeAnimalEventData } from '../lib/animalEventHydration'
 import { useNavigate } from 'react-router-dom'
-import { S, AnimalAvatar, fmt, formatDate, hasBreedingRestriction, DoNotBreedBadge } from '../components/ui/shared'
+import { S, AnimalAvatar, fmt, formatDate, getEventMeta, hasBreedingRestriction, DoNotBreedBadge } from '../components/ui/shared'
 
 // ─── Auth guard — only your UID gets in ───────────────────────────────────────
 const ADMIN_UIDS = ['d1b58a87-b815-47aa-8d8d-33c3eedb1e57']
@@ -501,6 +501,7 @@ export function AdminPage() {
     totalCosts:    0,
     signupsByDay:  [],
     eventsByType:  [],
+    recentEvents:  [],
     speciesBreakdown: {},
   })
 
@@ -626,6 +627,17 @@ export function AdminPage() {
         .sort((a,b) => b.count - a.count)
         .slice(0, 8)
 
+      // ── Most recently created events across every farm
+      const animalMap = Object.fromEntries(animalsData.map(animal => [animal.id, animal]))
+      const recentEvents = [...eventsData]
+        .sort((a, b) => new Date(b.created_at || b.event_date || 0) - new Date(a.created_at || a.event_date || 0))
+        .slice(0, 30)
+        .map(event => ({
+          ...event,
+          animal: animalMap[event.animal_id] || null,
+          email: emailMap[event.user_id]?.email || null,
+        }))
+
       // ── Species breakdown
       const speciesBreakdown = {
         sheep:    animalsData.filter(a => a.species==='sheep').length,
@@ -658,6 +670,7 @@ export function AdminPage() {
         totalCosts:    costsData.reduce((s,c) => s+Number(c.amount), 0),
         signupsByDay,
         eventsByType,
+        recentEvents,
         speciesBreakdown,
       })
     } catch (err) {
@@ -725,6 +738,9 @@ export function AdminPage() {
           .admin-user-expanded{padding:12px!important;padding-bottom:calc(22px + env(safe-area-inset-bottom))!important;max-height:calc(100vh - 190px)!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;}
           .admin-user-animal-list{padding-bottom:calc(88px + env(safe-area-inset-bottom))!important;}
           .admin-animal-detail-panel{max-height:calc(100vh - 260px)!important;overflow-y:auto!important;}
+          .admin-recent-events button{grid-template-columns:38px minmax(0,1fr) auto!important;gap:9px!important;padding:11px 2px!important;}
+          .admin-recent-events button > span:nth-child(3){grid-column:2 / -1!important;}
+          .admin-recent-events button > span:nth-child(4){grid-column:3!important;grid-row:1!important;font-size:10px!important;}
           .admin-emulation-banner{top:auto!important;bottom:var(--fh-mobile-float-bottom)!important;left:auto!important;right:10px!important;width:calc(100vw - 20px)!important;max-width:340px!important;border-radius:14px!important;padding:8px 10px!important;gap:6px!important;font-size:11px!important;box-shadow:0 8px 26px rgba(0,0,0,0.30)!important;flex-wrap:wrap!important;align-items:center!important;}
           .admin-emulation-icon{font-size:13px!important;}
           .admin-emulation-label{font-size:10px!important;}
@@ -888,6 +904,79 @@ export function AdminPage() {
           {/* ── ACTIVITY TAB ─────────────────────────────────────────────── */}
           {tab==='activity' && (
             <>
+              <div style={{ ...S.card, padding:'18px 20px', marginBottom:14 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start',
+                  gap:12, marginBottom:14, flexWrap:'wrap' }}>
+                  <div>
+                    <p style={{ fontFamily:"'Manrope',sans-serif", fontWeight:800, fontSize:16, margin:'0 0 3px' }}>
+                      Recent Events Across All Farms
+                    </p>
+                    <p style={{ fontSize:12, color:'#66736c', margin:0 }}>
+                      Newest activity first. Select an event to open that user in Admin.
+                    </p>
+                  </div>
+                  <span style={{ fontSize:11, fontWeight:800, color:'#176b47', background:'#e8f4ee',
+                    border:'1px solid #cfe4d9', borderRadius:999, padding:'4px 9px' }}>
+                    Latest {data.recentEvents.length}
+                  </span>
+                </div>
+
+                {data.recentEvents.length === 0 ? (
+                  <p style={{ color:'#66736c', fontSize:13, padding:'16px 0', margin:0 }}>No events logged yet.</p>
+                ) : (
+                  <div className="admin-recent-events" style={{ display:'flex', flexDirection:'column',
+                    borderTop:'1px solid #e6ece8', maxHeight:560, overflowY:'auto' }}>
+                    {data.recentEvents.map(event => {
+                      const eventMeta = getEventMeta(event.event_type)
+                      const ownerLabel = event.email || `${(event.user_id || 'Unknown user').slice(0, 14)}…`
+                      const createdLabel = event.created_at
+                        ? new Date(event.created_at).toLocaleString('en-US', {
+                            month:'short', day:'numeric', hour:'numeric', minute:'2-digit',
+                          })
+                        : null
+                      return (
+                        <button key={event.id} type="button"
+                          onClick={() => { setSearch(event.email || event.user_id || ''); setTab('users') }}
+                          style={{ display:'grid', gridTemplateColumns:'42px minmax(0, 1.5fr) minmax(150px, 1fr) auto',
+                            alignItems:'center', gap:12, width:'100%', padding:'11px 4px',
+                            border:'none', borderBottom:'1px solid #edf1ef', background:'transparent',
+                            color:'#17211c', textAlign:'left', cursor:'pointer', fontFamily:"'DM Sans',sans-serif" }}>
+                          <span style={{ width:38, height:38, display:'grid', placeItems:'center',
+                            borderRadius:9, background:eventMeta.bg, border:`1px solid ${eventMeta.border}`,
+                            color:eventMeta.color, fontSize:18 }}>
+                            {eventMeta.icon}
+                          </span>
+                          <span style={{ minWidth:0 }}>
+                            <span style={{ display:'block', fontWeight:800, fontSize:13,
+                              color:eventMeta.color, marginBottom:2 }}>
+                              {eventMeta.label}
+                            </span>
+                            <span style={{ display:'block', fontSize:12, color:'#536259',
+                              overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                              {event.animal?.name || 'Unknown animal'}
+                              {event.animal?.species ? ` · ${event.animal.species}` : ''}
+                              {event.notes ? ` · ${event.notes}` : ''}
+                            </span>
+                          </span>
+                          <span style={{ minWidth:0 }}>
+                            <span style={{ display:'block', fontSize:12, fontWeight:700, color:'#26352d',
+                              overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                              {ownerLabel}
+                            </span>
+                            <span style={{ display:'block', fontSize:11, color:'#89948e', marginTop:2 }}>
+                              Event date: {formatDate(event.event_date)}
+                            </span>
+                          </span>
+                          <span style={{ fontSize:11, color:'#66736c', whiteSpace:'nowrap', textAlign:'right' }}>
+                            {createdLabel || formatDate(event.event_date)}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
               <div className="admin-grid-3" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:20 }}>
                 {/* Most active farms */}
                 <div style={{ ...S.card, padding:'18px 20px', gridColumn:'span 2' }}>
